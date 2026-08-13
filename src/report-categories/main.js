@@ -12,8 +12,10 @@ import { createStore } from './store.js'
 import { renderCategorySettingsPanel } from './categorySettingsPanel.js'
 import './categorySettingsPanel.css'
 import { augmentCategoryRows } from './augmentSideMenu.js'
-import { renderDeleteConfirmDialog } from './deleteConfirmDialog.js'
+import { startDeleteCategoryFlow } from './deleteCategoryFlow.js'
 import './deleteConfirmDialog.css'
+import './reassignReportsDialog.css'
+import './forceDeleteDialog.css'
 import './hostPage.css'
 
 const builtin = (id, name, visibility = 'public', sharedWith = []) => ({
@@ -24,20 +26,30 @@ const builtin = (id, name, visibility = 'public', sharedWith = []) => ({
   sharedWith,
 })
 
+const custom = (id, name, visibility = 'public', sharedWith = []) => ({
+  id,
+  name,
+  type: 'custom',
+  visibility,
+  sharedWith,
+})
+
 const seedCategories = [
   builtin('all-reports', 'All Reports'),
   builtin('config', 'Config'),
-  builtin('windows', 'Windows'),
-  { id: 'inventory', name: 'Inventory', type: 'custom', visibility: 'private', sharedWith: [{ type: 'user', id: 'u1' }] },
-  builtin('flow-reports', 'Flow Reports'),
-  builtin('wan-link', 'WAN Link'),
+  custom('windows', 'Windows', 'public'),
+  custom('inventory', 'Inventory', 'private', [{ type: 'user', id: 'u1' }]),
+  builtin('flow-reports', 'Flow Reports', 'private', [{ type: 'profile', id: 'p1' }]),
+  custom('wireless', 'Wireless', 'private', [{ type: 'user', id: 'u2' }]),
+  custom('wan-link', 'WAN Link', 'public'),
+  // Deliberately holds no reports, so the "delete an empty category" path is reachable in the app.
+  custom('capacity-planning', 'Capacity Planning', 'private', [{ type: 'profile', id: 'p2' }]),
+  builtin('network', 'Network', 'private', [{ type: 'profile', id: 'p2' }]),
   builtin('alert', 'Alert'),
-  builtin('virtualization', 'Virtualization'),
-  builtin('availability', 'Availability'),
-  { id: 'wireless', name: 'Wireless', type: 'custom', visibility: 'public', sharedWith: [] },
+  builtin('availability', 'Availability', 'private', [{ type: 'user', id: 'u3' }]),
   builtin('performance', 'Performance'),
-  builtin('network', 'Network'),
-  builtin('server', 'Server'),
+  builtin('virtualization', 'Virtualization'),
+  builtin('server', 'Server', 'private', [{ type: 'user', id: 'u1' }]),
   builtin('service-check', 'Service Check'),
 ]
 
@@ -61,6 +73,9 @@ const report = (id, name, category, description, type, reportType, on = false, f
   reportType,
   schedule: on,
   favorite,
+  // The plain name. `name` below is the DS link-cell shape and is awkward to read from anywhere
+  // that is not obs-table, so keep the string itself available.
+  title: name,
   // The product's NAME cell is ★ + report name together, under the NAME header. A type="link"
   // cell ({text, icon, href}) is the only cell that renders an icon beside text.
   name: { text: name, icon: favorite ? 'filledStar' : 'star', href: '#' },
@@ -91,7 +106,7 @@ const reports = [
   report('r20', 'Service Check Summary', 'service-check', 'Service Check Summary', 'Availability', 'Default'),
 ]
 
-const store = createStore(seedCategories)
+const store = createStore({ categories: seedCategories, reports })
 const menu = document.getElementById('category-list')
 const panelRoot = document.getElementById('panel-root')
 const dialogRoot = document.getElementById('dialog-root')
@@ -143,20 +158,24 @@ table.columns = [
 table.addEventListener('cellaction', (event) => {
   const action = detailValue(event)
   if (!action) return
-  const row = reports.find((r) => r.id === action.id)
+  // The store holds the live rows, and hands out copies — so these must be written back THROUGH
+  // the store. Mutating the seed array here would be discarded on the next render.
+  const row = store.getReports().find((r) => r.id === action.id)
   if (!row) return
 
-  if (action.key === 'schedule') row.schedule = !row.schedule
+  if (action.key === 'schedule') {
+    store.updateReport(row.id, { schedule: !row.schedule })
+  }
 
   // The name cell holds two controls: the ★ favourites, the text opens the report. `part` tells
   // them apart — added in elements@0.1.159 (G15), which retired a shadow-root binding here.
   if (action.key === 'name' && action.part === 'icon') {
-    row.favorite = !row.favorite
-    row.name = { ...row.name, icon: row.favorite ? 'filledStar' : 'star' }
+    const favorite = !row.favorite
+    store.updateReport(row.id, { favorite, name: { ...row.name, icon: favorite ? 'filledStar' : 'star' } })
   }
   // part === 'text' would open the report; `download` would start a download, in a real app.
 
-  render(store.getCategories())
+  // store.updateReport notifies, which re-renders — no explicit render() call needed.
 })
 
 table.rowActions = [
@@ -241,25 +260,20 @@ function openPanel(mode, category) {
       mode === 'edit-custom'
         ? () => {
             closePanel()
-            openDeleteDialog(category)
+            startDeleteCategoryFlow({
+              category,
+              store,
+              mount: (dialog) => dialogRoot.replaceChildren(dialog),
+              close: closeDialog,
+              onDeleted: (deletedId) => {
+                // If the deleted category was the active filter, fall back to All Reports (spec).
+                if (activeId === deletedId) setActive('all-reports')
+              },
+            })
           }
         : undefined,
   })
   panelRoot.replaceChildren(panel)
-}
-
-function openDeleteDialog(category) {
-  const dialog = renderDeleteConfirmDialog({
-    categoryName: category.name,
-    onCancel: closeDialog,
-    onConfirm: () => {
-      store.deleteCategory(category.id)
-      // If the deleted category was the active filter, fall back to All Reports (spec).
-      if (activeId === category.id) setActive('all-reports')
-      closeDialog()
-    },
-  })
-  dialogRoot.replaceChildren(dialog)
 }
 
 const FAVORITES = 'Favorites'
@@ -269,22 +283,27 @@ const FAVORITES_ID = '\u0000favorites'
 
 // obs-side-menu is data-driven: label/icon/favorite/edit. `active` is matched by LABEL, not id.
 function toMenuItems(categories) {
-  const favourites = reports.filter((r) => r.favorite).length
+  // From the STORE, not the seed array — the store holds the live rows, so toggling a star or
+  // force-deleting a category has to move this count.
+  const favourites = store.getReports().filter((r) => r.favorite).length
   return [
     { label: FAVORITES, favorite: true, ...(favourites ? { count: favourites } : {}) },
     ...categories.map((c) => ({
       label: c.name,
-      icon: c.visibility === 'public' ? 'globe' : 'lockAlt',
+      // Paired padlocks: open = Public, closed = Private. NOT `unlockAlt`, which draws an undo
+      // arrow despite its name (gap G3).
+      icon: c.visibility === 'public' ? 'lockOpen' : 'lockAlt',
       edit: true,
     })),
   ]
 }
 
-/** Which reports belong to a rail selection. */
+/** Which reports belong to a rail selection. Reads the store, so a move or delete re-renders. */
 function rowsFor(id) {
-  if (id === FAVORITES_ID) return reports.filter((r) => r.favorite)
-  if (id === 'all-reports') return reports
-  return reports.filter((r) => r.category === id)
+  const all = store.getReports()
+  if (id === FAVORITES_ID) return all.filter((r) => r.favorite)
+  if (id === 'all-reports') return all
+  return all.filter((r) => r.category === id)
 }
 
 // obs-side-menu supplies the chrome; per its own known-issue the create/delete affordances and the

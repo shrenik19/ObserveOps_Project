@@ -1,13 +1,7 @@
 /* Colours are var(--token), resolved per the reference doc. The dialog chrome — backdrop, centring,
    icon, footer — belongs to obs-modal variant="confirm"; only its content is styled here. */
 
-.delete-confirm-dialog__title {
-  margin: 0 0 4px;
-  font-weight: 500;
-  color: var(--page-text-color);
-}
-
 .delete-confirm-dialog__message {
   margin: 0;
-  color: var(--neutral-light);
+  color: var(--page-text-color);
 }

@@ -59,8 +59,8 @@ user or profile must be shared with.
 ## 3. Tech stack
 
 - **Vanilla JS + Vite 8** — no framework. The DS ships web components, so the app is plain DOM.
-- **Vitest + jsdom** — 75 tests across 6 files.
-- `@mtdt/observeops-ds-elements@0.1.141` · `observeops-ds-css@0.1.0` · `observeops-ds-spec@0.1.180`
+- **Vitest + jsdom** — 123 tests across 9 files.
+- `@mtdt/observeops-ds-elements@0.1.159` · `observeops-ds-css@0.1.4` · `observeops-ds-spec@0.1.197`
 - The **`observeops-ds` MCP server** for component discovery and token resolution.
 
 No framework was a deliberate constraint: it keeps the DS's web components on the critical path,
@@ -84,10 +84,10 @@ The screen reproduces the product's real Report module, top to bottom:
 │ ▶Reports      │  mode="list"      │ filter bar: Type · Report Type · + Filter   │
 │  Settings     │                   ├────────────────────────────────────────────┤
 │               │  ★ Favorites      │ obs-table                                   │
-│               │  🌐 All Reports ✎ │  NAME↑ · DESCRIPTION · TYPE · REPORT TYPE   │
-│               │  🌐 Config    ✎   │       · SCHEDULE · ⋯                        │
-│               │  🔒 Inventory ✎ 🗑│  … rows …                                   │
-│               │  🌐 Wireless  ✎ 🗑│  « ‹ 1 2 › »  10 items per page  1–10 of 20 │
+│               │  🔓 All Reports ✎ │  NAME↑ · DESCRIPTION · TYPE · REPORT TYPE   │
+│               │  🔓 Config    ✎   │       · SCHEDULE · ⋯                        │
+│               │  🔒 Inventory ⚙ ✎ │  … rows …  (⚙ = custom, on hover only)      │
+│               │  🔒 Wireless  ⚙ ✎ │  « ‹ 1 2 › »  10 items per page  1–10 of 20 │
 │               │ ─────────────     │                                             │
 │               │  + New Category   │                                             │
 └───────────────┴───────────────────┴─────────────────────────────────────────────┘
@@ -96,7 +96,7 @@ The screen reproduces the product's real Report module, top to bottom:
 Overlays: **`obs-drawer`** (the settings panel, slides from the right) and **`obs-modal
 variant="confirm"`** (delete confirmation).
 
-**The RBAC feature is the 🌐/🔒 indicator, the ✎/🗑 row actions, `+ New Category`, the drawer and the
+**The RBAC feature is the 🔓/🔒 indicator, the ⚙ custom marker, the ✎ row action, `+ New Category`, the drawer and the
 dialog.** Everything else is the existing product screen, rebuilt so the feature could be seen in
 context rather than on a bare page.
 
@@ -110,7 +110,7 @@ context rather than on a bare page.
 | App header | `obs-app-header` | `brand` / `user` slots, also undocumented |
 | Module tabs | `obs-tabs` | Option shape is `{key,label}` — differs from other elements, see G5 |
 | Category rail | `obs-side-menu mode="list"` | The registry's `list` variant names this exact panel |
-| Row actions | **consumer-added** | Trash + pencil wiring injected into the shadow root — see G4/G13 |
+| Row actions | **consumer-added** | Pencil wiring + the custom-category marker, injected into the shadow root — see G4/G13 |
 | Filter bar | `obs-select` + `obs-radio` + `obs-button` | Composed, because `obs-filters` is referenceOnly — G9 |
 | Grid | `obs-table` | `row-actions` + pagination work; cell content is the blocker — G1 |
 | Settings panel | `obs-drawer` | Footer in the `actions` slot — undocumented, see G10 |
@@ -129,13 +129,16 @@ value in the application CSS. The one deliberate deviation is documented in G2: 
 report-categories.html          the screen: shell regions + mount points
 src/report-categories/
   main.js                       wiring: store ↔ side-menu ↔ table ↔ panel ↔ dialog
-  store.js                      pure data store — no DOM, no DS  (8 tests)
+  store.js                      categories + reports, no DOM     (24 tests)
   categorySettingsPanel.js      the three-mode drawer            (23 tests)
-  deleteConfirmDialog.js        the confirm modal                (10 tests)
-  augmentSideMenu.js            consumer-side DS extensions      (19 tests)
+  deleteConfirmDialog.js        the confirm modal                (9 tests)
+  deleteCategoryFlow.js         the four-state delete flow       (10 tests)
+  reassignReportsDialog.js      reassign reports before delete   (13 tests)
+  forceDeleteDialog.js          typed-name force delete          (13 tests)
+  augmentSideMenu.js            consumer-side DS extensions      (17 tests)
   categoryRow.js                hand-rolled row (superseded)     (13 tests)
   *.css                         token-only styling
-vite.config.js                  two entry points + the logos alias (G12 workaround)
+vite.config.js                  two entry points (the logos alias went when G12 was fixed)
 ```
 
 **Data flow** — one direction, no framework needed:
@@ -162,7 +165,7 @@ shadow root, so it is fully unit-tested. **If the DS closes G4 and G13, this fil
 
 - **All 8 planned tasks complete.** Design spec → plan → store → discovery → row → panel → dialog →
   wiring → conformance.
-- **75 tests passing** across 6 files.
+- **123 tests passing** across 9 files.
 - **DS conformance 100/100** — token 100 · component 100 · philosophy 100 · layout 100, with
   **0 raw controls** and 0 hardcoded colours.
 - **`validate_render`: 0 violations.**
@@ -173,7 +176,7 @@ shadow root, so it is fully unit-tested. **If the DS closes G4 and G13, this fil
 ```bash
 npm install
 npm run dev            # → http://localhost:5173/report-categories.html   (5174 if 5173 is taken)
-npm test               # 75 tests
+npm test               # 123 tests
 node node_modules/@mtdt/observeops-ds-spec/conformance/ds-conformance.mjs ./report-categories.html
 ```
 
@@ -191,13 +194,21 @@ Deliberate, and each traces to a gap:
 
 | Deviation | Why | Gap |
 |---|---|---|
-| SCHEDULE is an On/Off pill, not a toggle switch | `obs-table` escapes cell values as text | G1 |
-| No favourite ★ column in the grid | same | G1 |
-| DESCRIPTION is plain text, not a link with a doc icon | same | G1 |
-| No DOWNLOAD column | same | G1 |
-| Public uses `globe`, not an open padlock | the icon library has no open padlock | G3 |
-| The info banner is a reproduction | no banner component, no info-surface token | G2 |
-| The filter bar is composed, not `obs-filters` | `obs-filters` cannot be wired to data | G9 |
+| The reassignment grid is hand-composed, not an `obs-table` | a dropdown cannot live in a DS table cell | G23 |
+| DESCRIPTION is plain text, not a link with a doc icon | one column of the original G1 set that has not been revisited | G1 |
+| The custom-category marker is a `cog` | the product's real glyph is a wrench, which the DS does not ship | G24 |
+| The first delete confirm says No/Yes, not a named verb | the product specifies it; the verb is named on the force-delete step instead | — |
+
+**Deviations that are now gone**, each retired when the DS shipped the fix:
+
+| Was | Now | Gap |
+|---|---|---|
+| SCHEDULE was an On/Off pill | a real toggle switch (`type: 'switch'`) | G1 ✅ |
+| No favourite ★ in the grid | ★ in the NAME cell, `part`-addressable | G1 ✅ / G15 ✅ |
+| No DOWNLOAD column | icon buttons (`type: 'button'`) | G1 ✅ |
+| The info banner was a reproduction | the real `obs-banner variant="info"` | G2 ✅ |
+| The filter bar was hand-composed | the real `obs-filters kind="bar"` | G9 ✅ |
+| Public used `globe` | the paired `lockOpen` / `lockAlt` padlocks | G3 ✅ |
 
 ---
 
@@ -226,7 +237,7 @@ Useful when judging whether a gap is real or just an unlucky consumer:
 
 | File | What it is |
 |---|---|
-| [`DS-GAPS.md`](./DS-GAPS.md) | **The gap report — 14 findings, start here** |
+| [`DS-GAPS.md`](./DS-GAPS.md) | **The gap report — 22 findings (G0–G24), start here** |
 | `superpowers/specs/2026-08-06-report-category-rbac-design.md` | The original design spec |
 | `superpowers/plans/2026-08-06-report-category-rbac.md` | The 8-task implementation plan |
 | `superpowers/plans/2026-08-06-ds-component-reference.md` | Full API reference gathered during the build — every tag, event, option shape and token used, with the corrections found along the way |

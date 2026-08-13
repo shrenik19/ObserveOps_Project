@@ -124,3 +124,53 @@ describe('augmentCategoryRows', () => {
   })
 })
 
+
+describe('custom-category marker', () => {
+  it('marks a custom category row', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories })
+    const marker = rowFor(root, 'Inventory').querySelector('.rbac-type-marker')
+    expect(marker).not.toBeNull()
+    expect(marker.getAttribute('name')).toBe('cog')
+  })
+
+  it('leaves a default category row unmarked', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories })
+    expect(rowFor(root, 'All Reports').querySelector('.rbac-type-marker')).toBeNull()
+  })
+
+  it('hides the marker from assistive tech and keeps it unfocusable', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories })
+    const marker = rowFor(root, 'Inventory').querySelector('.rbac-type-marker')
+    expect(marker.getAttribute('aria-hidden')).toBe('true')
+    expect(marker.hasAttribute('tabindex')).toBe(false)
+    expect(marker.getAttribute('role')).toBeNull()
+  })
+
+  it('places the marker before the edit pencil', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories })
+    const row = rowFor(root, 'Inventory')
+    const children = [...row.children]
+    expect(children.indexOf(row.querySelector('.rbac-type-marker'))).toBeLessThan(
+      children.indexOf(row.querySelector('.pencil'))
+    )
+  })
+
+  it('reveals the marker on hover only, like the pencil', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories })
+    const css = root.querySelector('style[data-role="rbac-augment"]').textContent
+    expect(css).toMatch(/\.rbac-type-marker \{[^}]*visibility: hidden/)
+    expect(css).toMatch(/\.row:hover \.rbac-type-marker/)
+  })
+
+  it('does not add a second marker when re-run over the same rows', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories })
+    augmentCategoryRows({ root, categories })
+    expect(rowFor(root, 'Inventory').querySelectorAll('.rbac-type-marker')).toHaveLength(1)
+  })
+})

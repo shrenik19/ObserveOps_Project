@@ -9,6 +9,14 @@ The DS team shipped fixes across three releases (0.1.143, 0.1.144, 0.1.146). Re-
 each time. **Thirteen of the eighteen are now closed, and every one of them let the consumer delete a
 workaround.**
 
+**Two new findings, G23 and G24**, came from building the category delete flow on top of the same
+screen (2026-08-13). Both are discoverability/capability gaps that cost real time:
+
+| Gap | Status | Evidence |
+|---|---|---|
+| **G23** dropdown cannot go in a table cell | 🆕 **OPEN** | `obs-table` `slots: []`, no `select` column type, and `editable` yields `obs-input`s. The reassignment grid had to be hand-composed. **Second instance of G1** |
+| **G24** no icon inventory | 🆕 **OPEN** | `registry/icon.json` is prose, not a name list, and omits `trash`/`timesCircle` which both render. `wrench` does not exist — 14 of 32 probed names did not. Icon-side twin of G14 |
+
 | Gap | Status | Evidence |
 |---|---|---|
 | **G2** no banner, no info token | ✅ **FIXED** (0.1.144 / css 0.1.2) | `obs-banner` ships — `variant: info\|success\|warning\|error`, `title`, `icon`, `closable`, `close` event — and `--info-surface` / `--info-text` / `--info-border` now exist. **The reproduction and its declared off-purpose token deviation are deleted** |
@@ -310,6 +318,51 @@ running session keeps the build it started with. During re-testing `get_setup` s
 byte-identical to the old build (*"ORGANISMS are NOT shipped yet"*, and the old CSS path). Anything
 MCP-side — `validate_render`, `get_setup`, and any new `list_logos` / `resolve_logo` tools — must be
 re-checked in a **fresh session**.
+
+### New finding — G23: a dropdown cannot go in a table cell (G1, second instance)
+
+`obs-table` gained `switch` / `icon` / `link` / `button` cell types in 0.1.146, which closed the
+original G1. Building the "reassign these reports before deleting the category" step hit the same
+wall again, for a **select**:
+
+- `elements-api.json` reports `obs-table` `slots: []` — there is no per-cell slot.
+- The column `type` enum has no `select` member.
+- `editable` looks like the way in, but the registry is explicit that editable columns become
+  **`obs-input`s** — text fields. There is no editable enum/select cell.
+
+So the two-column *Reports · New Category* grid — a per-row destination picker, which is the entire
+content of the dialog — **cannot be an `obs-table`**. It was hand-composed from `obs-select` plus a
+CSS grid, reproducing the DS grid header by hand with `--grid-header-bg`.
+
+**Ask:** add a `select` cell type taking `{ options, value }` and reporting through `cellaction`
+(the same payload the other typed cells already use), or make `editable` honour a per-column
+`control: 'select'`. Either closes this without a new mechanism — `cellaction` already carries
+`{id, key, type, value}` and would need nothing added.
+
+*Worth noting the shape of this: G1 was closed for four specific cell types, and the fifth need hit
+the same limit. A per-column render hook would have closed the whole class at once.*
+
+### New finding — G24: there is no icon inventory, and the registry is not one
+
+`components/registry/icon.json` is prose about the component — `props`, `do`, `dont`, `a11y`,
+`knownIssues` — **not a list of glyph names**. It does not mention `trash` or `timesCircle`, both of
+which render perfectly. So a consumer has no way to answer "does icon X exist?" short of rendering
+it.
+
+Building this feature needed three icon decisions, and guessing produced a wrong answer:
+**`wrench` does not exist** and renders as a placeholder, despite being the obvious name for a
+"custom/configured" marker. It was caught only by mounting every candidate in a real browser and
+checking each shadow root for an SVG. Of 32 plausible names probed, **14 did not exist** —
+including `lock`, `warning`, `alertTriangle`, `tool`, `edit` and `folder`, all of which read as
+names a design system would ship.
+
+This is the icon-side twin of **G14** (no logo inventory), and it has the same consequence: a
+consumer either renders a broken placeholder in production or writes a probe harness to enumerate
+the library by brute force.
+
+**Ask:** publish the icon name list as data — a `icons.json` alongside `elements-api.json`, or an
+`list_icons` MCP tool. The names already exist as keys in the bundle's icon map; exporting them
+would cost nothing and close this permanently.
 
 ### Two defects in the G10 fix
 

@@ -1,0 +1,71 @@
+/* Colours are var(--token) — no hex/rgb/hsl. The modal chrome (backdrop, surface, header, footer
+   rail) belongs to obs-modal; only the content is styled here.
+
+   The two-column grid is hand-composed because a dropdown cannot live in an obs-table cell — no
+   per-cell slot, no `select` column type, and `editable` yields obs-inputs. See docs/DS-GAPS.md. */
+
+.reassign-dialog {
+  display: flex;
+  flex-direction: column;
+  /* A chosen number: the DS publishes no spacing scale to derive it from (gap G21). */
+  gap: 12px;
+  color: var(--page-text-color);
+}
+
+.reassign-dialog__error {
+  margin: 0;
+  color: var(--secondary-red);
+}
+
+.reassign-dialog__grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.reassign-dialog__head,
+.reassign-dialog__row {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Mirrors the DS grid header so this reads as the same kind of surface as the reports table. */
+.reassign-dialog__head {
+  padding: 10px 12px;
+  background: var(--grid-header-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.reassign-dialog__head-cell {
+  font-weight: 500;
+  color: var(--neutral-light);
+}
+
+.reassign-dialog__row {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.reassign-dialog__row[hidden] {
+  display: none;
+}
+
+.reassign-dialog__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cancel sits left, the two destructive-ish actions right. The DS modal footer is justify-end with
+   no gap, so both the spacer and the gap are ours. */
+.reassign-dialog__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.reassign-dialog__spacer {
+  flex: 1 1 auto;
+}

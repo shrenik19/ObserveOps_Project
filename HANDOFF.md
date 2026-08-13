@@ -1,97 +1,95 @@
-# Handoff — 2026-08-12 11:36
+# Handoff — 2026-08-13
 
 ## Read first
 
-`CLAUDE.md` in full, but especially **"How we work — the method that produced all of this"** and
-**"Environment gotchas"**. The method is the point: this project's value is as much the DS gap report
-as the screen. Then skim `docs/DS-GAPS.md` — the status table at the top tells you what is fixed and
-what is still open.
+`CLAUDE.md` in full, especially **"How we work"** and **"Environment gotchas"**. Then the status
+table at the top of `docs/DS-GAPS.md` — it says what is fixed and what is still open.
 
-## What we worked on this session
+This session's work has its own spec and plan:
 
-Picked the project up from a hard stop, unblocked it, and completed all 8 planned tasks. Then went
-well beyond the plan: rebuilt the bare conformance page into the real Report module screen, and ran
-several rounds of *find a DS gap → report it → the DS team ships a fix → re-verify → delete the
-workaround*.
+- `docs/superpowers/specs/2026-08-13-category-delete-flow-design.md`
+- `docs/superpowers/plans/2026-08-13-category-delete-flow.md`
 
-## Completed
+## The project is now a git repository
 
-- **All 8 tasks of the implementation plan.** The plan had stalled at Task 0's gate on the previous
-  (Windows) machine; installing the DS packages cleared it in one command.
-- **The RBAC feature works end to end** — visibility indicator per row, three-mode settings drawer
-  (`create` / `edit-builtin` / `edit-custom`), validation, delete-with-confirm, and a working
-  Favorites pseudo-category driven by the table's star.
-- **The screen matches the product's Report module** — module rail, app header with the Motadata
-  mark and a working user menu, module title strip, tab row, category rail, toolbar, filter bar, and
-  a grid with typed cells (star / link / switch / button).
-- **20 DS findings documented** (G0–G22) in `docs/DS-GAPS.md`. **13 have been fixed by the DS team**
-  across ~8 releases, each re-verified here.
-- **Four consumer workarounds deleted** as those fixes landed — a Vite alias, the composed filter
-  bar, the table star binding, and the drawer footer inset.
-- **Handover prep** — `README.md`, `.gitattributes` (line endings), `.mcp.json`, and
-  `.claude/settings.json` so a new machine configures itself.
-- 67 tests passing · DS conformance **100/100** · both pages build · 49 commits.
+It arrived as a share bundle with no history. It now has one, on branch
+**`feat/category-delete-flow`**, with `master` holding the received state plus the install fix.
 
-## In progress
+**`npm install` was broken as received.** `package.json` pinned `playwright-core` to a tarball path
+on the original author's Mac (`file:../../../../private/tmp/claude-501/…`). On any other machine npm
+fails with ENOENT and rolls the whole install back, leaving `node_modules` empty. It is now the
+published package from npm. The baseline commit preserves the broken manifest, so the history shows
+what happened.
 
-Nothing mid-flight. The working tree is clean and every change is committed.
+## What we built this session
+
+Three changes to the Report / Category RBAC feature, all specified, planned, then implemented TDD:
+
+1. **Paired padlock visibility icons** — `lockOpen` for Public, `lockAlt` for Private, on both
+   default and custom categories. This closes the `globe` vs `lockOpen` question the previous
+   handoff left open; `lockOpen` won because an open/closed padlock pair reads as one scale.
+2. **A custom-category marker** — a `cog` revealed on hover for custom categories only. Decorative,
+   `aria-hidden`, no role or tabindex.
+3. **A four-state category delete flow** — confirm (No/Yes) → branch on report count → reassign every
+   report to another category, or → force-delete by typing the category name exactly.
+
+The store now owns reports as well as categories, so the rule "no report points at a deleted
+category" is enforced in one DOM-free place. `deleteCategory` throws if the category still holds
+reports; the only ways past it are `moveReportsAndDeleteCategory` and `deleteCategoryWithReports`.
+
+**Seed data was reshaped** so every combination is visible at once, and `Capacity Planning` was added
+as a custom category with no reports — without it, the "delete an empty category" branch was
+unreachable in the running app.
+
+## Verification
+
+- **123 tests across 9 files**, all passing.
+- **DS conformance 100/100** — token · component · philosophy · layout, 0 raw controls.
+- **No hex/rgb/hsl** anywhere in application CSS or in the CSS embedded in `augmentSideMenu.js`.
+- **Every state driven in headless Chrome and screenshotted.** Empty-category delete, the
+  reassignment modal and its validation, a completed move (Config went from 1 report to 3), and the
+  force delete (total dropped from 20 reports to 18). The typed-name gate was checked against a
+  lowercase and a padded attempt as well as the exact name.
+
+Note that conformance measures the static page, so it does **not** cover the three dialogs, which
+only exist once opened. They were checked by rendering instead.
+
+## Two new DS findings
+
+- **G23 — a dropdown cannot go in a table cell.** `obs-table` has `slots: []`, no `select` column
+  type, and `editable` yields `obs-input`s. The reassignment grid had to be hand-composed. This is
+  the second instance of G1, which was closed for four specific cell types.
+- **G24 — there is no icon inventory.** `registry/icon.json` is prose, not a name list, and omits
+  `trash` and `timesCircle` even though both render. **`wrench` does not exist** — 14 of 32 probed
+  names did not, including `lock`, `warning`, `alertTriangle` and `folder`. Found only by mounting
+  every candidate in a browser. This is the icon-side twin of G14.
 
 ## Next steps
 
-1. **Verify G8 and G14 in a fresh session.** They could not be checked here — the MCP server is
-   spawned at session start, so this session ran an eight-release-old build the whole time. G8 =
-   `validate_render` rejecting `sidebar`/`app-header`/`icon`, which exist and score 100/100. G14 =
-   whether `list_logos` / `resolve_logo` tools now exist.
-2. **Decide `globe` vs `lockOpen` for Public.** `globe` was chosen when the icon library had no open
-   padlock; four now ship (`lockOpen`, `lockOpenAlt`, `lockAltOpen`, `unlock`). The original design
-   spec wanted open-lock/closed-lock. The `globe` reasoning — more distinct at 16px — still holds, so
-   this is a genuine choice, not a bug.
-3. **Wire search and notifications** the way the user menu now is. They are still plain `actions`
-   icon buttons that fire `action` but open nothing; the DS has `obs-command-palette` and
-   `obs-notification-menu` for them, and the `module-screen` recipe says to compose them into slots.
-4. **Decide the horizontal inset.** The page header sits at the DS's 20px while the tab row is at 8px
-   and the content at 12px. `--page-header-padding` is an exposed custom property, so aligning them
-   is a one-liner — it just needs a decision on which value wins.
-5. **Chase the remaining open gaps** with the DS team: **G21** (no spacing scale — the highest-leverage
-   one, and the root cause behind several others), **G20** (480px documented only in the markdown spec),
-   **G3**'s remaining half (`unlockAlt` still draws an undo arrow), **G22** (the header avatar's
-   `role="button"` with nothing wired).
+1. **Merge `feat/category-delete-flow`.** It is complete and green.
+2. **Verify G8 and G14 in a fresh session** — still not done, and still blocked by the same cause:
+   the MCP server is spawned at session start, so a running session keeps the build it began with.
+3. **Swap the `cog` marker** for whatever glyph the product actually wants; `cog` is a placeholder
+   standing in for the unavailable wrench.
+4. **Wire search and notifications** in the app header. They still fire `action` and open nothing;
+   the DS has `obs-command-palette` and `obs-notification-menu` for them.
+5. **Decide the horizontal inset.** Page header sits at 20px, tab row at 8px, content at 12px.
+   `--page-header-padding` is exposed, so it is a one-liner once someone picks a value.
+6. **Chase the open gaps** with the DS team: G21 (no spacing scale — highest leverage), G20, G3's
+   remaining half (`unlockAlt` still draws an undo arrow), G22, and now G23 and G24.
 
-## Decisions made
+## Gotchas
 
-- **Use the real DS components over hand-rolled ones, every time one exists.** `obs-side-menu` for
-  the rail, `obs-toolbar` for the search row, `obs-filters` for the filter bar, `obs-page-header` for
-  the title strip. Several of these replaced code written before the component was found or before it
-  became functional.
-- **Extend a component only where the DS explicitly leaves room.** `obs-side-menu`'s own known-issue
-  says create/delete affordances are the consumer's job, so `augmentSideMenu.js` is sanctioned, not a
-  hack. It is still the one fragile spot — it binds to internal class names.
-- **Restyle through tokens and slots, never by piercing shadow DOM**, wherever the DS exposes one.
-  The Inter switch is one line retargeting `--font-family`; the button hover was one line retargeting
-  `--button-transparent-hover-text`. Both cost nothing in conformance.
-- **Delete from the RBAC rail; keep it in the drawer.** The row carries only an edit affordance, so it
-  stays a navigation target.
-- **Keep `categoryRow.js`** though the host page no longer uses it — superseded by `obs-side-menu`,
-  but its 13 tests still document the row contract.
-- **Inter replaces the DS's Poppins.** A deliberate brand deviation, done through the token so
-  reverting is one line.
-
-## Gotchas & notes
-
-- **Why the project stalled before.** The design spec records it: Claude Code's permission classifier
-  on the Windows machine *"hard-denies both the `npm install` of this scope and any self-edit of
-  permission settings to work around that denial."* The commit history confirms it — the session
-  completed exactly the two tasks needing no DS access (Vitest tooling, the data store) and stopped
-  at the first one that did. `.claude/settings.json` and the packages now being declared dependencies
-  should prevent a repeat, but if Claude still refuses, run `npm install` in a terminal by hand.
-- **Vite's cache will lie to you after a DS update.** More than once it reported gaps as "still
-  broken" while serving the old pre-bundle. Always `rm -rf node_modules/.vite` and `--force`.
-- **The `change` payload of `obs-filters` is a silent breaking change** between DS versions (bare
-  array → `{conditions, match}`). An `Array.isArray` guard just yields no conditions, with no error.
-  The handler in `main.js` tolerates both shapes.
-- **Several plan assumptions were wrong** and are corrected in the component-reference doc — notably
-  that organisms "are not shipped" (they are), and that `list_gaps` can declare reproductions (it
-  takes no parameters). Do not trust the plan's `⟪PLACEHOLDER⟫` guidance over that doc.
-- **The reference screenshots the design spec cites (`ss1.png`–`ss4.png`) are not in the repo** —
-  they are at a Windows path from the authoring machine. Not chasing them is what caused the screen to
-  be built as a bare fragment at first (gap G0). If you need them, ask.
+- **Duplicate category names collide, and this is not fixed.** `addCategory` enforces no uniqueness
+  and `obs-side-menu` matches its active row by *label*, so two categories sharing a name resolve to
+  the first. It is a real pre-existing bug, deliberately out of scope for this work.
+- **The store hands out copies.** Anything that mutates a report must go through
+  `store.updateReport`; mutating the seed array is discarded on the next render. This bit once
+  during this session — the Favorites count silently stopped updating.
+- **Vitest workers can crash under load.** Running the suite while several headless Chrome instances
+  were open produced worker-fork crashes and *undercounted* tests (87 and 93 instead of 123) while
+  still reporting "passed". If the count is not 123, do not trust the run. Close other browsers and
+  re-run.
+- **Vite's cache will lie after a DS update.** `rm -rf node_modules/.vite` and `npm run dev --force`.
+- The `/favicon.ico` 404 in the console is pre-existing: `report-categories.html` declares no
+  favicon, though `public/favicon.svg` exists.
