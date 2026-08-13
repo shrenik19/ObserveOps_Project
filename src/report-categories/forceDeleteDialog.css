@@ -1,0 +1,41 @@
+/* Colours are var(--token) — no hex/rgb/hsl. obs-modal owns the surface and footer rail; only the
+   content is styled here. */
+
+.force-delete-dialog {
+  color: var(--page-text-color);
+}
+
+.force-delete-dialog__warning-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.force-delete-dialog__icon {
+  flex-shrink: 0;
+  color: var(--secondary-red);
+}
+
+.force-delete-dialog__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.force-delete-dialog__warning,
+.force-delete-dialog__instruction {
+  margin: 0;
+}
+
+.force-delete-dialog__instruction {
+  color: var(--neutral-light);
+}
+
+.force-delete-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
