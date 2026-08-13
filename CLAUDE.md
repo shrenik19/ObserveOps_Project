@@ -24,7 +24,7 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 - **Vanilla JS + Vite 8** — no framework. The DS ships web components, so the app is plain DOM. This
   is deliberate: it keeps the DS's components on the critical path so anything awkward about them
   surfaces immediately instead of being smoothed over by a wrapper.
-- **Vitest + jsdom** — 67 tests across 6 files.
+- **Vitest + jsdom** — 123 tests across 9 files.
 - `@mtdt/observeops-ds-elements` · `-ds-css` · `-ds-spec` (public on npm, no auth).
 - The **`observeops-ds` MCP server** for component discovery and token resolution — registered by
   the project's own `.mcp.json`.
@@ -35,10 +35,13 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 report-categories.html          the screen: app-shell regions + mount points
 src/report-categories/
   main.js                       wiring: store ↔ side-menu ↔ table ↔ drawer ↔ dialog
-  store.js                      pure data store — no DOM, no DS        (8 tests)
+  store.js                      categories + reports — no DOM, no DS   (24 tests)
   categorySettingsPanel.js      the three-mode settings drawer         (23 tests)
-  deleteConfirmDialog.js        the confirm modal                      (10 tests)
-  augmentSideMenu.js            the ONE remaining DS extension         (13 tests)
+  deleteCategoryFlow.js         the four-state category delete flow    (10 tests)
+  reassignReportsDialog.js      reassign reports before deleting       (13 tests)
+  forceDeleteDialog.js          typed-name force delete                (13 tests)
+  deleteConfirmDialog.js        the confirm modal                      (9 tests)
+  augmentSideMenu.js            the ONE remaining DS extension         (17 tests)
   categoryRow.js                superseded — kept, unused by the page  (13 tests)
   *.css                         token-only styling — no hex/rgb/hsl anywhere
 vite.config.js                  registers report-categories.html as a 2nd entry point
@@ -54,7 +57,7 @@ docs/                           see "Key context" below
 ```bash
 npm install
 npm run dev            # then open /report-categories.html — NOT /
-npm test               # 67 tests
+npm test               # 123 tests
 npm run build          # builds both pages
 ```
 
@@ -73,7 +76,7 @@ node node_modules/@mtdt/observeops-ds-spec/conformance/ds-conformance.mjs ./repo
 
 | File | Job |
 |---|---|
-| `docs/DS-GAPS.md` | **The DS gap report — 20 findings (G0–G22).** Written to be handed to the DS team on its own. Kept current: fixed items are marked ✅ with evidence, and the original report is preserved beneath. |
+| `docs/DS-GAPS.md` | **The DS gap report — 22 findings (G0–G24).** Written to be handed to the DS team on its own. Kept current: fixed items are marked ✅ with evidence, and the original report is preserved beneath. |
 | `docs/PROJECT-CONTEXT.md` | What was built and why, for someone who has never seen the app. Companion to the gap report. |
 | `docs/superpowers/plans/…-ds-component-reference.md` | A consumer's-eye record of what each `obs-*` element's API *actually* is, versus what the registry says. The raw material behind the gap report. |
 | `docs/superpowers/specs/…-design.md` | The original design spec. |
