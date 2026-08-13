@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "jsdom": "^30.0.1",
-    "playwright-core": "file:../../../../private/tmp/claude-501/-Users-niravbhatt-Downloads-observeops-app-2/747c0c0f-572a-41cf-90c0-86363a0a9b23/scratchpad/pw-core.tgz",
+    "playwright-core": "^1.62.1",
     "vite": "^8.2.0",
     "vitest": "^4.1.10"
   },
