@@ -12,8 +12,10 @@ import { createStore } from './store.js'
 import { renderCategorySettingsPanel } from './categorySettingsPanel.js'
 import './categorySettingsPanel.css'
 import { augmentCategoryRows } from './augmentSideMenu.js'
-import { renderDeleteConfirmDialog } from './deleteConfirmDialog.js'
+import { startDeleteCategoryFlow } from './deleteCategoryFlow.js'
 import './deleteConfirmDialog.css'
+import './reassignReportsDialog.css'
+import './forceDeleteDialog.css'
 import './hostPage.css'
 
 const builtin = (id, name, visibility = 'public', sharedWith = []) => ({
@@ -258,25 +260,20 @@ function openPanel(mode, category) {
       mode === 'edit-custom'
         ? () => {
             closePanel()
-            openDeleteDialog(category)
+            startDeleteCategoryFlow({
+              category,
+              store,
+              mount: (dialog) => dialogRoot.replaceChildren(dialog),
+              close: closeDialog,
+              onDeleted: (deletedId) => {
+                // If the deleted category was the active filter, fall back to All Reports (spec).
+                if (activeId === deletedId) setActive('all-reports')
+              },
+            })
           }
         : undefined,
   })
   panelRoot.replaceChildren(panel)
-}
-
-function openDeleteDialog(category) {
-  const dialog = renderDeleteConfirmDialog({
-    categoryName: category.name,
-    onCancel: closeDialog,
-    onConfirm: () => {
-      store.deleteCategory(category.id)
-      // If the deleted category was the active filter, fall back to All Reports (spec).
-      if (activeId === category.id) setActive('all-reports')
-      closeDialog()
-    },
-  })
-  dialogRoot.replaceChildren(dialog)
 }
 
 const FAVORITES = 'Favorites'
@@ -286,7 +283,9 @@ const FAVORITES_ID = '\u0000favorites'
 
 // obs-side-menu is data-driven: label/icon/favorite/edit. `active` is matched by LABEL, not id.
 function toMenuItems(categories) {
-  const favourites = reports.filter((r) => r.favorite).length
+  // From the STORE, not the seed array — the store holds the live rows, so toggling a star or
+  // force-deleting a category has to move this count.
+  const favourites = store.getReports().filter((r) => r.favorite).length
   return [
     { label: FAVORITES, favorite: true, ...(favourites ? { count: favourites } : {}) },
     ...categories.map((c) => ({
