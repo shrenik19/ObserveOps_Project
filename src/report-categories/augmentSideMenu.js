@@ -48,6 +48,18 @@ const AUGMENT_CSS = `
     outline-offset: 2px;
   }
 
+  /* The custom/default marker. Decorative only — it states a fact about the row, it does not act,
+     so it carries no role and no tabindex (adding those would repeat gap G22's mistake). Hidden
+     until hover, matching the pencil's behaviour. */
+  .rbac-type-marker {
+    flex-shrink: 0;
+    visibility: hidden;
+    color: var(--neutral-light);
+  }
+  .row:hover .rbac-type-marker {
+    visibility: visible;
+  }
+
 `
 
 function ensureStyles(root) {
@@ -103,6 +115,19 @@ export function augmentCategoryRows({ root, categories = [], onEdit, iconSize = 
     // quiet state indicator. obs-icon takes its size from the attribute, not CSS.
     const indicator = row.querySelector('.r-ic')
     if (indicator) indicator.setAttribute('size', String(iconSize))
+
+    // Mark custom categories so a user can tell them from the built-in ones without opening the
+    // drawer. Default categories get nothing, which is the distinction.
+    if (category.type === 'custom' && !row.querySelector('.rbac-type-marker')) {
+      const marker = document.createElement('obs-icon')
+      marker.className = 'rbac-type-marker'
+      marker.setAttribute('name', 'cog')
+      marker.setAttribute('size', String(iconSize))
+      marker.setAttribute('aria-hidden', 'true')
+      const existingPencil = row.querySelector('.pencil')
+      if (existingPencil) row.insertBefore(marker, existingPencil)
+      else row.appendChild(marker)
+    }
 
     const pencil = row.querySelector('.pencil')
     if (pencil) {
