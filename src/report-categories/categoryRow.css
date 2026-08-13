@@ -1,0 +1,53 @@
+/* Every colour here is a var(--token) resolved via the MCP resolve_token tool and recorded in
+   docs/superpowers/plans/2026-08-06-ds-component-reference.md. No hex/rgb/hsl anywhere. */
+
+.category-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: var(--page-text-color);
+}
+
+.category-row:hover {
+  background: var(--neutral-lightest);
+}
+
+/* The at-a-glance visibility indicator: globe (public) / lockAlt (private).
+   Always visible — it is state, not an action. */
+.category-row__lock {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--neutral-light);
+}
+
+.category-row__name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-row__actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+/* Hover-reveal. focus-within keeps the actions reachable by keyboard — without it the buttons
+   would be focusable but invisible, which is worse than not having them. */
+.category-row__actions > * {
+  visibility: hidden;
+}
+
+.category-row:hover .category-row__actions > *,
+.category-row:focus-within .category-row__actions > * {
+  visibility: visible;
+}
+
+/* obs-button variant="error" already carries the destructive treatment; this only tints the
+   glyph inside it, which the variant does not reach through the slot. */
+.category-row [data-role='delete-category'] obs-icon {
+  color: var(--secondary-red);
+}

@@ -1,0 +1,45 @@
+/* Every colour is a var(--token) resolved via the MCP resolve_token tool and recorded in
+   docs/superpowers/plans/2026-08-06-ds-component-reference.md. No hex/rgb/hsl anywhere.
+
+   This styles the panel's CONTENT only. The plan's original template hand-rolled
+   `position: fixed; right: 0; width: 400px; border-left: …` — that is obsolete: obs-drawer ships as
+   a real component and owns the slide-in surface, width, border and backdrop. Re-implementing it
+   here would fight the component. */
+
+.category-settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--page-text-color);
+}
+
+.category-settings-panel__heading {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--page-text-color);
+}
+
+.category-settings-panel__error {
+  margin: -8px 0 0;
+  color: var(--secondary-red);
+}
+
+/* Lives in obs-drawer's `actions` slot — the drawer pins it to the bottom, so no margin-top:auto
+   or height chain is needed here. Convention for three actions: destructive left, confirm group
+   right. The gap is ours: the DS drawer's own footer is justify-end with NO gap (drawer F3), so
+   adjacent buttons would otherwise touch. */
+.category-settings-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+/* Keeps Cancel/Save right-aligned even when there is no Delete button to push against. */
+.category-settings-panel__confirm-group {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}

@@ -1,0 +1,9 @@
+# Normalise line endings so the repo behaves the same on macOS, Linux and Windows.
+# Without this, `package.json` and `package-lock.json` (currently stored CRLF) show up as
+# whole-file diffs the first time a collaborator on another OS touches them.
+* text=auto eol=lf
+
+# Binary — never touch these.
+*.png binary
+*.jpg binary
+*.svg text eol=lf

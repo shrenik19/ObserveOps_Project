@@ -1,0 +1,139 @@
+/* App-shell layout. Colours are var(--token), resolved per the reference doc — no hex/rgb/hsl. */
+
+/* Inter instead of the DS default (Poppins). --font-family is an exposed DS token and custom
+   properties inherit into shadow DOM, so retargeting it here restyles every obs-* component too —
+   no per-component overrides, no shadow-DOM piercing. --chart-font-family and
+   --numeric-font-family are deliberately left as JetBrains Mono: they are the DS's numeric/chart
+   faces, not body text. */
+:root {
+  --font-family: 'Inter', sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* The DS sets --font-family on :root but does not style body itself, so plain elements would
+     otherwise fall back to the browser's serif default. */
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  background: var(--page-background-color);
+  color: var(--page-text-color);
+}
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-shell__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Brand mark + wordmark in the app header's `brand` slot. The mark uses currentColor so it follows
+   the header's text colour in both themes — no hardcoded fill. */
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--page-text-color);
+}
+
+/* Tab row with the primary action pinned right. */
+.module-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.module-tabs obs-tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Category nav + content sit side by side and fill the rest. */
+.app-shell__body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.app-shell__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Stack rhythm for toolbar → filter bar → table. A chosen number: the DS publishes no spacing
+     scale to derive it from (gap G21), and 8px matches obs-toolbar's own internal gap. */
+  gap: 8px;
+  padding: 12px;
+  overflow: auto;
+}
+
+.content-toolbar__search {
+  flex: 0 0 320px;
+}
+
+
+/* obs-side-menu is width:100% and fills its container — the registry says to set the WIDTH per
+   mode: list = ~15-25% of the viewport, ~340px if fixed. */
+.category-side-menu {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 280px;
+  background: var(--page-background-color);
+  border-right: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.category-side-menu obs-side-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.category-favorites {
+  display: block;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.category-favorites obs-icon {
+  margin-right: 8px;
+}
+
+/* The product paints the favourites star amber; --severity-warning is the catalogued amber. */
+.category-favorites obs-icon {
+  color: var(--severity-warning);
+}
+
+.category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+}
+
+/* The product's category list uses a full-width rule between rows. */
+.category-list .category-row {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.category-row.is-active {
+  background: var(--neutral-lightest);
+  box-shadow: inset 2px 0 0 var(--primary);
+  font-weight: 500;
+}
+
