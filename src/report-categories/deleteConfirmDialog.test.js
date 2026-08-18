@@ -50,6 +50,35 @@ describe('renderDeleteConfirmDialog', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
+  // obs-modal emits confirm -> close -> hide when the action button is clicked, so `close` arrives
+  // after a SUCCESSFUL confirm as well as after a dismissal. Reporting both would tell the host to
+  // tear down the very step the confirm just opened.
+  it('does not also report a cancel when close follows a confirm', () => {
+    const onConfirm = vi.fn()
+    const onCancel = vi.fn()
+    const dialog = build({ onConfirm, onCancel })
+
+    dialog.dispatchEvent(new CustomEvent('confirm'))
+    dialog.dispatchEvent(new CustomEvent('close'))
+    dialog.dispatchEvent(new CustomEvent('hide'))
+
+    expect(onConfirm).toHaveBeenCalledTimes(1)
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  it('reports one outcome only, however many events arrive', () => {
+    const onConfirm = vi.fn()
+    const onCancel = vi.fn()
+    const dialog = build({ onConfirm, onCancel })
+
+    dialog.dispatchEvent(new CustomEvent('cancel'))
+    dialog.dispatchEvent(new CustomEvent('close'))
+    dialog.dispatchEvent(new CustomEvent('confirm'))
+
+    expect(onCancel).toHaveBeenCalledTimes(1)
+    expect(onConfirm).not.toHaveBeenCalled()
+  })
+
   it('does not throw when handlers are omitted', () => {
     const dialog = renderDeleteConfirmDialog({ categoryName: 'Inventory' })
     expect(() => {

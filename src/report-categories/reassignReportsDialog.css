@@ -51,6 +51,28 @@
   display: none;
 }
 
+/* Per-row error marking.
+   obs-select has NO `error` attribute — obs-input ships `error` + `errorMessage`, obs-select ships
+   neither, so setting it on the element renders nothing at all. The attribute is still set as the
+   state flag, and the ring is drawn here from the host element: an outline needs no shadow-DOM
+   piercing and no custom property the component does not expose. See docs/DS-GAPS.md (G25). */
+.reassign-dialog__row obs-select[error] {
+  display: block;
+  border-radius: 4px;
+  outline: 1px solid var(--secondary-red);
+}
+
+.reassign-dialog__row-error {
+  grid-column: 2;
+  margin: 4px 0 0;
+  color: var(--secondary-red);
+  font-size: 0.85em;
+}
+
+.reassign-dialog__row-error[hidden] {
+  display: none;
+}
+
 .reassign-dialog__name {
   overflow: hidden;
   text-overflow: ellipsis;

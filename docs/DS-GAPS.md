@@ -16,6 +16,8 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 |---|---|---|
 | **G23** dropdown cannot go in a table cell | 🆕 **OPEN** | `obs-table` `slots: []`, no `select` column type, and `editable` yields `obs-input`s. The reassignment grid had to be hand-composed. **Second instance of G1** |
 | **G24** no icon inventory | 🆕 **OPEN** | `registry/icon.json` is prose, not a name list, and omits `trash`/`timesCircle` which both render. `wrench` does not exist — 14 of 32 probed names did not. Icon-side twin of G14 |
+| **G25** `obs-modal` emits `close` after `confirm` | 🆕 **OPEN** | One click on the action button fires `confirm` → `close` → `hide`, undocumented. Wiring `close` to cancel — the obvious reading — tears down whatever the confirm just opened. **Invisible to unit tests**; found with a real mouse |
+| **G26** `obs-select` has no error state | 🆕 **OPEN** | `obs-input` ships `error` + `errorMessage`; `obs-select` ships neither, and setting `error` fails silently |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -363,6 +365,61 @@ the library by brute force.
 **Ask:** publish the icon name list as data — a `icons.json` alongside `elements-api.json`, or an
 `list_icons` MCP tool. The names already exist as keys in the bundle's icon map; exporting them
 would cost nothing and close this permanently.
+
+### New finding — G25: `obs-modal` emits `close` after `confirm`, and nothing says so
+
+**Severity: high — it silently breaks any multi-step flow.**
+
+One click on the confirm button of `obs-modal variant="confirm"` emits, in order:
+
+```
+confirm  ->  close  ->  hide
+```
+
+`elements-api.json` lists the events as `["confirm","cancel","close","show","hide"]` with **no note
+that `close` also fires on the success path**. The natural reading — `confirm` means yes, `close`
+means the user dismissed it — is wrong, and wiring `close` to a cancel handler is the obvious thing
+to do because the modal has no × and Escape must still be handled.
+
+**What it cost here.** The category delete flow opens a second dialog from the confirm handler. The
+trailing `close` was read as a dismissal and tore down the dialog that `confirm` had just mounted, so
+the flow dead-ended on a blank screen. **Unit tests did not catch it**, because a test dispatches
+`confirm` alone; only the real component emits the pair. It was found by driving the screen with a
+real mouse.
+
+**Consumer workaround:** latch each dialog to report exactly one outcome — the first event to arrive
+wins, the rest are ignored.
+
+**Ask:** document the emission order and state plainly that `close` follows `confirm`. Better, do not
+emit `close` on the confirm path at all — `confirm` and `cancel` already cover both outcomes, and
+`close` should mean "dismissed without choosing".
+
+### New finding — G26: `obs-select` has no error state, but `obs-input` does
+
+`obs-input` ships `error` (Boolean) and `errorMessage` (String). **`obs-select` ships neither** — its
+25 attributes include `disabled`, `loading` and `placeholder`, but nothing for validation.
+
+So a form that validates a select cannot mark it. Setting `error` on the element does nothing at all,
+and it fails silently — the attribute lands on the host and is simply ignored, which reads as working
+code until someone looks at the screen.
+
+**Consumer workaround:** keep the attribute as a state flag and draw the ring from the host element:
+
+```css
+.reassign-dialog__row obs-select[error] {
+  display: block;
+  border-radius: 4px;
+  outline: 1px solid var(--secondary-red);
+}
+```
+
+An outline avoids piercing the shadow root, but it sits outside the control's own border rather than
+replacing it, so it does not match how `obs-input` renders its error. A per-row message had to be
+hand-built too, since there is no `errorMessage` to carry one.
+
+**Ask:** give `obs-select` the same `error` / `errorMessage` pair `obs-input` already has. Form
+controls in one design system should validate the same way — a consumer should not have to check,
+control by control, which ones can show an error.
 
 ### Two defects in the G10 fix
 

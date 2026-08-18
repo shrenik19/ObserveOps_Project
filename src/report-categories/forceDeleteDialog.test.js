@@ -74,15 +74,32 @@ describe('renderForceDeleteDialog', () => {
     expect(onConfirm).toHaveBeenCalled()
   })
 
-  it('routes Cancel and dismissal to onCancel', () => {
+  it('routes Cancel to onCancel', () => {
     const onCancel = vi.fn()
     const dialog = build({ onCancel })
-
     dialog.querySelector('[data-role="force-delete-cancel"]').dispatchEvent(new Event('click', { bubbles: true }))
     expect(onCancel).toHaveBeenCalledTimes(1)
+  })
 
+  it('routes a dismissal to onCancel', () => {
+    const onCancel = vi.fn()
+    build({ onCancel }).dispatchEvent(new CustomEvent('close'))
+    expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+
+  // Confirming tears this dialog down, and the disconnect makes obs-modal emit its own `close`.
+  // Reporting that as a cancel would undo the outcome the user just chose.
+  it('does not report a cancel after a successful force delete', () => {
+    const onCancel = vi.fn()
+    const onConfirm = vi.fn()
+    const dialog = build({ onCancel, onConfirm })
+
+    type(dialog, 'Inventory')
+    confirmBtn(dialog).dispatchEvent(new Event('click', { bubbles: true }))
     dialog.dispatchEvent(new CustomEvent('close'))
-    expect(onCancel).toHaveBeenCalledTimes(2)
+
+    expect(onConfirm).toHaveBeenCalledTimes(1)
+    expect(onCancel).not.toHaveBeenCalled()
   })
 
   it('is an open obs-modal that does not close on its backdrop', () => {

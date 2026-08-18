@@ -103,12 +103,22 @@ export function renderReassignReportsDialog({
       if (!next) return
       assignments[report.id] = next
       select.removeAttribute('error')
+      rowError.hidden = true
       if (isComplete()) summaryError.hidden = true
     })
     row.appendChild(select)
 
+    // Per-row message. Colour alone is not an accessible error signal, and obs-select has no
+    // errorMessage of its own to carry one.
+    const rowError = document.createElement('p')
+    rowError.setAttribute('data-role', 'reassign-row-error')
+    rowError.className = 'reassign-dialog__row-error'
+    rowError.textContent = 'Select a category'
+    rowError.hidden = true
+    row.appendChild(rowError)
+
     grid.appendChild(row)
-    controls.set(report.id, { row, select })
+    controls.set(report.id, { row, select, rowError })
 
     // Object-valued props are assigned only AFTER insertion: setting them on a not-yet-upgraded
     // custom element leaves own-properties that shadow the element's accessors once it upgrades,
@@ -132,17 +142,29 @@ export function renderReassignReportsDialog({
   function validate() {
     let ok = true
     for (const report of reports) {
-      const { select } = controls.get(report.id)
+      const { select, rowError } = controls.get(report.id)
       if (assignments[report.id]) {
         select.removeAttribute('error')
+        rowError.hidden = true
       } else {
         // Marked even when the row is filtered out of view, so the error is not hidden by a search.
         select.setAttribute('error', '')
+        rowError.hidden = false
         ok = false
       }
     }
     summaryError.hidden = ok
     return ok
+  }
+
+  // ONE outcome per dialog. Advancing to the next step replaces this element, which disconnects it
+  // and makes obs-modal emit its own `close`. Read as a dismissal, that would tear down the step
+  // this dialog just handed off to.
+  let reported = false
+  const once = (handler) => (...args) => {
+    if (reported) return
+    reported = true
+    handler?.(...args)
   }
 
   // --- Footer -----------------------------------------------------------
@@ -151,7 +173,8 @@ export function renderReassignReportsDialog({
   footer.className = 'reassign-dialog__footer'
 
   const cancel = button({ role: 'reassign-cancel', label: 'Cancel', variant: 'default' })
-  cancel.addEventListener('click', () => onCancel?.())
+  const reportCancel = once(onCancel)
+  cancel.addEventListener('click', () => reportCancel())
   footer.appendChild(cancel)
 
   const spacer = document.createElement('span')
@@ -159,21 +182,25 @@ export function renderReassignReportsDialog({
   footer.appendChild(spacer)
 
   const force = button({ role: 'reassign-force', label: 'Proceed Anyway', variant: 'error' })
-  force.addEventListener('click', () => onProceedAnyway?.())
+  const reportProceed = once(onProceedAnyway)
+  force.addEventListener('click', () => reportProceed())
   footer.appendChild(force)
 
   const move = button({ role: 'reassign-move', label: 'Move and Delete', variant: 'primary' })
+  const reportMove = once(onMoveAndDelete)
   move.addEventListener('click', () => {
+    // Validation runs BEFORE the latch: a rejected attempt is not an outcome, so the user can fix
+    // the missing destinations and press the button again.
     if (!validate()) return
-    onMoveAndDelete?.({ ...assignments })
+    reportMove({ ...assignments })
   })
   footer.appendChild(move)
 
   // A slotted child must be a direct child of the host.
   dialog.appendChild(footer)
 
-  dialog.addEventListener('close', () => onCancel?.())
-  dialog.addEventListener('cancel', () => onCancel?.())
+  dialog.addEventListener('close', () => reportCancel())
+  dialog.addEventListener('cancel', () => reportCancel())
 
   return dialog
 }

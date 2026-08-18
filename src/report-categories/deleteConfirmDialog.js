@@ -29,11 +29,22 @@ export function renderDeleteConfirmDialog({ categoryName, onConfirm, onCancel } 
 
   dialog.appendChild(message)
 
-  dialog.addEventListener('confirm', () => onConfirm?.())
-  dialog.addEventListener('cancel', () => onCancel?.())
+  // ONE outcome per dialog. obs-modal emits `confirm` -> `close` -> `hide` from a single click on
+  // the action button, so `close` arrives after a SUCCESSFUL confirm as well as after a dismissal.
+  // Without this latch the trailing `close` is read as a cancel and the host tears down whatever
+  // step the confirm just opened — which dead-ended this flow with a blank screen.
+  let reported = false
+  const once = (handler) => () => {
+    if (reported) return
+    reported = true
+    handler?.()
+  }
+
+  dialog.addEventListener('confirm', once(onConfirm))
+  dialog.addEventListener('cancel', once(onCancel))
   // The modal has no × and no backdrop-close, but Escape still dismisses it — treat that as a
   // cancel so the host always gets told to tear the dialog down.
-  dialog.addEventListener('close', () => onCancel?.())
+  dialog.addEventListener('close', once(onCancel))
 
   return dialog
 }

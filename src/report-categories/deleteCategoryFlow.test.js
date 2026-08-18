@@ -74,6 +74,35 @@ describe('startDeleteCategoryFlow', () => {
     expect(shown().querySelectorAll('[data-role="reassign-row"]')).toHaveLength(2)
   })
 
+  // The real component emits confirm -> close -> hide from one click on Yes. The trailing `close`
+  // must not be read as a dismissal, or it tears down the reassignment step that `confirm` just
+  // opened and the flow dead-ends with nothing on screen.
+  it('keeps the reassignment step open through the real confirm/close/hide sequence', () => {
+    const { shown, close } = harness('inventory')
+    const confirmDialog = shown()
+
+    confirmDialog.dispatchEvent(new CustomEvent('confirm'))
+    confirmDialog.dispatchEvent(new CustomEvent('close'))
+    confirmDialog.dispatchEvent(new CustomEvent('hide'))
+
+    expect(shown().getAttribute('data-role')).toBe('reassign-dialog')
+    expect(close).not.toHaveBeenCalled()
+  })
+
+  // Same hazard one step later: mounting the force dialog disconnects the reassignment dialog,
+  // which makes the component emit its own close.
+  it('keeps the force step open when the reassignment dialog reports close on teardown', () => {
+    const { shown, close } = harness('inventory')
+    shown().dispatchEvent(new CustomEvent('confirm'))
+
+    const reassign = shown()
+    click(reassign, 'reassign-force')
+    reassign.dispatchEvent(new CustomEvent('close'))
+
+    expect(shown().getAttribute('data-role')).toBe('force-delete-dialog')
+    expect(close).not.toHaveBeenCalled()
+  })
+
   it('moves the reports and deletes the category on Move and Delete', () => {
     const { store, shown, onDeleted } = harness('inventory')
     shown().dispatchEvent(new CustomEvent('confirm'))

@@ -66,11 +66,22 @@ export function renderForceDeleteDialog({ categoryName, onCancel, onConfirm } = 
   footer.setAttribute('slot', 'footer')
   footer.className = 'force-delete-dialog__footer'
 
+  // ONE outcome per dialog: a successful Force Delete tears this element down, and the resulting
+  // disconnect makes obs-modal emit its own `close`, which must not then be read as a cancel.
+  let reported = false
+  const once = (handler) => () => {
+    if (reported) return
+    reported = true
+    handler?.()
+  }
+  const reportCancel = once(onCancel)
+  const reportConfirm = once(onConfirm)
+
   const cancel = document.createElement('obs-button')
   cancel.setAttribute('data-role', 'force-delete-cancel')
   cancel.setAttribute('variant', 'default')
   cancel.textContent = 'Cancel'
-  cancel.addEventListener('click', () => onCancel?.())
+  cancel.addEventListener('click', () => reportCancel())
   footer.appendChild(cancel)
 
   const confirm = document.createElement('obs-button')
@@ -80,8 +91,10 @@ export function renderForceDeleteDialog({ categoryName, onCancel, onConfirm } = 
   confirm.textContent = 'Force Delete'
   confirm.addEventListener('click', () => {
     // Guarded as well as disabled: `disabled` is a rendering concern, this is the actual rule.
+    // Checked BEFORE the latch, so a premature click is not an outcome and the user can type the
+    // name and press again.
     if (!matches) return
-    onConfirm?.()
+    reportConfirm()
   })
   footer.appendChild(confirm)
 
@@ -94,8 +107,8 @@ export function renderForceDeleteDialog({ categoryName, onCancel, onConfirm } = 
     else confirm.setAttribute('disabled', '')
   })
 
-  dialog.addEventListener('close', () => onCancel?.())
-  dialog.addEventListener('cancel', () => onCancel?.())
+  dialog.addEventListener('close', () => reportCancel())
+  dialog.addEventListener('cancel', () => reportCancel())
 
   return dialog
 }
