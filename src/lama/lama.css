@@ -1,0 +1,197 @@
+/* Colours are var(--token) — no hex/rgb/hsl anywhere, per the project's standing constraint.
+   The DS publishes no spacing scale (gap G21), so the gaps here are chosen numbers aligned to the
+   8px rhythm obs-toolbar uses internally. */
+
+/* ---------- LAMA list page ---------- */
+
+.lama-page__intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.lama-page__title {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--page-text-color);
+}
+
+.lama-page__blurb {
+  margin: 0;
+  max-width: 90ch;
+  color: var(--neutral-light);
+}
+
+.lama-page__link {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.lama-page__search {
+  flex: 0 0 320px;
+}
+
+/* ---------- Drawer ---------- */
+
+.lama-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--page-text-color);
+}
+
+/* The product lays this form out in two columns. */
+.lama-drawer__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.lama-drawer__field-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--neutral-light);
+}
+
+.lama-drawer__scope {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Special Days is a boxed sub-region in the product. */
+.lama-drawer__special-days {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.lama-drawer__more {
+  margin: 0;
+  color: var(--neutral-light);
+}
+
+.lama-drawer__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.lama-drawer__mandatory-note {
+  color: var(--neutral-light);
+}
+
+.lama-drawer__actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* ---------- Custom Fields ---------- */
+
+.custom-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.custom-fields__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--page-text-color);
+}
+
+.custom-fields__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Each group is a card so "this Custom Field and THESE metadata rows" reads as one unit. Without
+   a boundary, consecutive groups run together and the parent/child structure is only implied by
+   indentation. */
+.custom-fields__group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--page-background-color);
+}
+
+.custom-fields__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The child region: indented and rule-marked, so the parent/child relationship is visible
+   rather than implied by proximity alone. */
+.custom-fields__metadata {
+  margin-left: 16px;
+  padding: 12px 0 12px 16px;
+  border-left: 2px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.custom-fields__metadata[hidden] {
+  display: none;
+}
+
+.custom-fields__subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--neutral-light);
+}
+
+.custom-fields__metadata-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---------- Repeater rows ---------- */
+
+/* Top-aligned, NOT flex-end. A custom-field row's body includes its metadata block, so centring or
+   bottom-aligning drags the group's own (x) down beside the metadata — where it looks like it
+   removes a metadata row rather than the whole group. */
+.field-repeater__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.field-repeater__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Offset past the field label so the controls sit on the INPUT line, at both nesting levels. */
+.field-repeater__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  margin-top: 26px;
+}
+
+/* The remove control is destructive; the add is neutral. */
+.field-repeater__actions [data-role='repeater-remove'] {
+  color: var(--secondary-red);
+}
+
+.field-repeater__actions [data-role='repeater-add'] {
+  color: var(--primary);
+}

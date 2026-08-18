@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         main: resolve(root, 'index.html'),
         reportCategories: resolve(root, 'report-categories.html'),
+        lama: resolve(root, 'lama.html'),
       },
     },
   },

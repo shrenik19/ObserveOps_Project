@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>LAMA — ObserveOps</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-shell">
+      <obs-sidebar id="module-nav" active="settings" brand="ObserveOps"></obs-sidebar>
+
+      <div class="app-shell__main">
+        <obs-app-header id="app-header" build="8.2.7">
+          <span slot="brand" class="app-brand">
+            <obs-logo name="motadata" size="26"></obs-logo>
+            ObserveOps
+          </span>
+          <obs-user-menu
+            slot="user"
+            id="user-menu"
+            name="Motadata Admin"
+            subtitle="admin@motadata.com"
+            initials="MA"
+            theme-toggle
+            theme="light"
+            manage-theme
+            logout
+          ></obs-user-menu>
+        </obs-app-header>
+
+        <obs-page-header heading="Settings">
+          <obs-icon slot="before" name="settings" size="20"></obs-icon>
+        </obs-page-header>
+
+        <main class="app-shell__content lama-page">
+          <!-- The LAMA intro strip: mark, title, and the framework blurb the product shows. -->
+          <header class="lama-page__intro">
+            <div class="lama-page__heading">
+              <h2 class="lama-page__title">LAMA</h2>
+              <p class="lama-page__blurb">
+                Accelerate regulatory compliance under SEBI's LAMA framework with Motadata
+                ObserveOps. For more information:
+                <span class="lama-page__link">LAMA Framework</span>
+              </p>
+            </div>
+          </header>
+
+          <obs-toolbar data-role="lama-toolbar">
+            <obs-input
+              slot="start"
+              class="lama-page__search"
+              type="search"
+              placeholder="Search"
+              data-role="lama-search"
+            ></obs-input>
+
+            <obs-button variant="transparent" squared aria-label="Preview">
+              <obs-icon name="eye" size="16"></obs-icon>
+            </obs-button>
+            <obs-button variant="transparent" squared aria-label="Export PDF">
+              <obs-icon name="filePdf" size="16"></obs-icon>
+            </obs-button>
+            <obs-button variant="transparent" squared aria-label="Export XLS">
+              <obs-icon name="fileExcel" size="16"></obs-icon>
+            </obs-button>
+            <obs-button variant="primary" id="create-lama-profile">Create LAMA Profile</obs-button>
+          </obs-toolbar>
+
+          <obs-table
+            id="lama-table"
+            sticky-header
+            empty-text="No records available"
+            page-size="50"
+          ></obs-table>
+        </main>
+      </div>
+    </div>
+
+    <!-- The Create LAMA Profile drawer mounts here. -->
+    <div id="drawer-root"></div>
+
+    <script type="module" src="/src/lama/main.js"></script>
+  </body>
+</html>
