@@ -6,10 +6,19 @@
 // customFieldsSection.js.
 
 import { renderCustomFieldsSection } from './customFieldsSection.js'
+import { augmentAddableSelect } from './augmentAddableSelect.js'
 
 const SELECT_OPTIONS = {
   exchange: ['NSE', 'BSE', 'MCX', 'NCDEX'],
   application: ['Trading', 'Risk Management', 'Surveillance', 'Clearing'],
+  // Defaults only — the field accepts a custom endpoint too, via the select's inline add.
+  tradingApi: [
+    '/metrics/application',
+    '/metrics/hardware',
+    '/metrics/database',
+    '/metrics/network',
+    '/metrics/cap-utilization',
+  ],
   monitoringHours: ['Market Hours', 'Extended Hours', '24x7'],
   groups: ['Colo Servers', 'Core Network', 'Trading Gateways', 'Datastore'],
 }
@@ -33,7 +42,7 @@ function input({ role, label, placeholder = '', type, suffix, suffixIcon, prefix
  * docs/DS-GAPS.md, G26). Setting one renders nothing, so every select is wrapped with a label the
  * consumer draws. Object-valued props are still assigned only AFTER insertion.
  */
-function select({ role, label, options }) {
+function select({ role, label, options, addable = false, placeholder = 'Select' }) {
   const wrap = document.createElement('div')
   wrap.className = 'lama-drawer__field'
 
@@ -44,8 +53,15 @@ function select({ role, label, options }) {
 
   const el = document.createElement('obs-select')
   el.setAttribute('data-role', role)
-  el.setAttribute('placeholder', 'Select')
+  el.setAttribute('placeholder', placeholder)
   el.setAttribute('block', '')
+  if (addable) {
+    // The DS's own inline-add: it forces the search row open so the "+" is reachable, which is
+    // where the add affordance lives (elements@0.1.19).
+    el.setAttribute('can-user-add-options', '')
+    // The component prefixes "Add " itself, so add-label="Add" renders "Add Add".
+    el.setAttribute('add-label', 'endpoint')
+  }
   el.dataset.pendingOptions = JSON.stringify(options)
   wrap.appendChild(el)
 
@@ -90,7 +106,13 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
     ),
     pair(
       input({ role: 'lama-client-auth-api', label: 'Client Authentication API', placeholder: 'Write API endpoint' }),
-      input({ role: 'lama-trading-api', label: 'Trading API', placeholder: 'Write API endpoint' })
+      select({
+        role: 'lama-trading-api',
+        label: 'Trading API',
+        options: SELECT_OPTIONS.tradingApi,
+        addable: true,
+        placeholder: 'Select or add an endpoint',
+      })
     ),
     pair(
       input({ role: 'lama-member-id', label: 'Member ID', placeholder: 'Write member ID' }),
@@ -190,6 +212,10 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
       { value: 'group', text: 'Group' },
       { value: 'tag', text: 'Tag' },
     ]
+
+    // Make the DS's inert "+" actually add the typed endpoint. Remove this line and the import
+    // when obs-select reports its own additions (G27).
+    augmentAddableSelect({ select: drawer.querySelector('[data-role="lama-trading-api"]') })
   }
 
   return { element: drawer, customFields }

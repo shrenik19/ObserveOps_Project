@@ -17,6 +17,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G23** dropdown cannot go in a table cell | 🆕 **OPEN** | `obs-table` `slots: []`, no `select` column type, and `editable` yields `obs-input`s. The reassignment grid had to be hand-composed. **Second instance of G1** |
 | **G24** no icon inventory | 🆕 **OPEN** | `registry/icon.json` is prose, not a name list, and omits `trash`/`timesCircle` which both render. `wrench` does not exist — 14 of 32 probed names did not. Icon-side twin of G14 |
 | **G25** `obs-modal` emits `close` after `confirm` | 🆕 **OPEN** | One click on the action button fires `confirm` → `close` → `hide`, undocumented. Wiring `close` to cancel — the obvious reading — tears down whatever the confirm just opened. **Invisible to unit tests**; found with a real mouse |
+| **G27** `obs-select` inline add is decorative | 🆕 **OPEN** | `can-user-add-options` renders a "+" and a confirm row; clicking either emits nothing and `options` never changes. Same shape as G22 and G18 |
 | **G26** `obs-select` has no error state | 🆕 **OPEN** | `obs-input` ships `error` + `errorMessage`; `obs-select` ships neither, and setting `error` fails silently |
 
 | Gap | Status | Evidence |
@@ -425,6 +426,47 @@ captions, because setting `label` on an obs-select is accepted and ignored.
 **Ask:** give `obs-select` the same `error` / `errorMessage` pair `obs-input` already has. Form
 controls in one design system should validate the same way — a consumer should not have to check,
 control by control, which ones can show an error.
+
+### New finding — G27: `obs-select`'s inline "add option" is decorative
+
+**Severity: high — the affordance is fully rendered and does nothing at all.**
+
+`can-user-add-options` renders the inline "+" and, per the changelog, deliberately forces the search
+row open so the "+" is reachable. Clicking it opens the component's own editor row with a tick and a
+cross. **None of it commits anything.**
+
+Verified by patching `dispatchEvent` on the element so every event it fires is captured, on a bare
+page with no consumer code attached:
+
+```
+typing         -> search: ["/"] … search: ["/metrics/brand-new"]   (19 events)
+click "+"      -> (nothing)
+click the tick -> (nothing)      button.ok, the component's own confirm control
+press Enter    -> (nothing)
+```
+
+`options` is unchanged afterwards and `value` stays `undefined`. So a consumer switching the
+attribute on ships a control that looks complete, opens a confirmation UI, and silently discards
+whatever the user types.
+
+This is the same defect shape as **G22** (the app-header avatar announces as a button and is wired to
+nothing) and **G18** (the FilterBar's Match control renders state it never emits). Worth treating as a
+class: *an affordance that renders must report.*
+
+**Consumer workaround** (`src/lama/augmentAddableSelect.js`, 16 tests): take the typed text from the
+**public** `search` event, and bind the click through the shadow root's internal `.addbtn`, then push
+the value into `options`, set `value`, and emit `change` as the component should have. The
+component's stale editor row is dismissed by clicking its `.trig`.
+
+Only the click target needs piercing — the text itself is public — but it still binds to two internal
+class names and will break on any change to them.
+
+**Ask:** emit an event when the user confirms an addition (`add` with the new value, or simply
+`change` with it) and append it to `options`. Until then, document `can-user-add-options` as
+non-functional rather than shipping a control that appears to work.
+
+*Also:* `add-label` is prefixed with "Add " by the component, so `add-label="Add"` renders
+**"Add Add"**. Worth a note in the API.
 
 ### Two defects in the G10 fix
 
