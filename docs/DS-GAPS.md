@@ -17,6 +17,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G23** dropdown cannot go in a table cell | 🆕 **OPEN** | `obs-table` `slots: []`, no `select` column type, and `editable` yields `obs-input`s. The reassignment grid had to be hand-composed. **Second instance of G1** |
 | **G24** no icon inventory | 🆕 **OPEN** | `registry/icon.json` is prose, not a name list, and omits `trash`/`timesCircle` which both render. `wrench` does not exist — 14 of 32 probed names did not. Icon-side twin of G14 |
 | **G25** `obs-modal` emits `close` after `confirm` | 🆕 **OPEN** | One click on the action button fires `confirm` → `close` → `hide`, undocumented. Wiring `close` to cancel — the obvious reading — tears down whatever the confirm just opened. **Invisible to unit tests**; found with a real mouse |
+| **G28** `obs-date-time-picker` mislabelled + write-only | 🆕 **OPEN** | Flagged `referenceOnly` but emits a real `change` contract; and `value` accepts a write that never renders, so a time can be collected but never displayed |
 | **G27** `obs-select` inline add is decorative | 🆕 **OPEN** | `can-user-add-options` renders a "+" and a confirm row; clicking either emits nothing and `options` never changes. Same shape as G22 and G18 |
 | **G26** `obs-select` has no error state | 🆕 **OPEN** | `obs-input` ships `error` + `errorMessage`; `obs-select` ships neither, and setting `error` fails silently |
 
@@ -467,6 +468,51 @@ non-functional rather than shipping a control that appears to work.
 
 *Also:* `add-label` is prefixed with "Add " by the component, so `add-label="Add"` renders
 **"Add Add"**. Worth a note in the API.
+
+### New finding — G28: `obs-date-time-picker` is mislabelled `referenceOnly`, and is write-only
+
+**Two separate problems, one component.**
+
+**1. The `referenceOnly` flag is wrong.** `elements-api.json` marks `obs-date-time-picker` as
+`referenceOnly: true`, which the file's own preamble defines as *"renders but has no functional data
+contract"*. A consumer reading that reasonably concludes the component cannot be wired and either
+skips it or hand-builds a replacement.
+
+It is not true. Rendered with `kind="field-time"`, the component opens a real three-column
+hour/minute/meridiem spinner and **emits `change` on every column click**, refining as it goes:
+
+```
+click 09  -> change [{"time":"05:21 PM"}]
+click 30  -> change [{"time":"09:21 PM"}]
+click AM  -> change [{"time":"09:30 PM"}]
+             change [{"time":"09:30 AM"}]
+```
+
+That is a perfectly usable data contract. The flag costs consumers a working component.
+
+**2. It cannot be seeded.** `value` exists as a property and accepts a write, but nothing renders:
+
+```js
+el.value = '09:30'   // accepted
+el.value             // '09:30'
+// the trigger still shows the placeholder — shows: false
+```
+
+So the picker is **write-only from the user's side**: you can read what they chose, but you cannot
+put a value back in. Any form that edits an existing record, restores a draft, or offers a default
+time cannot display it. A create-only form escapes this; an edit form does not.
+
+**Consumer workaround:** hold the chosen time in the consumer's own state from the `change` payload
+and never read it back off the element (`src/lama/scheduleSection.js`). Resetting the field means
+destroying and recreating the element, because there is no way to clear it programmatically either.
+
+**Ask:** correct the `referenceOnly` flag — the component has a working `change` contract and should
+be discoverable. Then make `value` two-way so a time can be displayed as well as collected, and
+document the payload shape (`{ time: "hh:mm AM" }`, a 12-hour string, not a Date).
+
+*Also worth noting:* the emission is per-column, so a consumer receives several intermediate times
+before the final one. That is fine for a live-bound field but surprising if you expect one event per
+selection.
 
 ### Two defects in the G10 fix
 

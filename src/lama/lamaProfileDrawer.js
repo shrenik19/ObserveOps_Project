@@ -6,6 +6,7 @@
 // customFieldsSection.js.
 
 import { renderCustomFieldsSection } from './customFieldsSection.js'
+import { renderScheduleSection } from './scheduleSection.js'
 import { augmentAddableSelect } from './augmentAddableSelect.js'
 
 const SELECT_OPTIONS = {
@@ -94,7 +95,11 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
   body.className = 'lama-drawer'
   drawer.appendChild(body)
 
-  // --- The sixteen inert product fields ---------------------------------
+  // Built before the layout below, because it is placed inline among the inert fields.
+  const schedule = renderScheduleSection()
+
+  // --- The product fields ------------------------------------------------
+  // All inert except the schedule, which sits where Data Interval used to.
   body.append(
     pair(
       input({ role: 'lama-name', label: 'Name', placeholder: 'Write name' }),
@@ -123,7 +128,7 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
       input({ role: 'lama-secret-key', label: 'Secret Key', type: 'password', suffixIcon: 'eye' })
     ),
     pair(
-      input({ role: 'lama-data-interval', label: 'Data Interval', value: '5', suffix: 'Minute(s)' }),
+      schedule.element,
       select({ role: 'lama-monitoring-hours', label: 'Monitoring Hours', options: SELECT_OPTIONS.monitoringHours })
     )
   )
@@ -186,14 +191,21 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
   actions.className = 'lama-drawer__actions'
 
   const reset = button({ role: 'lama-reset', label: 'Reset', variant: 'default' })
-  reset.addEventListener('click', () => customFields.reset())
+  reset.addEventListener('click', () => {
+    customFields.reset()
+    schedule.reset()
+  })
   actions.appendChild(reset)
 
   const create = button({ role: 'lama-create', label: 'Create LAMA Profile', variant: 'primary' })
   create.addEventListener('click', () => {
     // Only the Custom Fields section validates — the rest of the drawer is inert by design.
-    if (!customFields.validate()) return
-    onCreate?.({ customFields: customFields.value() })
+    // Both live sections must pass; validate BOTH so every offending field is marked at once
+    // rather than one per click.
+    const scheduleOk = schedule.validate()
+    const fieldsOk = customFields.validate()
+    if (!scheduleOk || !fieldsOk) return
+    onCreate?.({ schedule: schedule.value(), customFields: customFields.value() })
   })
   actions.appendChild(create)
 
