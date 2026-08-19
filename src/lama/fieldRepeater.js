@@ -23,7 +23,9 @@ function iconButton({ role, name, label, repeater }) {
   // `repeater-add` would hit the inner one. This names the level unambiguously.
   if (repeater) button.setAttribute('data-repeater', repeater)
   button.setAttribute('variant', 'transparent')
-  button.setAttribute('square', '')
+  // `squared` is the documented 35x35 icon button; `square` renders 48 wide, which forces the
+  // reserved actions track wider than it needs to be.
+  button.setAttribute('squared', '')
   button.setAttribute('aria-label', label)
 
   const icon = document.createElement('obs-icon')

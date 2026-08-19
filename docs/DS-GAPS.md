@@ -417,6 +417,11 @@ An outline avoids piercing the shadow root, but it sits outside the control's ow
 replacing it, so it does not match how `obs-input` renders its error. A per-row message had to be
 hand-built too, since there is no `errorMessage` to carry one.
 
+**And it has no `label` either.** `obs-input` ships `label`; `obs-select` and `obs-radio` ship
+neither. Every select on the LAMA profile drawer rendered untitled until the consumer drew its own
+label beside it — Exchange, Application, Monitoring Hours and Select Groups all silently lost their
+captions, because setting `label` on an obs-select is accepted and ignored.
+
 **Ask:** give `obs-select` the same `error` / `errorMessage` pair `obs-input` already has. Form
 controls in one design system should validate the same way — a consumer should not have to check,
 control by control, which ones can show an error.

@@ -49,6 +49,14 @@
   align-items: start;
 }
 
+/* Consumer-drawn labels for obs-select and obs-radio, which ship no `label` of their own (G26).
+   Matched to obs-input's own label so a select does not read as a different kind of field. */
+.lama-drawer__field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .lama-drawer__field-label {
   display: block;
   margin-bottom: 6px;
@@ -91,12 +99,11 @@
 
 /* ---------- Custom Fields ---------- */
 
+/* No rule above the heading — the heading itself is enough of a break. */
 .custom-fields {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-color);
 }
 
 .custom-fields__title {
@@ -112,17 +119,18 @@
   gap: 12px;
 }
 
-/* Each group is a card so "this Custom Field and THESE metadata rows" reads as one unit. Without
-   a boundary, consecutive groups run together and the parent/child structure is only implied by
-   indentation. */
+/* No box. A single group needs no boundary at all; groups are separated by a rule only once there
+   is more than one, which is the only point at which a separator means anything. */
 .custom-fields__group {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--page-background-color);
+}
+
+/* The rule sits BETWEEN groups — `+` never matches the first, so one group draws nothing. */
+.custom-fields__groups > .field-repeater__row + .field-repeater__row {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
 }
 
 .custom-fields__pair {
@@ -134,12 +142,9 @@
   min-width: 0;
 }
 
-/* The child region: indented and rule-marked, so the parent/child relationship is visible
-   rather than implied by proximity alone. */
+/* The child region: indentation alone carries the parent/child relationship — no vertical rule. */
 .custom-fields__metadata {
-  margin-left: 16px;
-  padding: 12px 0 12px 16px;
-  border-left: 2px solid var(--border-color);
+  margin-left: 24px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -147,13 +152,6 @@
 
 .custom-fields__metadata[hidden] {
   display: none;
-}
-
-.custom-fields__subtitle {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--neutral-light);
 }
 
 .custom-fields__metadata-rows {
@@ -178,20 +176,29 @@
   min-width: 0;
 }
 
-/* Offset past the field label so the controls sit on the INPUT line, at both nesting levels. */
+/* FIXED track, sized to hold BOTH controls (2 x 35px squared buttons + the 2px gap).
+   Sizing to content is what made rows differ: a flex item will not shrink below its content, so a
+   row showing (x)+(+) reserved 98px while a row showing (+) alone reserved 64px, and the fields
+   beside them came out 34px narrower. Reserving the two-button width always keeps every group —
+   and every metadata row — exactly the same width. */
 .field-repeater__actions {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex: 0 0 auto;
-  margin-top: 26px;
+  justify-content: flex-end;
+  gap: 2px;
+  flex: 0 0 72px;
+  /* Clears the field label so the controls sit on the INPUT line, at both nesting levels. */
+  margin-top: 24px;
 }
 
-/* The remove control is destructive; the add is neutral. */
-.field-repeater__actions [data-role='repeater-remove'] {
+/* Destructive red for remove, primary for add. The colour has to land on the icon: obs-button
+   paints its own text colour inside the shadow root, so colouring the host alone does nothing. */
+.field-repeater__actions [data-role='repeater-remove'],
+.field-repeater__actions [data-role='repeater-remove'] obs-icon {
   color: var(--secondary-red);
 }
 
-.field-repeater__actions [data-role='repeater-add'] {
+.field-repeater__actions [data-role='repeater-add'],
+.field-repeater__actions [data-role='repeater-add'] obs-icon {
   color: var(--primary);
 }

@@ -28,15 +28,28 @@ function input({ role, label, placeholder = '', type, suffix, suffixIcon, prefix
   return el
 }
 
-/** obs-select needs its object-valued props set AFTER insertion — see the reference doc. */
+/**
+ * obs-select has NO `label` attribute — obs-input does, obs-select and obs-radio do not (see
+ * docs/DS-GAPS.md, G26). Setting one renders nothing, so every select is wrapped with a label the
+ * consumer draws. Object-valued props are still assigned only AFTER insertion.
+ */
 function select({ role, label, options }) {
+  const wrap = document.createElement('div')
+  wrap.className = 'lama-drawer__field'
+
+  const caption = document.createElement('span')
+  caption.className = 'lama-drawer__field-label'
+  caption.textContent = label
+  wrap.appendChild(caption)
+
   const el = document.createElement('obs-select')
   el.setAttribute('data-role', role)
-  el.setAttribute('label', label)
   el.setAttribute('placeholder', 'Select')
   el.setAttribute('block', '')
   el.dataset.pendingOptions = JSON.stringify(options)
-  return el
+  wrap.appendChild(el)
+
+  return wrap
 }
 
 function pair(...children) {

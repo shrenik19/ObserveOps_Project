@@ -92,11 +92,8 @@ export function renderCustomFieldsSection() {
     metaBlock.hidden = true
     groupEl.appendChild(metaBlock)
 
-    const metaTitle = document.createElement('h4')
-    metaTitle.className = 'custom-fields__subtitle'
-    metaTitle.textContent = 'Metadata'
-    metaBlock.appendChild(metaTitle)
-
+    // No "Metadata" sub-heading: the Metadata / Value field labels already name the region, and a
+    // second title on top of them just repeats the word.
     const metaMount = document.createElement('div')
     metaMount.className = 'custom-fields__metadata-rows'
     metaBlock.appendChild(metaMount)
