@@ -3,7 +3,7 @@
 // The counter list is DERIVED from the Trading API endpoint chosen above it — each endpoint exposes
 // its own counters, so the section repopulates whenever that field changes. Three states:
 //
-//   no endpoint chosen        a hint, no rows
+//   no endpoint chosen        a hint plus a DISABLED aggregation field, so the control is seen
 //   a known endpoint          one row per counter
 //   an endpoint with no map   a note saying so (the Trading API accepts custom endpoints, and a
 //                             custom one has no counters until the backend describes it)
@@ -75,11 +75,8 @@ export function renderCountersSection() {
   list.className = 'counters__list'
   element.appendChild(list)
 
-  const hint = document.createElement('p')
-  hint.setAttribute('data-role', 'counters-hint')
-  hint.className = 'counters__hint'
-  element.appendChild(hint)
-
+  // The hint lives INSIDE the placeholder row, beside the disabled Aggregation field, so there is
+  // exactly one element carrying that role at any time.
   const summaryError = document.createElement('p')
   summaryError.setAttribute('data-role', 'counters-error')
   summaryError.className = 'counters__error'
@@ -106,26 +103,51 @@ export function renderCountersSection() {
     }
   }
 
+  /**
+   * The empty state still shows a full, disabled Aggregation field rather than nothing at all —
+   * so the control on offer is visible before a Trading API has been chosen, just unusable.
+   */
+  function renderPlaceholder(message) {
+    head.hidden = false
+
+    const row = document.createElement('div')
+    row.setAttribute('data-role', 'counters-placeholder')
+    row.className = 'counters__row'
+
+    const note = document.createElement('p')
+    note.setAttribute('data-role', 'counters-hint')
+    note.className = 'counters__hint'
+    note.textContent = message
+    row.appendChild(note)
+
+    const agg = document.createElement('obs-select')
+    agg.setAttribute('data-role', 'counter-aggregation')
+    agg.setAttribute('multiple', '')
+    agg.setAttribute('block', '')
+    agg.setAttribute('placeholder', 'Select')
+    agg.setAttribute('disabled', '')
+    agg.dataset.pendingOptions = JSON.stringify(AGGREGATIONS.map((a) => ({ value: a, text: a })))
+    row.appendChild(agg)
+
+    list.appendChild(row)
+    applyPendingOptions()
+  }
+
   function renderCounters() {
     list.replaceChildren()
     selects.clear()
     const counters = countersFor(endpoint)
 
     if (!endpoint) {
-      head.hidden = true
-      hint.hidden = false
-      hint.textContent = 'Choose a Trading API above to see its counters.'
+      renderPlaceholder('Choose a Trading API above to see its counters.')
       return
     }
     if (counters.length === 0) {
-      head.hidden = true
-      hint.hidden = false
-      hint.textContent = `No counters are mapped to ${endpoint}.`
+      renderPlaceholder(`No counters are mapped to ${endpoint}.`)
       return
     }
 
     head.hidden = false
-    hint.hidden = true
 
     for (const name of counters) {
       const own = stateFor(name)

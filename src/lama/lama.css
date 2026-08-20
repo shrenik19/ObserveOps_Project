@@ -154,8 +154,9 @@
   align-items: start;
 }
 
+/* 50 / 25 / 25 — Frequency keeps half the row, Count and At Time take a quarter each. */
 .schedule[data-mode='times'] {
-  grid-template-columns: 1fr 0.55fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
 }
 
 .schedule [hidden] {
@@ -246,4 +247,19 @@
 
 .counters__error[hidden] {
   display: none;
+}
+
+/* A disabled obs-select renders as bare grey text — the DS documents the state only as "greyed",
+   with no border token. Draw the field outline on the host so a disabled picker still reads as a
+   FIELD that is unavailable, rather than as a caption. */
+.counters obs-select[disabled] {
+  display: block;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--page-background-color);
+}
+
+/* The placeholder's hint sits on the input line, beside the disabled field. */
+.counters__row .counters__hint {
+  align-self: center;
 }

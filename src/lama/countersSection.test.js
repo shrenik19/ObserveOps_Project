@@ -65,6 +65,39 @@ describe('initial state', () => {
     expect(hint(s).textContent).toContain('Choose a Trading API')
   })
 
+  // The control on offer must be visible before an endpoint is chosen, just unusable.
+  it('shows a complete but disabled Aggregation field with no Trading API', () => {
+    const s = build()
+    const ph = q(s, 'counters-placeholder')
+    expect(ph).not.toBeNull()
+
+    const agg = ph.querySelector('[data-role="counter-aggregation"]')
+    expect(agg).not.toBeNull()
+    expect(agg.hidden).toBe(false)
+    expect(agg.hasAttribute('disabled')).toBe(true)
+    expect(agg.options.map((o) => o.value)).toEqual(AGGREGATIONS)
+  })
+
+  it('labels both columns even while empty', () => {
+    const s = build()
+    expect(s.element.querySelector('.counters__head').hidden).toBe(false)
+  })
+
+  it('keeps the disabled field for a custom endpoint with no counters', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+    const ph = q(s, 'counters-placeholder')
+    expect(ph.querySelector('[data-role="counter-aggregation"]').hasAttribute('disabled')).toBe(true)
+    expect(hint(s).textContent).toContain('No counters are mapped')
+  })
+
+  it('replaces the placeholder with real rows once an endpoint is chosen', () => {
+    const s = build()
+    s.setTradingApi('/metrics/cap-utilization')
+    expect(q(s, 'counters-placeholder')).toBeNull()
+    expect(rows(s)).toHaveLength(2)
+  })
+
   it('reports nothing chosen', () => {
     expect(build().value()).toEqual({ counters: [] })
   })
