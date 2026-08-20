@@ -11,6 +11,7 @@
 // The adder row has no aggregation beside it: it is a control for adding counters, not a counter.
 
 import { augmentAddableSelect } from './augmentAddableSelect.js'
+import { catalogueOptions } from './counterCatalogue.js'
 
 /** Endpoint → the counters it exposes. */
 export const COUNTERS_BY_ENDPOINT = {
@@ -127,7 +128,12 @@ export function renderCountersSection() {
     // values. The DS renders the "+" but never reports it — augmentAddableSelect wires it (G27).
     adder.setAttribute('can-user-add-options', '')
     adder.setAttribute('add-label', 'counter')
-    adder.dataset.pendingOptions = JSON.stringify([])
+    // Two-pane picker: the option list on the left, the highlighted counter's description on the
+    // right. obs-select reads that pane from each option's `description` key — established by
+    // rendering, since the registry documents this prop only in a changelog line.
+    adder.setAttribute('use-after-menu-description', '')
+    // The catalogue minus whatever is already on screen; a name outside it can still be typed.
+    adder.dataset.pendingOptions = JSON.stringify(catalogueOptions(countersShown()))
     row.appendChild(adder)
 
     // Both a picked option and an added one arrive as `change`.
