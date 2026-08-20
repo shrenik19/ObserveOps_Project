@@ -232,3 +232,43 @@
   gap: 8px;
   align-items: center;
 }
+
+/* ---------- Counters & Aggregation ---------- */
+
+.counters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.counters__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* A short list — up to four counters — so they stack rather than wrap into columns. */
+.counters__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.counters__hint {
+  margin: 0;
+  color: var(--neutral-light);
+}
+
+.counters__hint[hidden] {
+  display: none;
+}
+
+.counters__error {
+  margin: 6px 0 0;
+  color: var(--secondary-red);
+}
+
+.counters__error[hidden] {
+  display: none;
+}

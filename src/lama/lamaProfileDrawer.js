@@ -7,6 +7,7 @@
 
 import { renderCustomFieldsSection } from './customFieldsSection.js'
 import { renderScheduleSection } from './scheduleSection.js'
+import { renderCountersSection } from './countersSection.js'
 import { augmentAddableSelect } from './augmentAddableSelect.js'
 
 const SELECT_OPTIONS = {
@@ -173,6 +174,9 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
   body.appendChild(input({ role: 'lama-failover-email', label: 'Failover Email', placeholder: 'Write email address' }))
 
   // --- The live part ----------------------------------------------------
+  const counters = renderCountersSection()
+  body.appendChild(counters.element)
+
   const customFields = renderCustomFieldsSection()
   body.appendChild(customFields.element)
 
@@ -198,6 +202,7 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
   reset.addEventListener('click', () => {
     customFields.reset()
     schedule.reset()
+    counters.reset()
   })
   actions.appendChild(reset)
 
@@ -207,9 +212,14 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
     // Both live sections must pass; validate BOTH so every offending field is marked at once
     // rather than one per click.
     const scheduleOk = schedule.validate()
+    const countersOk = counters.validate()
     const fieldsOk = customFields.validate()
-    if (!scheduleOk || !fieldsOk) return
-    onCreate?.({ schedule: schedule.value(), customFields: customFields.value() })
+    if (!scheduleOk || !countersOk || !fieldsOk) return
+    onCreate?.({
+      schedule: schedule.value(),
+      counters: counters.value(),
+      customFields: customFields.value(),
+    })
   })
   actions.appendChild(create)
 
@@ -233,8 +243,18 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
     // when obs-select reports its own additions (G27).
     augmentAddableSelect({ select: drawer.querySelector('[data-role="lama-trading-api"]') })
 
-    // The schedule's own selects (unit, at-time) carry pending options too.
+    // The schedule's and counters' own selects carry pending options too.
     schedule.upgrade()
+    counters.upgrade()
+
+    // The counter list is derived from the Trading API endpoint, so follow that field. This also
+    // catches a custom endpoint added through the inline "+", which reports through the same event.
+    const tradingApi = drawer.querySelector('[data-role="lama-trading-api"]')
+    tradingApi?.addEventListener('change', (event) => {
+      const detail = event.detail
+      const next = Array.isArray(detail) ? detail[0] : detail
+      counters.setTradingApi(next ?? tradingApi.value ?? '')
+    })
   }
 
   return { element: drawer, customFields }
