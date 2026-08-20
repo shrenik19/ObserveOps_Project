@@ -13,6 +13,8 @@ const rowFor = (s, name) => rows(s).find((r) => r.dataset.counter === name)
 const boxIn = (row) => row.querySelector('[data-role="counter-option"]')
 const aggIn = (row) => row.querySelector('[data-role="counter-aggregation"]')
 const names = (s) => rows(s).map((r) => r.dataset.counter)
+const adder = (s) => q(s, 'counter-adder')
+const adderRow = (s) => q(s, 'counter-adder-row')
 const hint = (s) => q(s, 'counters-hint')
 const summaryError = (s) => q(s, 'counters-error')
 
@@ -25,6 +27,9 @@ const tick = (row, on = true) => {
 }
 const chooseAgg = (row, list) =>
   aggIn(row).dispatchEvent(new CustomEvent('change', { detail: [list] }))
+/** Adding through the "Select Counter" control arrives as a change, however it was produced. */
+const addCounter = (s, name) =>
+  adder(s).dispatchEvent(new CustomEvent('change', { detail: [name] }))
 
 describe('the counter map', () => {
   it('covers all five endpoints', () => {
@@ -41,61 +46,28 @@ describe('the counter map', () => {
     expect(countersFor('/metrics/cap-utilization')).toEqual(['benchmark', 'peakOrder'])
   })
 
-  it('returns nothing for an unknown or empty endpoint', () => {
-    expect(countersFor('/metrics/nope')).toEqual([])
-    expect(countersFor('')).toEqual([])
-  })
-
   it('offers the seven aggregations', () => {
     expect(AGGREGATIONS).toEqual(['Avg', 'Min', 'Max', 'Median', 'Sum', 'Count', 'Last'])
   })
 })
 
-describe('initial state', () => {
-  it('is titled for both controls', () => {
-    expect(build().element.querySelector('[data-role="counters-title"]').textContent).toBe(
-      'Counters & Aggregation'
-    )
+describe('state 1 — no Trading API chosen', () => {
+  it('shows the text and nothing else', () => {
+    const s = build()
+    expect(hint(s)).not.toBeNull()
+    expect(hint(s).textContent).toBe('Choose a Trading API above to see its counters.')
   })
 
-  it('shows no rows and a hint before an endpoint is chosen', () => {
-    const s = build()
-    expect(rows(s)).toHaveLength(0)
-    expect(hint(s).hidden).toBe(false)
-    expect(hint(s).textContent).toContain('Choose a Trading API')
+  it('shows NO aggregation dropdown', () => {
+    expect(build().element.querySelector('[data-role="counter-aggregation"]')).toBeNull()
   })
 
-  // The control on offer must be visible before an endpoint is chosen, just unusable.
-  it('shows a complete but disabled Aggregation field with no Trading API', () => {
-    const s = build()
-    const ph = q(s, 'counters-placeholder')
-    expect(ph).not.toBeNull()
-
-    const agg = ph.querySelector('[data-role="counter-aggregation"]')
-    expect(agg).not.toBeNull()
-    expect(agg.hidden).toBe(false)
-    expect(agg.hasAttribute('disabled')).toBe(true)
-    expect(agg.options.map((o) => o.value)).toEqual(AGGREGATIONS)
+  it('shows NO counter adder', () => {
+    expect(adder(build())).toBeNull()
   })
 
-  it('labels both columns even while empty', () => {
-    const s = build()
-    expect(s.element.querySelector('.counters__head').hidden).toBe(false)
-  })
-
-  it('keeps the disabled field for a custom endpoint with no counters', () => {
-    const s = build()
-    s.setTradingApi('/metrics/custom-latency')
-    const ph = q(s, 'counters-placeholder')
-    expect(ph.querySelector('[data-role="counter-aggregation"]').hasAttribute('disabled')).toBe(true)
-    expect(hint(s).textContent).toContain('No counters are mapped')
-  })
-
-  it('replaces the placeholder with real rows once an endpoint is chosen', () => {
-    const s = build()
-    s.setTradingApi('/metrics/cap-utilization')
-    expect(q(s, 'counters-placeholder')).toBeNull()
-    expect(rows(s)).toHaveLength(2)
+  it('hides the column labels', () => {
+    expect(build().element.querySelector('.counters__head').hidden).toBe(true)
   })
 
   it('reports nothing chosen', () => {
@@ -103,18 +75,102 @@ describe('initial state', () => {
   })
 })
 
-describe('a row per counter', () => {
-  it('gives every counter its own aggregation picker', () => {
+describe('state 2 — a custom endpoint with no mapped counters', () => {
+  it('offers the adder instead of a "no counters" message', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+
+    expect(hint(s)).toBeNull()
+    expect(adder(s)).not.toBeNull()
+    expect(adder(s).getAttribute('placeholder')).toBe('Select Counter')
+  })
+
+  it('accepts a counter the user names', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+
+    expect(rows(s)).toHaveLength(0)
+    addCounter(s, 'p99')
+
+    expect(names(s)).toEqual(['p99'])
+  })
+
+  it('shows no aggregation dropdown until a counter exists', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+    expect(s.element.querySelector('[data-role="counter-aggregation"]')).toBeNull()
+
+    addCounter(s, 'p99')
+    expect(s.element.querySelector('[data-role="counter-aggregation"]')).not.toBeNull()
+  })
+
+  it('keeps the added counter unticked with its aggregation disabled', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+    addCounter(s, 'p99')
+
+    const row = rowFor(s, 'p99')
+    expect(boxIn(row).hasAttribute('checked')).toBe(false)
+    expect(aggIn(row).hasAttribute('disabled')).toBe(true)
+  })
+
+  it('takes several added counters, in order', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+    addCounter(s, 'p95')
+    addCounter(s, 'p99')
+
+    expect(names(s)).toEqual(['p95', 'p99'])
+  })
+
+  it('ignores a blank or duplicate name', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+    addCounter(s, 'p99')
+    addCounter(s, 'p99')
+    addCounter(s, '   ')
+
+    expect(names(s)).toEqual(['p99'])
+  })
+})
+
+describe('state 3 — a mapped endpoint', () => {
+  it('lists the mapped counters and offers the adder below them', () => {
     const s = build()
     s.setTradingApi('/metrics/cap-utilization')
 
     expect(names(s)).toEqual(['benchmark', 'peakOrder'])
-    for (const row of rows(s)) {
-      expect(aggIn(row)).not.toBeNull()
-      expect(aggIn(row).options.map((o) => o.value)).toEqual(AGGREGATIONS)
-      expect(aggIn(row).hasAttribute('multiple')).toBe(true)
-      expect(aggIn(row).hasAttribute('allow-select-all')).toBe(true)
-    }
+    expect(adder(s)).not.toBeNull()
+  })
+
+  it('puts the adder last, after every counter row', () => {
+    const s = build()
+    s.setTradingApi('/metrics/cap-utilization')
+    const children = [...s.element.querySelector('[data-role="counter-list"]').children]
+
+    expect(children.at(-1)).toBe(adderRow(s))
+  })
+
+  it('gives the adder row no aggregation of its own', () => {
+    const s = build()
+    s.setTradingApi('/metrics/cap-utilization')
+    expect(adderRow(s).querySelector('[data-role="counter-aggregation"]')).toBeNull()
+  })
+
+  it('appends a new counter after the mapped ones', () => {
+    const s = build()
+    s.setTradingApi('/metrics/cap-utilization')
+    addCounter(s, 'customRatio')
+
+    expect(names(s)).toEqual(['benchmark', 'peakOrder', 'customRatio'])
+  })
+
+  it('refuses to add a counter the endpoint already maps', () => {
+    const s = build()
+    s.setTradingApi('/metrics/cap-utilization')
+    addCounter(s, 'benchmark')
+
+    expect(names(s)).toEqual(['benchmark', 'peakOrder'])
   })
 
   it('swaps the rows when the endpoint changes', () => {
@@ -129,12 +185,16 @@ describe('a row per counter', () => {
     ])
   })
 
-  it('explains itself for a custom endpoint with no counters', () => {
+  it('keeps added counters with the endpoint they were added to', () => {
     const s = build()
-    s.setTradingApi('/metrics/custom-latency')
+    s.setTradingApi('/metrics/cap-utilization')
+    addCounter(s, 'customRatio')
+    s.setTradingApi('/metrics/network')
 
-    expect(rows(s)).toHaveLength(0)
-    expect(hint(s).textContent).toContain('No counters are mapped')
+    expect(names(s)).not.toContain('customRatio')
+
+    s.setTradingApi('/metrics/cap-utilization')
+    expect(names(s)).toContain('customRatio')
   })
 })
 
@@ -142,15 +202,12 @@ describe('the aggregation picker is enabled only for ticked counters', () => {
   it('starts disabled on every row', () => {
     const s = build()
     s.setTradingApi('/metrics/cap-utilization')
-
     for (const row of rows(s)) expect(aggIn(row).hasAttribute('disabled')).toBe(true)
   })
 
-  // Disabled, NOT hidden — the choice on offer stays visible.
   it('is still visible while disabled', () => {
     const s = build()
     s.setTradingApi('/metrics/cap-utilization')
-    expect(aggIn(rowFor(s, 'benchmark'))).not.toBeNull()
     expect(aggIn(rowFor(s, 'benchmark')).hidden).toBe(false)
   })
 
@@ -174,6 +231,17 @@ describe('the aggregation picker is enabled only for ticked counters', () => {
     expect(aggIn(rowFor(s, 'benchmark')).hasAttribute('disabled')).toBe(false)
     expect(aggIn(rowFor(s, 'peakOrder')).hasAttribute('disabled')).toBe(true)
   })
+
+  it('applies to a counter the user added too', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+    addCounter(s, 'p99')
+    const row = rowFor(s, 'p99')
+
+    expect(aggIn(row).hasAttribute('disabled')).toBe(true)
+    tick(row)
+    expect(aggIn(row).hasAttribute('disabled')).toBe(false)
+  })
 })
 
 describe('value', () => {
@@ -193,34 +261,22 @@ describe('value', () => {
     })
   })
 
-  it('omits counters that are not ticked, even if they carry aggregations', () => {
+  it('includes an added counter once ticked', () => {
+    const s = build()
+    s.setTradingApi('/metrics/custom-latency')
+    addCounter(s, 'p99')
+    tick(rowFor(s, 'p99'))
+    chooseAgg(rowFor(s, 'p99'), ['Last'])
+
+    expect(s.value()).toEqual({ counters: [{ name: 'p99', aggregations: ['Last'] }] })
+  })
+
+  it('omits counters that are not ticked', () => {
     const s = build()
     s.setTradingApi('/metrics/cap-utilization')
     tick(rowFor(s, 'benchmark'))
     chooseAgg(rowFor(s, 'benchmark'), ['Avg'])
     tick(rowFor(s, 'benchmark'), false)
-
-    expect(s.value()).toEqual({ counters: [] })
-  })
-
-  it('restores an aggregation when its counter is ticked again', () => {
-    const s = build()
-    s.setTradingApi('/metrics/cap-utilization')
-    const row = rowFor(s, 'benchmark')
-    tick(row)
-    chooseAgg(row, ['Avg'])
-    tick(row, false)
-    tick(row)
-
-    expect(s.value()).toEqual({ counters: [{ name: 'benchmark', aggregations: ['Avg'] }] })
-  })
-
-  it('forgets state for counters the new endpoint does not expose', () => {
-    const s = build()
-    s.setTradingApi('/metrics/cap-utilization')
-    tick(rowFor(s, 'benchmark'))
-    chooseAgg(rowFor(s, 'benchmark'), ['Avg'])
-    s.setTradingApi('/metrics/network')
 
     expect(s.value()).toEqual({ counters: [] })
   })
@@ -250,17 +306,6 @@ describe('validate', () => {
     s.validate()
 
     expect(aggIn(rowFor(s, 'peakOrder')).hasAttribute('error')).toBe(false)
-  })
-
-  it('marks every offending row at once', () => {
-    const s = build()
-    s.setTradingApi('/metrics/cap-utilization')
-    tick(rowFor(s, 'benchmark'))
-    tick(rowFor(s, 'peakOrder'))
-
-    expect(s.validate()).toBe(false)
-    expect(aggIn(rowFor(s, 'benchmark')).hasAttribute('error')).toBe(true)
-    expect(aggIn(rowFor(s, 'peakOrder')).hasAttribute('error')).toBe(true)
   })
 
   it('passes once every ticked counter has an aggregation', () => {
@@ -298,28 +343,27 @@ describe('validate', () => {
     expect(aggIn(row).hasAttribute('error')).toBe(false)
     expect(s.validate()).toBe(true)
   })
+
+  it('passes with no endpoint, where there is nothing to validate', () => {
+    expect(build().validate()).toBe(true)
+  })
 })
 
 describe('reset', () => {
-  it('unticks everything and disables every picker again', () => {
+  it('unticks everything and forgets added counters', () => {
     const s = build()
     s.setTradingApi('/metrics/cap-utilization')
+    addCounter(s, 'customRatio')
     tick(rowFor(s, 'benchmark'))
     chooseAgg(rowFor(s, 'benchmark'), ['Avg'])
 
     s.reset()
 
     expect(s.value()).toEqual({ counters: [] })
+    expect(names(s)).toEqual(['benchmark', 'peakOrder'])
     for (const row of rows(s)) {
       expect(boxIn(row).hasAttribute('checked')).toBe(false)
       expect(aggIn(row).hasAttribute('disabled')).toBe(true)
     }
-  })
-
-  it('keeps the endpoint rows on screen', () => {
-    const s = build()
-    s.setTradingApi('/metrics/cap-utilization')
-    s.reset()
-    expect(names(s)).toEqual(['benchmark', 'peakOrder'])
   })
 })

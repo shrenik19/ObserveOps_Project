@@ -263,3 +263,9 @@
 .counters__row .counters__hint {
   align-self: center;
 }
+
+/* The adder occupies only the Counters column — it adds counters, it is not one, so nothing sits
+   in the Aggregation column beside it. */
+.counters__row--adder > * {
+  grid-column: 1;
+}

@@ -1,16 +1,16 @@
 // Which counters a LAMA profile sends, and how EACH ONE is aggregated.
 //
-// The counter list is DERIVED from the Trading API endpoint chosen above it — each endpoint exposes
-// its own counters, so the section repopulates whenever that field changes. Three states:
+// The counter list is DERIVED from the Trading API endpoint chosen above it. Three states:
 //
-//   no endpoint chosen        a hint plus a DISABLED aggregation field, so the control is seen
-//   a known endpoint          one row per counter
-//   an endpoint with no map   a note saying so (the Trading API accepts custom endpoints, and a
-//                             custom one has no counters until the backend describes it)
+//   no endpoint chosen   a line of text and nothing else — there is nothing yet to configure
+//   a mapped endpoint    one row per mapped counter, plus a "Select Counter" adder at the bottom
+//   a custom endpoint    no mapped counters, so just the adder — the user names their own
 //
-// Every counter carries its OWN aggregation picker. The picker is always visible — so the choice on
-// offer is never hidden — but is DISABLED until its counter is ticked, because an aggregation means
-// nothing for a counter that is not being sent.
+// Every counter row carries its OWN aggregation picker, always visible but DISABLED until that
+// counter is ticked, because an aggregation means nothing for a counter that is not being sent.
+// The adder row has no aggregation beside it: it is a control for adding counters, not a counter.
+
+import { augmentAddableSelect } from './augmentAddableSelect.js'
 
 /** Endpoint → the counters it exposes. */
 export const COUNTERS_BY_ENDPOINT = {
@@ -75,8 +75,6 @@ export function renderCountersSection() {
   list.className = 'counters__list'
   element.appendChild(list)
 
-  // The hint lives INSIDE the placeholder row, beside the disabled Aggregation field, so there is
-  // exactly one element carrying that role at any time.
   const summaryError = document.createElement('p')
   summaryError.setAttribute('data-role', 'counters-error')
   summaryError.className = 'counters__error'
@@ -85,15 +83,19 @@ export function renderCountersSection() {
   element.appendChild(summaryError)
 
   let endpoint = ''
-  /** counter name → { ticked, aggregations } — kept across re-renders of the same endpoint. */
+  /** counter name → { ticked, aggregations } */
   const state = new Map()
+  /** endpoint → counters the user added themselves, beyond whatever the map provides. */
+  const added = new Map()
 
   const stateFor = (name) => {
     if (!state.has(name)) state.set(name, { ticked: false, aggregations: [] })
     return state.get(name)
   }
 
-  /** Every row's aggregation select, so validation and upgrading can reach them. */
+  /** Mapped counters first, then anything the user has added for this endpoint. */
+  const countersShown = () => [...countersFor(endpoint), ...(added.get(endpoint) ?? [])]
+
   const selects = new Map()
 
   function applyPendingOptions() {
@@ -103,53 +105,56 @@ export function renderCountersSection() {
     }
   }
 
-  /**
-   * The empty state still shows a full, disabled Aggregation field rather than nothing at all —
-   * so the control on offer is visible before a Trading API has been chosen, just unusable.
-   */
-  function renderPlaceholder(message) {
-    head.hidden = false
+  function addCounter(name) {
+    const clean = String(name ?? '').trim()
+    if (!clean) return
+    if (countersShown().includes(clean)) return
+    added.set(endpoint, [...(added.get(endpoint) ?? []), clean])
+    renderCounters()
+  }
 
+  /** The "Select Counter" control. No aggregation sits beside it — it is not a counter. */
+  function renderAdder() {
     const row = document.createElement('div')
-    row.setAttribute('data-role', 'counters-placeholder')
-    row.className = 'counters__row'
+    row.setAttribute('data-role', 'counter-adder-row')
+    row.className = 'counters__row counters__row--adder'
 
-    const note = document.createElement('p')
-    note.setAttribute('data-role', 'counters-hint')
-    note.className = 'counters__hint'
-    note.textContent = message
-    row.appendChild(note)
+    const adder = document.createElement('obs-select')
+    adder.setAttribute('data-role', 'counter-adder')
+    adder.setAttribute('block', '')
+    adder.setAttribute('placeholder', 'Select Counter')
+    // A counter that is not in the map has to be named by the user, so the select must accept new
+    // values. The DS renders the "+" but never reports it — augmentAddableSelect wires it (G27).
+    adder.setAttribute('can-user-add-options', '')
+    adder.setAttribute('add-label', 'counter')
+    adder.dataset.pendingOptions = JSON.stringify([])
+    row.appendChild(adder)
 
-    const agg = document.createElement('obs-select')
-    agg.setAttribute('data-role', 'counter-aggregation')
-    agg.setAttribute('multiple', '')
-    agg.setAttribute('block', '')
-    agg.setAttribute('placeholder', 'Select')
-    agg.setAttribute('disabled', '')
-    agg.dataset.pendingOptions = JSON.stringify(AGGREGATIONS.map((a) => ({ value: a, text: a })))
-    row.appendChild(agg)
+    // Both a picked option and an added one arrive as `change`.
+    adder.addEventListener('change', (event) => addCounter(detailValue(event)))
 
     list.appendChild(row)
-    applyPendingOptions()
+    augmentAddableSelect({ select: adder })
   }
 
   function renderCounters() {
     list.replaceChildren()
     selects.clear()
-    const counters = countersFor(endpoint)
 
+    // Nothing to configure yet: a line of text, and no controls at all.
     if (!endpoint) {
-      renderPlaceholder('Choose a Trading API above to see its counters.')
-      return
-    }
-    if (counters.length === 0) {
-      renderPlaceholder(`No counters are mapped to ${endpoint}.`)
+      head.hidden = true
+      const note = document.createElement('p')
+      note.setAttribute('data-role', 'counters-hint')
+      note.className = 'counters__hint'
+      note.textContent = 'Choose a Trading API above to see its counters.'
+      list.appendChild(note)
       return
     }
 
     head.hidden = false
 
-    for (const name of counters) {
+    for (const name of countersShown()) {
       const own = stateFor(name)
 
       const row = document.createElement('div')
@@ -172,7 +177,6 @@ export function renderCountersSection() {
       agg.setAttribute('block', '')
       agg.setAttribute('placeholder', 'Select')
       agg.dataset.pendingOptions = JSON.stringify(AGGREGATIONS.map((a) => ({ value: a, text: a })))
-      // Visible but inert until its counter is ticked.
       if (!own.ticked) agg.setAttribute('disabled', '')
       row.appendChild(agg)
 
@@ -202,22 +206,23 @@ export function renderCountersSection() {
       list.appendChild(row)
     }
 
+    renderAdder()
     applyPendingOptions()
   }
   renderCounters()
 
   /**
-   * Point the section at a Trading API endpoint. State for counters the new endpoint does not
-   * expose is dropped — keeping it would report counters the endpoint cannot produce.
+   * Point the section at a Trading API endpoint. State for counters this endpoint does not show is
+   * dropped — keeping it would report counters the endpoint cannot produce.
    */
   function setTradingApi(next) {
     endpoint = String(next ?? '')
-    const allowed = new Set(countersFor(endpoint))
-    for (const name of [...state.keys()]) if (!allowed.has(name)) state.delete(name)
     renderCounters()
+    const allowed = new Set(countersShown())
+    for (const name of [...state.keys()]) if (!allowed.has(name)) state.delete(name)
   }
 
-  const selectedCounters = () => countersFor(endpoint).filter((name) => stateFor(name).ticked)
+  const selectedCounters = () => countersShown().filter((name) => stateFor(name).ticked)
 
   const everySelectedHasAggregation = () =>
     selectedCounters().every((name) => stateFor(name).aggregations.length > 0)
@@ -249,11 +254,11 @@ export function renderCountersSection() {
 
   function reset() {
     state.clear()
+    added.clear()
     summaryError.hidden = true
     renderCounters()
   }
 
-  /** Object-valued props must be assigned only AFTER the elements are in the document. */
   const upgrade = () => applyPendingOptions()
 
   return { element, setTradingApi, value, validate, reset, upgrade }
