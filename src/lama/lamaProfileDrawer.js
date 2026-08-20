@@ -63,7 +63,10 @@ function select({ role, label, options, addable = false, placeholder = 'Select' 
     // The component prefixes "Add " itself, so add-label="Add" renders "Add Add".
     el.setAttribute('add-label', 'endpoint')
   }
-  el.dataset.pendingOptions = JSON.stringify(options)
+  // Stored in their FINAL shape. Both this drawer and the schedule section upgrade selects, and
+  // storing two different shapes under one attribute meant the first upgrader to run wrapped the
+  // other's options in a second layer — the time list rendered as raw JSON.
+  el.dataset.pendingOptions = JSON.stringify(options.map((o) => (typeof o === 'string' ? { value: o, text: o } : o)))
   wrap.appendChild(el)
 
   return wrap
@@ -127,9 +130,10 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
       input({ role: 'lama-password', label: 'Password', type: 'password', suffixIcon: 'eye' }),
       input({ role: 'lama-secret-key', label: 'Secret Key', type: 'password', suffixIcon: 'eye' })
     ),
+    schedule.element,
     pair(
-      schedule.element,
-      select({ role: 'lama-monitoring-hours', label: 'Monitoring Hours', options: SELECT_OPTIONS.monitoringHours })
+      select({ role: 'lama-monitoring-hours', label: 'Monitoring Hours', options: SELECT_OPTIONS.monitoringHours }),
+      document.createElement('div')
     )
   )
 
@@ -217,7 +221,7 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
   // Object-valued props only after the element is in the document, or they shadow the accessors.
   drawer.upgradeSelects = () => {
     for (const el of drawer.querySelectorAll('obs-select[data-pending-options]')) {
-      el.options = JSON.parse(el.dataset.pendingOptions).map((text) => ({ value: text, text }))
+      el.options = JSON.parse(el.dataset.pendingOptions)
       delete el.dataset.pendingOptions
     }
     scope.options = [
@@ -228,6 +232,9 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
     // Make the DS's inert "+" actually add the typed endpoint. Remove this line and the import
     // when obs-select reports its own additions (G27).
     augmentAddableSelect({ select: drawer.querySelector('[data-role="lama-trading-api"]') })
+
+    // The schedule's own selects (unit, at-time) carry pending options too.
+    schedule.upgrade()
   }
 
   return { element: drawer, customFields }

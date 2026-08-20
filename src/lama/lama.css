@@ -203,52 +203,32 @@
   color: var(--primary);
 }
 
-/* ---------- Schedule (Data Interval / fixed times) ---------- */
+/* ---------- Schedule (Frequency + its mode-dependent fields) ---------- */
 
+/* One row. The mode switch sits left and its fields sit beside it, never below — so the grid's
+   track list changes with the mode rather than the fields wrapping.
+     intervals   Frequency | Data Interval
+     fixed times Frequency | Count | At Time
+   Frequency keeps the same width in both, so switching does not shuffle the row. */
 .schedule {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
 }
 
-.schedule__times {
-  display: flex;
-  flex-direction: column;
+.schedule[data-mode='times'] {
+  grid-template-columns: 1fr 0.55fr 1fr;
 }
 
-.schedule__times[hidden],
-[data-role='interval-block'][hidden] {
+.schedule [hidden] {
   display: none;
 }
 
-.schedule__time-rows {
-  display: flex;
-  flex-direction: column;
+/* Data Interval is itself two controls: the number and its unit. */
+.schedule__interval-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-}
-
-/* obs-date-time-picker renders at a fixed ~220px and will not stretch, so the row's body is sized
-   to the picker rather than to the column. Otherwise the (x)/(+) are stranded ~140px to its right. */
-.schedule__time-rows .field-repeater__body {
-  flex: 0 0 auto;
-}
-
-.schedule__time-row obs-date-time-picker {
-  display: block;
-}
-
-.schedule__error {
-  margin: 6px 0 0;
-  color: var(--secondary-red);
-}
-
-.schedule__error[hidden] {
-  display: none;
-}
-
-/* The time rows sit under a label of their own, so the repeater's usual label offset would push
-   the controls too low here. */
-.schedule__time-rows .field-repeater__actions {
-  margin-top: 0;
+  align-items: center;
 }
