@@ -97,69 +97,6 @@
   margin-left: auto;
 }
 
-/* ---------- Custom Fields ---------- */
-
-/* No rule above the heading — the heading itself is enough of a break. */
-.custom-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.custom-fields__title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--page-text-color);
-}
-
-.custom-fields__groups {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* No box. A single group needs no boundary at all; groups are separated by a rule only once there
-   is more than one, which is the only point at which a separator means anything. */
-.custom-fields__group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* The rule sits BETWEEN groups — `+` never matches the first, so one group draws nothing. */
-.custom-fields__groups > .field-repeater__row + .field-repeater__row {
-  padding-top: 12px;
-  border-top: 1px solid var(--border-color);
-}
-
-.custom-fields__pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  align-items: start;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-/* The child region: indentation alone carries the parent/child relationship — no vertical rule. */
-.custom-fields__metadata {
-  margin-left: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.custom-fields__metadata[hidden] {
-  display: none;
-}
-
-.custom-fields__metadata-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 /* ---------- Repeater rows ---------- */
 
 /* Top-aligned, NOT flex-end. A custom-field row's body includes its metadata block, so centring or
@@ -233,6 +170,39 @@
   align-items: center;
 }
 
+/* ---------- Section headings ---------- */
+
+.section-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--page-text-color);
+}
+
+/* ---------- Metadata Fields ---------- */
+
+/* Flat now: no parent group, no nesting, no indentation. Each row is a field in its own right. */
+.metadata-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metadata-fields__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metadata-fields__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* ---------- Counters & Aggregation ---------- */
 
 .counters {
@@ -241,14 +211,19 @@
   gap: 12px;
 }
 
+/* The header labels the two columns once, rather than repeating on every row. */
+.counters__head,
 .counters__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  align-items: start;
+  align-items: center;
 }
 
-/* A short list — up to four counters — so they stack rather than wrap into columns. */
+.counters__head[hidden] {
+  display: none;
+}
+
 .counters__list {
   display: flex;
   flex-direction: column;
@@ -265,7 +240,7 @@
 }
 
 .counters__error {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--secondary-red);
 }
 

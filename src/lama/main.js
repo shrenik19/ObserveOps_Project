@@ -54,12 +54,12 @@ const closeDrawer = () => drawerRoot.replaceChildren()
 function openDrawer() {
   const { element } = renderLamaProfileDrawer({
     onCancel: closeDrawer,
-    onCreate: ({ customFields }) => {
+    onCreate: ({ metadataFields, counters }) => {
       // No backend: show the result by adding the profile to the grid, so the flow is visible.
       profiles.push({
         id: `lama-${profiles.length + 1}`,
         name: document.querySelector('[data-role="lama-name"]')?.getAttribute('value') || 'Untitled Profile',
-        description: `${customFields.length} custom field(s)`,
+        description: `${counters.counters.length} counter(s), ${metadataFields.length} metadata field(s)`,
         exchange: 'NSE',
         application: 'Trading',
         dataInterval: '5 Minute(s)',

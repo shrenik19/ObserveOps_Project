@@ -1,15 +1,16 @@
-// Which counters a LAMA profile sends, and how they are aggregated.
+// Which counters a LAMA profile sends, and how EACH ONE is aggregated.
 //
 // The counter list is DERIVED from the Trading API endpoint chosen above it — each endpoint exposes
 // its own counters, so the section repopulates whenever that field changes. Three states:
 //
-//   no endpoint chosen        a hint, no checkboxes
-//   a known endpoint          its counters, each with a checkbox
+//   no endpoint chosen        a hint, no rows
+//   a known endpoint          one row per counter
 //   an endpoint with no map   a note saying so (the Trading API accepts custom endpoints, and a
 //                             custom one has no counters until the backend describes it)
 //
-// Aggregation is a multi-select: obs-select already renders checkboxes for `multiple`, and
-// `allow-select-all` gives "select all" for free.
+// Every counter carries its OWN aggregation picker. The picker is always visible — so the choice on
+// offer is never hidden — but is DISABLED until its counter is ticked, because an aggregation means
+// nothing for a counter that is not being sent.
 
 /** Endpoint → the counters it exposes. */
 export const COUNTERS_BY_ENDPOINT = {
@@ -60,173 +61,178 @@ export function renderCountersSection() {
 
   const title = document.createElement('h3')
   title.setAttribute('data-role', 'counters-title')
-  title.className = 'custom-fields__title'
+  title.className = 'section-title'
   title.textContent = 'Counters & Aggregation'
   element.appendChild(title)
 
-  const row = document.createElement('div')
-  row.className = 'counters__row'
-  element.appendChild(row)
-
-  // --- Counters ---------------------------------------------------------
-  const countersField = document.createElement('div')
-  countersField.className = 'lama-drawer__field'
-  countersField.appendChild(label('Counters'))
+  const head = document.createElement('div')
+  head.className = 'counters__head'
+  head.append(label('Counters'), label('Aggregation'))
+  element.appendChild(head)
 
   const list = document.createElement('div')
   list.setAttribute('data-role', 'counter-list')
   list.className = 'counters__list'
-  countersField.appendChild(list)
+  element.appendChild(list)
 
   const hint = document.createElement('p')
   hint.setAttribute('data-role', 'counters-hint')
   hint.className = 'counters__hint'
-  countersField.appendChild(hint)
+  element.appendChild(hint)
 
-  const countersError = document.createElement('p')
-  countersError.setAttribute('data-role', 'counters-error')
-  countersError.className = 'counters__error'
-  countersError.textContent = 'Choose at least one counter.'
-  countersError.hidden = true
-  countersField.appendChild(countersError)
-
-  row.appendChild(countersField)
-
-  // --- Aggregation ------------------------------------------------------
-  const aggField = document.createElement('div')
-  aggField.className = 'lama-drawer__field'
-  aggField.appendChild(label('Aggregation'))
-
-  const aggregation = document.createElement('obs-select')
-  aggregation.setAttribute('data-role', 'counters-aggregation')
-  aggregation.setAttribute('multiple', '')
-  aggregation.setAttribute('allow-select-all', '')
-  aggregation.setAttribute('allow-clear', '')
-  aggregation.setAttribute('block', '')
-  aggregation.setAttribute('placeholder', 'Select')
-  aggregation.dataset.pendingOptions = JSON.stringify(AGGREGATIONS.map((a) => ({ value: a, text: a })))
-
-  let chosenAggregations = []
-  aggregation.addEventListener('change', (event) => {
-    const next = detailValue(event)
-    chosenAggregations = Array.isArray(next) ? next.map(String) : next ? [String(next)] : []
-    if (chosenAggregations.length) {
-      aggregation.removeAttribute('error')
-      // Clear the MESSAGE too, not just the field state — otherwise it sits there contradicting the
-      // user's fix until the next submit.
-      aggError.hidden = true
-    }
-  })
-  aggField.appendChild(aggregation)
-
-  const aggError = document.createElement('p')
-  aggError.setAttribute('data-role', 'aggregation-error')
-  aggError.className = 'counters__error'
-  aggError.textContent = 'Choose at least one aggregation.'
-  aggError.hidden = true
-  aggField.appendChild(aggError)
-
-  row.appendChild(aggField)
+  const summaryError = document.createElement('p')
+  summaryError.setAttribute('data-role', 'counters-error')
+  summaryError.className = 'counters__error'
+  summaryError.textContent = 'Choose an aggregation for every selected counter.'
+  summaryError.hidden = true
+  element.appendChild(summaryError)
 
   let endpoint = ''
-  /** Counter name → whether it is ticked. Kept across endpoint changes for counters that survive. */
-  let ticked = new Set()
+  /** counter name → { ticked, aggregations } — kept across re-renders of the same endpoint. */
+  const state = new Map()
+
+  const stateFor = (name) => {
+    if (!state.has(name)) state.set(name, { ticked: false, aggregations: [] })
+    return state.get(name)
+  }
+
+  /** Every row's aggregation select, so validation and upgrading can reach them. */
+  const selects = new Map()
+
+  function applyPendingOptions() {
+    for (const el of list.querySelectorAll('obs-select[data-pending-options]')) {
+      el.options = JSON.parse(el.dataset.pendingOptions)
+      delete el.dataset.pendingOptions
+    }
+  }
 
   function renderCounters() {
     list.replaceChildren()
+    selects.clear()
     const counters = countersFor(endpoint)
 
     if (!endpoint) {
+      head.hidden = true
       hint.hidden = false
       hint.textContent = 'Choose a Trading API above to see its counters.'
       return
     }
     if (counters.length === 0) {
+      head.hidden = true
       hint.hidden = false
       hint.textContent = `No counters are mapped to ${endpoint}.`
       return
     }
 
+    head.hidden = false
     hint.hidden = true
+
     for (const name of counters) {
+      const own = stateFor(name)
+
+      const row = document.createElement('div')
+      row.setAttribute('data-role', 'counter-row')
+      row.dataset.counter = name
+      row.className = 'counters__row'
+
       const box = document.createElement('obs-checkbox')
       box.setAttribute('data-role', 'counter-option')
       box.setAttribute('value', name)
       box.textContent = name
-      if (ticked.has(name)) box.setAttribute('checked', '')
-      box.addEventListener('change', (event) => {
-        // The DS reports the new state; fall back to the attribute for safety.
+      if (own.ticked) box.setAttribute('checked', '')
+      row.appendChild(box)
+
+      const agg = document.createElement('obs-select')
+      agg.setAttribute('data-role', 'counter-aggregation')
+      agg.setAttribute('multiple', '')
+      agg.setAttribute('allow-select-all', '')
+      agg.setAttribute('allow-clear', '')
+      agg.setAttribute('block', '')
+      agg.setAttribute('placeholder', 'Select')
+      agg.dataset.pendingOptions = JSON.stringify(AGGREGATIONS.map((a) => ({ value: a, text: a })))
+      // Visible but inert until its counter is ticked.
+      if (!own.ticked) agg.setAttribute('disabled', '')
+      row.appendChild(agg)
+
+      agg.addEventListener('change', (event) => {
         const next = detailValue(event)
-        const on = typeof next === 'boolean' ? next : box.hasAttribute('checked')
-        if (on) ticked.add(name)
-        else ticked.delete(name)
-        if (ticked.size) countersError.hidden = true
+        own.aggregations = Array.isArray(next) ? next.map(String) : next ? [String(next)] : []
+        if (own.aggregations.length) {
+          agg.removeAttribute('error')
+          if (everySelectedHasAggregation()) summaryError.hidden = true
+        }
       })
-      list.appendChild(box)
+
+      box.addEventListener('change', (event) => {
+        const next = detailValue(event)
+        own.ticked = typeof next === 'boolean' ? next : box.hasAttribute('checked')
+        if (own.ticked) {
+          agg.removeAttribute('disabled')
+        } else {
+          agg.setAttribute('disabled', '')
+          // An unticked counter cannot be in breach, so drop any mark it was carrying.
+          agg.removeAttribute('error')
+        }
+        if (everySelectedHasAggregation()) summaryError.hidden = true
+      })
+
+      selects.set(name, { box, agg, own })
+      list.appendChild(row)
     }
+
+    applyPendingOptions()
   }
   renderCounters()
 
   /**
-   * Point the section at a Trading API endpoint. Ticks for counters that do not exist on the new
-   * endpoint are dropped — keeping them would report counters the endpoint cannot produce.
+   * Point the section at a Trading API endpoint. State for counters the new endpoint does not
+   * expose is dropped — keeping it would report counters the endpoint cannot produce.
    */
   function setTradingApi(next) {
     endpoint = String(next ?? '')
     const allowed = new Set(countersFor(endpoint))
-    ticked = new Set([...ticked].filter((c) => allowed.has(c)))
+    for (const name of [...state.keys()]) if (!allowed.has(name)) state.delete(name)
     renderCounters()
   }
 
-  const selectedCounters = () => countersFor(endpoint).filter((c) => ticked.has(c))
+  const selectedCounters = () => countersFor(endpoint).filter((name) => stateFor(name).ticked)
+
+  const everySelectedHasAggregation = () =>
+    selectedCounters().every((name) => stateFor(name).aggregations.length > 0)
 
   function value() {
-    return { counters: selectedCounters(), aggregations: [...chosenAggregations] }
+    return {
+      counters: selectedCounters().map((name) => ({
+        name,
+        aggregations: [...stateFor(name).aggregations],
+      })),
+    }
   }
 
-  /**
-   * Both are optional until either is used. Picking counters without saying how to aggregate them —
-   * or an aggregation with nothing to aggregate — is incomplete, so each requires the other.
-   */
+  /** Every ticked counter needs at least one aggregation. Unticked rows are not evaluated. */
   function validate() {
-    const counters = selectedCounters()
-    const touched = counters.length > 0 || chosenAggregations.length > 0
-    if (!touched) {
-      countersError.hidden = true
-      aggError.hidden = true
-      aggregation.removeAttribute('error')
-      return true
+    let ok = true
+    for (const [name, { agg }] of selects) {
+      const own = stateFor(name)
+      if (own.ticked && own.aggregations.length === 0) {
+        agg.setAttribute('error', '')
+        ok = false
+      } else {
+        agg.removeAttribute('error')
+      }
     }
-
-    const countersOk = counters.length > 0
-    countersError.hidden = countersOk
-
-    const aggOk = chosenAggregations.length > 0
-    aggError.hidden = aggOk
-    if (aggOk) aggregation.removeAttribute('error')
-    else aggregation.setAttribute('error', '')
-
-    // Both evaluated before returning, so one submit marks everything that is missing.
-    return countersOk && aggOk
+    summaryError.hidden = ok
+    return ok
   }
 
   function reset() {
-    ticked = new Set()
-    chosenAggregations = []
-    countersError.hidden = true
-    aggError.hidden = true
-    aggregation.removeAttribute('error')
-    if (typeof aggregation.value !== 'undefined') aggregation.value = []
+    state.clear()
+    summaryError.hidden = true
     renderCounters()
   }
 
-  /** Object-valued props must be assigned only AFTER the element is in the document. */
-  function upgrade() {
-    if (aggregation.dataset.pendingOptions) {
-      aggregation.options = JSON.parse(aggregation.dataset.pendingOptions)
-      delete aggregation.dataset.pendingOptions
-    }
-  }
+  /** Object-valued props must be assigned only AFTER the elements are in the document. */
+  const upgrade = () => applyPendingOptions()
 
   return { element, setTradingApi, value, validate, reset, upgrade }
 }

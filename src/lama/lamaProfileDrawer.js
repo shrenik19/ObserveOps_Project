@@ -2,10 +2,10 @@
 //
 // The sixteen product fields below are reproduced for LAYOUT AND CONTEXT ONLY and are deliberately
 // inert — no validation, no data, placeholder options in the selects. They exist so the new Custom
-// Fields section can be judged where it will actually live. The live part of this drawer is
-// customFieldsSection.js.
+// live sections can be judged where they will actually live. The live parts of this drawer are
+// scheduleSection.js, countersSection.js and metadataFieldsSection.js.
 
-import { renderCustomFieldsSection } from './customFieldsSection.js'
+import { renderMetadataFieldsSection } from './metadataFieldsSection.js'
 import { renderScheduleSection } from './scheduleSection.js'
 import { renderCountersSection } from './countersSection.js'
 import { augmentAddableSelect } from './augmentAddableSelect.js'
@@ -177,8 +177,8 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
   const counters = renderCountersSection()
   body.appendChild(counters.element)
 
-  const customFields = renderCustomFieldsSection()
-  body.appendChild(customFields.element)
+  const metadataFields = renderMetadataFieldsSection()
+  body.appendChild(metadataFields.element)
 
   const more = document.createElement('p')
   more.className = 'lama-drawer__more'
@@ -200,7 +200,7 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
 
   const reset = button({ role: 'lama-reset', label: 'Reset', variant: 'default' })
   reset.addEventListener('click', () => {
-    customFields.reset()
+    metadataFields.reset()
     schedule.reset()
     counters.reset()
   })
@@ -213,12 +213,12 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
     // rather than one per click.
     const scheduleOk = schedule.validate()
     const countersOk = counters.validate()
-    const fieldsOk = customFields.validate()
+    const fieldsOk = metadataFields.validate()
     if (!scheduleOk || !countersOk || !fieldsOk) return
     onCreate?.({
       schedule: schedule.value(),
       counters: counters.value(),
-      customFields: customFields.value(),
+      metadataFields: metadataFields.value(),
     })
   })
   actions.appendChild(create)
@@ -257,5 +257,5 @@ export function renderLamaProfileDrawer({ onCancel, onCreate } = {}) {
     })
   }
 
-  return { element: drawer, customFields }
+  return { element: drawer, metadataFields, counters, schedule }
 }
