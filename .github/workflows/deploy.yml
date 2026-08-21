@@ -1,0 +1,90 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege by default; the deploy job asks for what it needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # jsdom refuses Node older than 22.22.2 / 24.15 / 26, so pin a version that satisfies it.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      # `npm ci` installs exactly the lockfile and fails if the two have drifted — which is the
+      # point of running it in CI rather than `npm install`.
+      - run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build all three pages
+        run: npm run build
+
+      - name: Guard the no-hardcoded-colours rule
+        run: |
+          if grep -rnE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(' src/lama/*.css src/lama/*.js \
+               src/report-categories/*.css src/report-categories/*.js src/landing/*.css; then
+            echo "::error::Hardcoded colour found. Every colour must be a var(--token)."
+            exit 1
+          fi
+          echo "No hardcoded colours."
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: verify
+    # Only the default branch publishes; pull requests are verified but never deployed.
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write # publish the site
+      id-token: write # OIDC token the deploy action exchanges, so no PAT is needed
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      # A project site serves from /<repo>/, so the build needs that base path baked in.
+      - name: Build for Pages
+        run: npm run build
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

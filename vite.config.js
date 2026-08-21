@@ -6,6 +6,10 @@ import { fileURLToPath } from 'node:url'
 const root = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
+  // A GitHub Pages PROJECT site serves from /<repo>/, not from the domain root, so every asset URL
+  // needs that prefix. Taken from the environment rather than hardcoded, so the same build works
+  // locally, on Pages, and on any host that serves from the root.
+  base: process.env.BASE_PATH || '/',
   build: {
     rollupOptions: {
       input: {
