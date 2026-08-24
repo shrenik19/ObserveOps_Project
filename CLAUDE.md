@@ -126,6 +126,24 @@ node node_modules/@mtdt/observeops-ds-spec/conformance/ds-conformance.mjs ./repo
   like a pass. On Windows it also looks for Chrome at a macOS path; set `CHROME`, or
   `npx playwright install chromium`.
 
+## Deployment
+
+Repo: https://github.com/shrenik19/ObserveOps_Project
+Live URL: https://shrenik19.github.io/ObserveOps_Project/
+
+Published from **master** by `.github/workflows/deploy.yml`, which runs the tests, the build and the
+no-hardcoded-colours guard before it publishes — a red suite blocks the deploy. Pages is a PROJECT
+site, so it serves from `/ObserveOps_Project/`; `vite.config.js` takes that prefix from
+`BASE_PATH` rather than hardcoding it, so the same build works locally and live.
+
+The three pages:
+
+| Page | Live |
+|---|---|
+| Landing | https://shrenik19.github.io/ObserveOps_Project/ |
+| LAMA | https://shrenik19.github.io/ObserveOps_Project/lama.html |
+| Report / Category RBAC | https://shrenik19.github.io/ObserveOps_Project/report-categories.html |
+
 ## Handoff
 
 Latest session state is in [HANDOFF.md](HANDOFF.md) — read it first.
