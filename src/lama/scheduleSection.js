@@ -1,8 +1,8 @@
 // How often a LAMA profile sends data. Two mutually exclusive modes, laid out on ONE row beside
 // the mode switch so nothing drops below it:
 //
-//   At intervals    Data Interval  = a number + a unit (Minutes / Hours)
-//   At fixed times  Count + At Time = how many sends, and the clock times they happen at
+//   At intervals    Data Interval = a number + a unit (Minutes / Hours)
+//   At fixed times  At Time       = the clock times the sends happen at
 //
 // The mode switch is obs-radio with as-button, which is what a segmented control IS in this DS —
 // the same pattern the Scope By control in this drawer already uses.
@@ -117,12 +117,7 @@ export function renderScheduleSection() {
   intervalBlock.appendChild(intervalControls)
   element.appendChild(intervalBlock)
 
-  // --- At fixed times: a count and the slots -----------------------------
-  const count = numberInput({ role: 'lama-send-count' })
-  const countBlock = field('Count', count, 'count-block')
-  countBlock.hidden = true
-  element.appendChild(countBlock)
-
+  // --- At fixed times: the clock slots -----------------------------------
   const atTime = document.createElement('obs-select')
   atTime.setAttribute('data-role', 'lama-at-time')
   atTime.setAttribute('multiple', '')
@@ -149,20 +144,19 @@ export function renderScheduleSection() {
     element.dataset.mode = next
 
     intervalBlock.hidden = next !== 'interval'
-    countBlock.hidden = next !== 'times'
     atTimeBlock.hidden = next !== 'times'
   }
   applyMode('interval')
 
   frequency.addEventListener('change', (event) => applyMode(String(detailValue(event) ?? '')))
 
-  // An empty field reports null, not 0 — `count: 0` would read as "send zero times a day" rather
-  // than "not set yet".
+  // An empty field reports null, not 0 — `every: 0` would read as "send every zero minutes"
+  // rather than "not set yet".
   const numberOrNull = (raw) => (raw === '' || !Number.isFinite(Number(raw)) ? null : Number(raw))
 
   function value() {
     if (mode === 'times') {
-      return { mode, count: numberOrNull(readValue(count)), times: [...chosenTimes] }
+      return { mode, times: [...chosenTimes] }
     }
     return { mode, every: numberOrNull(readValue(every)), unit: unitValue }
   }
@@ -176,23 +170,16 @@ export function renderScheduleSection() {
       return ok
     }
 
-    const countOk = isPositive(readValue(count))
-    if (countOk) count.removeAttribute('error')
-    else markInvalid(count, 'Enter how many times to send.')
-
     const timesOk = chosenTimes.length > 0
     if (timesOk) atTime.removeAttribute('error')
     else atTime.setAttribute('error', '')
 
-    // Both are evaluated before returning, so a submit marks every offending field at once.
-    return countOk && timesOk
+    return timesOk
   }
 
   function reset() {
     every.setAttribute('value', DEFAULT_EVERY)
     every.removeAttribute('error')
-    count.setAttribute('value', '')
-    count.removeAttribute('error')
     atTime.removeAttribute('error')
     chosenTimes = []
     unitValue = 'minutes'

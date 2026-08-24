@@ -142,21 +142,17 @@
 
 /* ---------- Schedule (Frequency + its mode-dependent fields) ---------- */
 
-/* One row. The mode switch sits left and its fields sit beside it, never below — so the grid's
-   track list changes with the mode rather than the fields wrapping.
+/* One row, 50/50 in BOTH modes. The mode switch sits left and its field sits beside it, never
+   below.
      intervals   Frequency | Data Interval
-     fixed times Frequency | Count | At Time
-   Frequency keeps the same width in both, so switching does not shuffle the row. */
+     fixed times Frequency | At Time
+   Count used to take a third track in the fixed-times mode; with it gone the two modes share one
+   track list, so switching cannot shuffle the row. */
 .schedule {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: start;
-}
-
-/* 50 / 25 / 25 — Frequency keeps half the row, Count and At Time take a quarter each. */
-.schedule[data-mode='times'] {
-  grid-template-columns: 2fr 1fr 1fr;
 }
 
 .schedule [hidden] {
@@ -212,13 +208,27 @@
   gap: 12px;
 }
 
-/* The header labels the two columns once, rather than repeating on every row. */
+/* The header labels the two columns once, rather than repeating on every row.
+   Aggregation is the narrower track: the (+)/(x) pair now sits beside it, and the counter name is
+   the longer string of the two. */
 .counters__head,
-.counters__row {
+.counters__pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.4fr 1fr;
   gap: 16px;
   align-items: center;
+}
+
+/* Clears the repeater's reserved action track (72px) plus its gap, so the two labels sit over the
+   two fields rather than drifting right of them. */
+.counters__head {
+  padding-right: 80px;
+}
+
+/* Counter rows carry no per-row labels — the header labels them — so the actions must NOT be
+   pushed down onto a label line the way the metadata rows' are. */
+.counters .field-repeater__actions {
+  margin-top: 0;
 }
 
 .counters__head[hidden] {
@@ -249,23 +259,59 @@
   display: none;
 }
 
-/* A disabled obs-select renders as bare grey text — the DS documents the state only as "greyed",
-   with no border token. Draw the field outline on the host so a disabled picker still reads as a
-   FIELD that is unavailable, rather than as a caption. */
-.counters obs-select[disabled] {
-  display: block;
+/* A multiple obs-select that is disabled renders <div class="pills"> INSTEAD of its trigger — no
+   border, no background, no chevron, so the field collapses to bare text (DS-GAPS G29). The wrapper
+   redraws the trigger the component withheld, to the DS's own metrics: .trig is
+   min-height var(--input-height-base), padding 3px 9px 3px 11px, 1px border, 4px radius, and
+   .sel.disabled .trig adds the grey fill, .75 opacity and the not-allowed cursor. Enabled, the
+   wrapper is inert and the component's real trigger shows through. */
+.counters__agg {
+  position: relative;
+  min-width: 0;
+}
+
+.counters__agg[data-disabled='true'] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--input-height-base, 32px);
+  padding: 3px 9px 3px 11px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--page-background-color);
+  border-radius: 4px;
+  background: var(--neutral-lightest);
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
-/* The placeholder's hint sits on the input line, beside the disabled field. */
-.counters__row .counters__hint {
-  align-self: center;
+.counters__agg[data-disabled='true'] obs-select {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-/* The adder occupies only the Counters column — it adds counters, it is not one, so nothing sits
-   in the Aggregation column beside it. */
-.counters__row--adder > * {
-  grid-column: 1;
+.counters__agg [data-role='aggregation-chevron'] {
+  flex: 0 0 auto;
+  color: var(--neutral-light);
+}
+
+/* Enabled, obs-select draws its own chevron — a second one would double up. */
+.counters__agg[data-disabled='false'] [data-role='aggregation-chevron'] {
+  display: none;
+}
+
+/* The tick box rides in FRONT of the picker inside the Counters track, so the two column labels
+   still sit over the two fields and the grid stays a plain two-track row. */
+.counters__counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.counters__counter > obs-select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.counters__counter > obs-checkbox {
+  flex: 0 0 auto;
 }

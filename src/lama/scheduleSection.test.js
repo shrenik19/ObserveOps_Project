@@ -11,10 +11,8 @@ const q = (s, role) => s.element.querySelector(`[data-role="${role}"]`)
 const freq = (s) => q(s, 'schedule-frequency')
 const every = (s) => q(s, 'lama-data-interval')
 const unit = (s) => q(s, 'lama-data-interval-unit')
-const count = (s) => q(s, 'lama-send-count')
 const atTime = (s) => q(s, 'lama-at-time')
 const intervalBlock = (s) => q(s, 'interval-block')
-const countBlock = (s) => q(s, 'count-block')
 const atTimeBlock = (s) => q(s, 'at-time-block')
 
 const chooseMode = (s, mode) => freq(s).dispatchEvent(new CustomEvent('change', { detail: [mode] }))
@@ -44,12 +42,16 @@ describe('initial state', () => {
     ])
   })
 
-  it('starts on intervals with the count and time fields hidden', () => {
+  it('starts on intervals with the time field hidden', () => {
     const s = build()
     expect(freq(s).getAttribute('value')).toBe('interval')
     expect(intervalBlock(s).hidden).toBe(false)
-    expect(countBlock(s).hidden).toBe(true)
     expect(atTimeBlock(s).hidden).toBe(true)
+  })
+
+  it('offers no Count field at all', () => {
+    expect(q(build(), 'lama-send-count')).toBeNull()
+    expect(q(build(), 'count-block')).toBeNull()
   })
 
   it('defaults to every 5 minutes', () => {
@@ -110,12 +112,11 @@ describe('interval mode', () => {
 })
 
 describe('switching to fixed times', () => {
-  it('swaps the interval field for count and time', () => {
+  it('swaps the interval field for the time field', () => {
     const s = build()
     chooseMode(s, 'times')
 
     expect(intervalBlock(s).hidden).toBe(true)
-    expect(countBlock(s).hidden).toBe(false)
     expect(atTimeBlock(s).hidden).toBe(false)
   })
 
@@ -135,62 +136,30 @@ describe('switching to fixed times', () => {
   it('keeps what was entered when switching away and back', () => {
     const s = build()
     chooseMode(s, 'times')
-    typeIn(count(s), '3')
     chooseTimes(s, ['09:00', '13:00', '17:30'])
     chooseMode(s, 'interval')
     chooseMode(s, 'times')
 
-    expect(s.value()).toEqual({ mode: 'times', count: 3, times: ['09:00', '13:00', '17:30'] })
+    expect(s.value()).toEqual({ mode: 'times', times: ['09:00', '13:00', '17:30'] })
   })
 })
 
 describe('fixed-times validation', () => {
-  it('fails and marks both fields when neither is given', () => {
+  it('fails and marks the time field when nothing is chosen', () => {
     const s = build()
     chooseMode(s, 'times')
 
     expect(s.validate()).toBe(false)
-    expect(count(s).hasAttribute('error')).toBe(true)
     expect(atTime(s).hasAttribute('error')).toBe(true)
   })
 
-  it('still fails when only the count is given', () => {
+  it('passes on the times alone, now that Count is gone', () => {
     const s = build()
     chooseMode(s, 'times')
-    typeIn(count(s), '2')
-
-    expect(s.validate()).toBe(false)
-    expect(count(s).hasAttribute('error')).toBe(false)
-    expect(atTime(s).hasAttribute('error')).toBe(true)
-  })
-
-  it('still fails when only times are chosen', () => {
-    const s = build()
-    chooseMode(s, 'times')
-    chooseTimes(s, ['09:00'])
-
-    expect(s.validate()).toBe(false)
-    expect(count(s).hasAttribute('error')).toBe(true)
-    expect(atTime(s).hasAttribute('error')).toBe(false)
-  })
-
-  it('passes when both are given', () => {
-    const s = build()
-    chooseMode(s, 'times')
-    typeIn(count(s), '2')
     chooseTimes(s, ['09:00', '17:30'])
 
     expect(s.validate()).toBe(true)
-    expect(s.value()).toEqual({ mode: 'times', count: 2, times: ['09:00', '17:30'] })
-  })
-
-  it('rejects a zero or negative count', () => {
-    const s = build()
-    chooseMode(s, 'times')
-    chooseTimes(s, ['09:00'])
-    typeIn(count(s), '0')
-
-    expect(s.validate()).toBe(false)
+    expect(s.value()).toEqual({ mode: 'times', times: ['09:00', '17:30'] })
   })
 
   it('clears the times mark as soon as a time is chosen', () => {
@@ -207,7 +176,6 @@ describe('fixed-times validation', () => {
     const s = build()
     typeIn(every(s), '')
     chooseMode(s, 'times')
-    typeIn(count(s), '1')
     chooseTimes(s, ['09:00'])
 
     expect(s.validate()).toBe(true)
@@ -218,18 +186,16 @@ describe('reset', () => {
   it('returns to intervals at 5 minutes and forgets the times', () => {
     const s = build()
     chooseMode(s, 'times')
-    typeIn(count(s), '4')
     chooseTimes(s, ['09:00'])
 
     s.reset()
 
     expect(freq(s).getAttribute('value')).toBe('interval')
     expect(intervalBlock(s).hidden).toBe(false)
-    expect(countBlock(s).hidden).toBe(true)
     expect(every(s).getAttribute('value')).toBe('5')
     expect(s.value()).toEqual({ mode: 'interval', every: 5, unit: 'minutes' })
 
     chooseMode(s, 'times')
-    expect(s.value()).toEqual({ mode: 'times', count: null, times: [] })
+    expect(s.value()).toEqual({ mode: 'times', times: [] })
   })
 })

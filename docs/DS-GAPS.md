@@ -20,6 +20,8 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G28** `obs-date-time-picker` mislabelled + write-only | 🆕 **OPEN** | Flagged `referenceOnly` but emits a real `change` contract; and `value` accepts a write that never renders, so a time can be collected but never displayed |
 | **G27** `obs-select` inline add is decorative | 🆕 **OPEN** | `can-user-add-options` renders a "+" and a confirm row; clicking either emits nothing and `options` never changes. Same shape as G22 and G18 |
 | **G26** `obs-select` has no error state | 🆕 **OPEN** | `obs-input` ships `error` + `errorMessage`; `obs-select` ships neither, and setting `error` fails silently |
+| **G29** `multiple`+`disabled` select loses its trigger | 🆕 **OPEN** | The template swaps `.trig` for a bare `<div class="pills">`, so the field has no border, background or chevron — it reads as a caption, not a disabled field |
+| **G30** two-pane description ignores the selected option | 🆕 **OPEN** | The pane is driven by a hover-only highlight index; a select that already has a value opens on "Hover an option to see details." instead of that option's own description. **Found with a real mouse** |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -513,6 +515,75 @@ document the payload shape (`{ time: "hh:mm AM" }`, a 12-hour string, not a Date
 *Also worth noting:* the emission is per-column, so a consumer receives several intermediate times
 before the final one. That is fine for a live-bound field but surprising if you expect one event per
 selection.
+
+### New finding — G29: a `multiple` + `disabled` `obs-select` loses its entire trigger
+
+A disabled `obs-select` normally keeps its field chrome: `.sel.disabled .trig` only repaints it
+(grey fill, `.75` opacity, `not-allowed` cursor). But when the select is **also `multiple`**, the
+template takes a different branch entirely and never renders `.trig` at all:
+
+```js
+// observeops-elements.js — the first branch of the trigger region
+e.multiple && e.disabled
+  ? h("div", { class: "pills" }, [ /* pills, or <span class="ph">placeholder</span> */ ])
+  : /* ...every other case renders the real .trig button... */
+```
+
+So the control collapses to bare text on the page background: **no border, no background, no
+chevron**. Nothing marks it as a field at all — it reads as a stray caption sitting next to a real
+one. The two states are not variants of one control; they are two different controls.
+
+**Repro:** `<obs-select multiple disabled placeholder="Select">` beside any enabled select. The
+enabled one is a bordered dropdown; the disabled one is grey text.
+
+**Why it matters here:** every counter row carries an aggregation picker that is `multiple` and is
+`disabled` until its row is opted in — so on first render *every* aggregation field in the section
+is chrome-less. A disabled field still has to look like a field, or the user cannot see what is
+waiting to be filled in.
+
+**Consumer workaround:** wrap the select and redraw the trigger the component withheld, to the DS's
+own metrics (`min-height: var(--input-height-base)`, `padding: 3px 9px 3px 11px`, 1px border, 4px
+radius, `--neutral-lightest` fill), plus an `obs-icon name="chevronDown"` the CSS hides again once
+the field is enabled — `.counters__agg` in `src/lama/lama.css`, wired in
+`src/lama/countersSection.js`. No shadow DOM is pierced, but the consumer is now maintaining a
+copy of the DS's own field metrics, which will drift the moment the DS changes them.
+
+**Ask:** render `.trig` in the `multiple` + `disabled` case too, with the pills inside it, so the
+disabled state is a repaint of one control rather than a substitution of another.
+
+### New finding — G30: the two-pane description ignores the option that is already selected
+
+`use-after-menu-description` fills the right-hand pane from a highlight index that **only
+`mouseenter` on an option ever sets**:
+
+```js
+// each option button
+onMouseenter: () => { d1.value = <index> }
+// the pane
+const description = computed(() => options.value[d1.value]?.description ?? null)
+```
+
+Opening the menu does not seed that index from the current value. So a select that **already has a
+value** opens showing *"Hover an option to see details."* beside a list whose selected entry is
+typically scrolled out of sight — the description the component is already holding for that exact
+option is never shown until the pointer happens to cross it.
+
+**Repro:** give a two-pane `obs-select` a `value`, then open it. Pane shows the hint, not that
+option's description. Hover the option and the description appears — so the data was there all along.
+
+**Found by rendering, not reading.** A synthetic `mouseenter` on the trigger does nothing; only a
+real hover over the option row populates the pane. This is the third finding in this project that a
+DOM-level or unit check would have passed (see G22, G25).
+
+**Consumer workaround:** on open, dispatch `mouseenter` on
+`.opts [role="option"][aria-selected="true"]` and scroll it into view —
+`src/lama/augmentSelectDescription.js`. It works only because the component listens for exactly
+that event, so it is a nudge rather than a patch; but it reaches into the shadow root to find the
+option, which is a piercing the DS could remove entirely.
+
+**Ask:** seed the highlight index from the selected option when the menu opens (and scroll it into
+view), so an already-chosen select opens on its own description. A `highlight`/`activeIndex` prop
+would also do it, and would let a consumer preview any option without faking pointer events.
 
 ### Two defects in the G10 fix
 
