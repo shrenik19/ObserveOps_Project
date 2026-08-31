@@ -1,95 +1,120 @@
-# Handoff — 2026-08-13
+# Handoff — 2026-08-31
 
 ## Read first
 
 `CLAUDE.md` in full, especially **"How we work"** and **"Environment gotchas"**. Then the status
-table at the top of `docs/DS-GAPS.md` — it says what is fixed and what is still open.
+table at the top of `docs/DS-GAPS.md`.
 
 This session's work has its own spec and plan:
 
-- `docs/superpowers/specs/2026-08-13-category-delete-flow-design.md`
-- `docs/superpowers/plans/2026-08-13-category-delete-flow.md`
+- `docs/superpowers/specs/2026-08-31-app-shell-router-design.md`
+- `docs/superpowers/plans/2026-08-31-app-shell-router.md`
 
-## The project is now a git repository
+Branch: **`feat/app-shell-router`**, off `master` at `a529420`.
 
-It arrived as a share bundle with no history. It now has one, on branch
-**`feat/category-delete-flow`**, with `master` holding the received state plus the install fix.
+## What changed, in one sentence
 
-**`npm install` was broken as received.** `package.json` pinned `playwright-core` to a tarball path
-on the original author's Mac (`file:../../../../private/tmp/claude-501/…`). On any other machine npm
-fails with ENOENT and rolls the whole install back, leaving `node_modules` empty. It is now the
-published package from npm. The baseline commit preserves the broken manifest, so the history shows
-what happened.
+The two screens were two standalone pages, each with its own copy of the app shell; they are now
+**two routes inside one shell**, and a third screen costs one module file plus one registry line.
 
-## What we built this session
+## Why
 
-Three changes to the Report / Category RBAC feature, all specified, planned, then implemented TDD:
+Adding a screen used to cost five edits, three of them copy-paste: a new `.html` with the whole
+shell re-pasted, a new `vite.config.js` input, a new `main.js` with the shell *wiring* re-pasted
+(the six-item module list, the header actions and the user-menu items appeared verbatim in both
+`main.js` files), a hand-written card on the landing page, and a new path in the CI colour guard.
 
-1. **Paired padlock visibility icons** — `lockOpen` for Public, `lockAlt` for Private, on both
-   default and custom categories. This closes the `globe` vs `lockOpen` question the previous
-   handoff left open; `lockOpen` won because an open/closed padlock pair reads as one scale.
-2. **A custom-category marker** — a `cog` revealed on hover for custom categories only. Decorative,
-   `aria-hidden`, no role or tabindex.
-3. **A four-state category delete flow** — confirm (No/Yes) → branch on report count → reassign every
-   report to another category, or → force-delete by typing the category name exactly.
+## The shape now
 
-The store now owns reports as well as categories, so the rule "no report points at a deleted
-category" is enforced in one DOM-free place. `deleteCategory` throws if the category still holds
-reports; the only ways past it are `moveReportsAndDeleteCategory` and `deleteCategoryWithReports`.
+```
+index.html            an empty shell; shell.js fills <body>, the router fills #screen-root
+src/app/
+  registry.js         modules -> screens.  THE file you edit to add a screen
+  router.js           parse / resolve / href.  Pure: no DOM, no registry import
+  shell.js            chrome only: sidebar, app header, user menu, #overlay-root
+  screenHost.js       lifecycle only: unmount -> clear -> load -> mount
+  overviewScreen.js   the default route, generated from the registry
+  cardList.js         the card grid, shared by Overview and any module index
+  pageHeader.js       obs-page-header from { heading, icon }
+  main.js             composition root, and the ONLY DS import in the app
+src/report-categories/screen.js
+src/lama/screen.js
+```
 
-**Seed data was reshaped** so every combination is visible at once, and `Capacity Planning` was added
-as a custom category with no reports — without it, the "delete an empty category" branch was
-unreachable in the running app.
+**The screen contract is one function in, one function out:** `mount(root)` gets the content region
+and returns its own teardown. A screen can be read without reading the shell, and the shell without
+reading any screen.
+
+Routes: `#/reports/categories`, `#/settings/lama`, `#/` for the Overview. A module with several
+screens would show a card grid filtered to itself — no new UI, just `cardList` with a filter. A
+module with **no** screens is inert: `obs-sidebar` never writes its own `active`, so ignoring its
+`navigate` event is the entire implementation.
+
+## Decisions, so they are not relitigated
+
+| Decision | Why |
+|---|---|
+| Hash routes, not pretty paths | No dev-server history fallback and no Pages `404.html` trick needed. Behaves identically at a root and under `/ObserveOps_Project/` |
+| `report-categories.html` / `lama.html` kept as redirect stubs | Every URL in the docs and anything already shared keeps working. Redirects are **relative**, verified against a `BASE_PATH` build |
+| Modules hold *many* screens | Two-level registry, so the seventh screen never forces a nav redesign |
+| Empty modules do nothing on click | No placeholder screens, no disabled state — and it costs no code |
+| The page header belongs to the screen, not the shell | It also exposes `count`, `back`, `meta`, `accent` and five slots; hoisting it into shell metadata means extending that schema forever |
+| Overview is reached by clicking the brand | Our own slotted markup, so it needed no DS co-operation. `obs-sidebar`'s logo is an `<a>` with `@click.prevent` that emits nothing |
+| One `#overlay-root` replaces `#panel-root` / `#dialog-root` / `#drawer-root` | The host clears it between screens, so no screen has to remember to close itself |
 
 ## Verification
 
-- **123 tests across 9 files**, all passing.
-- **DS conformance 100/100** — token · component · philosophy · layout, 0 raw controls.
-- **No hex/rgb/hsl** anywhere in application CSS or in the CSS embedded in `augmentSideMenu.js`.
-- **Every state driven in headless Chrome and screenshotted.** Empty-category delete, the
-  reassignment modal and its validation, a completed move (Config went from 1 report to 3), and the
-  force delete (total dropped from 20 reports to 18). The typed-name gate was checked against a
-  lowercase and a padded attempt as well as the exact name.
+- **416 tests across 21 files**, all passing. 53 of those are new (`src/app/`). No pre-existing test
+  needed changing — every one targets a module this work did not touch.
+- **Build clean**, and the lazy `import()` genuinely split: `overviewScreen` 0.63 kB and two `screen`
+  chunks at 25.5 kB and 34 kB, each with its own CSS.
+- **Both redirect stubs verified in a browser at the root AND under `/ObserveOps_Project/`.**
+- **Conformance 100/100 on both real screens.** See the caveat below.
+- **The scaling claim was proved, not asserted:** a throwaway third screen was added with one file
+  and one registry line, confirmed to appear in the sidebar, on the Overview and at its own route,
+  then removed.
+- **The report screen was driven end to end**: 15 categories with 8 open / 7 closed padlocks and 5
+  custom cogs; the settings drawer in edit-builtin mode; the delete flow from confirm through an
+  empty-category delete (15 → 14) and on to the reassign step for a category holding reports.
+- **The LAMA screen is pixel-identical to the pre-refactor page**, drawer included.
 
-Note that conformance measures the static page, so it does **not** cover the three dialogs, which
-only exist once opened. They were checked by rendering instead.
+### Three defects that only rendering caught
 
-## Two new DS findings
+The suite was green for all three.
 
-- **G23 — a dropdown cannot go in a table cell.** `obs-table` has `slots: []`, no `select` column
-  type, and `editable` yields `obs-input`s. The reassignment grid had to be hand-composed. This is
-  the second instance of G1, which was closed for four specific cell types.
-- **G24 — there is no icon inventory.** `registry/icon.json` is prose, not a name list, and omits
-  `trash` and `timesCircle` even though both render. **`wrench` does not exist** — 14 of 32 probed
-  names did not, including `lock`, `warning`, `alertTriangle` and `folder`. Found only by mounting
-  every candidate in a browser. This is the icon-side twin of G14.
+1. **The CSS lift left `.app-shell__content` unclosed** — a `sed` range that stopped one line short
+   of its `}`. Every rule after it was swallowed, so the whole Overview layout silently did nothing.
+   There is now a brace-balance check; use it after any CSS move.
+2. **`.landing` needed `width: 100%`.** It was a plain block on the old standalone page and is a
+   flex item now, so `margin: 0 auto` made it shrink-to-fit and collapsed the card grid to one
+   narrow column.
+3. **The report markup contains HTML comments with backticks** (`` `fields` ``, `` `start` ``).
+   Moved into a template literal they closed the string early and the entire screen threw
+   `Unexpected identifier 'start'`. They are escaped now — **watch for this when moving any more
+   markup into a template literal**, since this codebase comments heavily in backticks.
 
-## Next steps
+### The conformance caveat, and how it was settled
 
-1. **Merge `feat/category-delete-flow`.** It is complete and green.
-2. **Verify G8 and G14 in a fresh session** — still not done, and still blocked by the same cause:
-   the MCP server is spawned at session start, so a running session keeps the build it began with.
-3. **Swap the `cog` marker** for whatever glyph the product actually wants; `cog` is a placeholder
-   standing in for the unavailable wrench.
-4. **Wire search and notifications** in the app header. They still fire `action` and open nothing;
-   the DS has `obs-command-palette` and `obs-notification-menu` for them.
-5. **Decide the horizontal inset.** Page header sits at 20px, tab row at 8px, content at 12px.
-   `--page-header-padding` is exposed, so it is a one-liner once someone picks a value.
-6. **Chase the open gaps** with the DS team: G21 (no spacing scale — highest leverage), G20, G3's
-   remaining half (`unlockAlt` still draws an undo arrow), G22, and now G23 and G24.
+Screens load by dynamic `import()`, so the checker could sample before a screen has mounted and hand
+back a high score for a nearly empty page. It does not: running it against three routes gives three
+distinct measurements (`/` 70/100 · 0 DS components, `#/settings/lama` 100/100 · 5, and
+`#/reports/categories` 100/100 · 6), which proves it is routing and sampling the mounted screen.
+**Re-do that differential rather than trusting a single number.**
 
-## Gotchas
+## One thing left open — G31
 
-- **Duplicate category names collide, and this is not fixed.** `addCategory` enforces no uniqueness
-  and `obs-side-menu` matches its active row by *label*, so two categories sharing a name resolve to
-  the first. It is a real pre-existing bug, deliberately out of scope for this work.
-- **The store hands out copies.** Anything that mutates a report must go through
-  `store.updateReport`; mutating the seed array is discarded on the next render. This bit once
-  during this session — the Favorites count silently stopped updating.
-- **Vitest workers can crash under load.** Running the suite while several headless Chrome instances
-  were open produced worker-fork crashes and *undercounted* tests (87 and 93 instead of 123) while
-  still reporting "passed". If the count is not 123, do not trust the run. Close other browsers and
-  re-run.
-- **Vite's cache will lie after a DS update.** `rm -rf node_modules/.vite` and `npm run dev --force`.
-- The `/favicon.ico` 404 in the console is pre-existing: `report-categories.html` declares no
-  favicon, though `public/favicon.svg` exists.
+The **Overview scores 70/100** (component 0, 2 raw controls) and is the only screen that cannot
+reach 100. Its cards are hand-composed `<a class="card">` because **the DS has no card or tile
+component** — `obs-layout-panels` is `referenceOnly`, `obs-metric-list` has no documented API, and
+`obs-link` is an inline link, not a card-sized target. This is recorded as **G31** in
+`docs/DS-GAPS.md` with the repro and the ask.
+
+The markup is carried over verbatim from the old landing page, so this is not a regression — it is
+newly *visible*, because the Overview is now a route the checker can measure. Making only the "Open
+screen" text an `obs-link` would score 100 and shrink the click target from the whole card to a few
+words; that trade was deliberately not taken. **If you would rather have the score, that is the
+one-line change.**
+
+## Not done
+
+Not pushed, and not merged to `master`. `master` is the deploy branch, so merging publishes.

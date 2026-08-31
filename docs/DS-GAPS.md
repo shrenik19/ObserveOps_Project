@@ -22,6 +22,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G26** `obs-select` has no error state | 🆕 **OPEN** | `obs-input` ships `error` + `errorMessage`; `obs-select` ships neither, and setting `error` fails silently |
 | **G29** `multiple`+`disabled` select loses its trigger | 🆕 **OPEN** | The template swaps `.trig` for a bare `<div class="pills">`, so the field has no border, background or chevron — it reads as a caption, not a disabled field |
 | **G30** two-pane description ignores the selected option | 🆕 **OPEN** | The pane is driven by a hover-only highlight index; a select that already has a value opens on "Hover an option to see details." instead of that option's own description. **Found with a real mouse** |
+| **G31** no card / tile component | 🆕 **OPEN** | A navigational index of screens has to hand-compose its cards from raw `<a>`. Conformance scores that page **70/100, component 0, 2 raw controls** — the only screen in the project that cannot reach 100 |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -606,6 +607,46 @@ option, which is a piercing the DS could remove entirely.
 **Ask:** seed the highlight index from the selected option when the menu opens (and scroll it into
 view), so an already-chosen select opens on its own description. A `highlight`/`activeIndex` prop
 would also do it, and would let a consumer preview any option without faking pointer events.
+
+### New finding — G31: there is no card / tile component, so an index page cannot reach conformance
+
+Building the app shell turned the old standalone landing page into a real screen — an **Overview**
+that lists every screen in the app. That is an ordinary product surface: a grid of clickable cards,
+each with an icon, a title, a description and a "go" affordance.
+
+**The DS has nothing for it.** Searching all 47 elements for `card|tile|panel|surface` returns three,
+none usable:
+
+| Element | Why not |
+|---|---|
+| `obs-layout-panels` | `referenceOnly: true` — renders, but carries no data contract |
+| `obs-metric-list` | no attributes and no slots in `elements-api.json`; not a navigational surface |
+| `obs-link` | functional (`href`, `variant`, `as-button`), but it is an inline link, not a card-sized target |
+
+So the cards are hand-composed `<a class="card">` with a token-only stylesheet — the same markup the
+old landing page used, carried over unchanged.
+
+**Repro:** run the conformance checker against the Overview route and against either real screen:
+
+```
+/                        OVERALL:  70/100  · component   0 · 2 raw controls · 0 DS components
+/#/settings/lama         OVERALL: 100/100  · component 100 · 0 raw controls · 5 DS components
+/#/reports/categories    OVERALL: 100/100  · component 100 · 0 raw controls · 6 DS components
+```
+
+The two raw controls are the two card anchors. **This is the only screen in the project that cannot
+reach 100**, and not for want of trying: there is no component to reach for.
+
+**Consumer workaround:** none available. Wrapping the whole card in `obs-link` is not equivalent —
+it is styled and sized as an inline link. Making only the "Open screen" text an `obs-link` would
+satisfy the checker but shrink the click target from the whole card to a few words, which is a worse
+product for a better score. The raw anchor was kept deliberately.
+
+**Ask:** ship a card/tile component — `obs-card` with `href`, slots for `media`/`title`/`body`/
+`action`, and a hoverable/clickable variant. Failing that, let `obs-link` take a `block` or
+`as-card` variant so a consumer can make a whole region a DS-sanctioned navigation target. An index
+of screens is a common enough surface that every consumer will otherwise hand-roll it, and each one
+will fail the component dimension in exactly this way.
 
 ### Two defects in the G10 fix
 
