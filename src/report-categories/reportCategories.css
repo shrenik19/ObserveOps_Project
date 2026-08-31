@@ -1,0 +1,75 @@
+/* The Report / Category RBAC screen. The app-shell rules this file used to carry moved to
+   src/app/shell.css when the shell became a page of its own; what is left is this screen only.
+   Colours are var(--token) — no hex/rgb/hsl. */
+
+
+/* Tab row with the primary action pinned right. */
+.module-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.module-tabs obs-tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.content-toolbar__search {
+  flex: 0 0 320px;
+}
+
+
+/* obs-side-menu is width:100% and fills its container — the registry says to set the WIDTH per
+   mode: list = ~15-25% of the viewport, ~340px if fixed. */
+.category-side-menu {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 280px;
+  background: var(--page-background-color);
+  border-right: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.category-side-menu obs-side-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.category-favorites {
+  display: block;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.category-favorites obs-icon {
+  margin-right: 8px;
+}
+
+/* The product paints the favourites star amber; --severity-warning is the catalogued amber. */
+.category-favorites obs-icon {
+  color: var(--severity-warning);
+}
+
+.category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 auto;
+}
+
+/* The product's category list uses a full-width rule between rows. */
+.category-list .category-row {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.category-row.is-active {
+  background: var(--neutral-lightest);
+  box-shadow: inset 2px 0 0 var(--primary);
+  font-weight: 500;
+}
+

@@ -12,7 +12,20 @@ export const modules = [
   { key: 'monitors', label: 'Monitors', icon: 'monitor', screens: [] },
   { key: 'alerts', label: 'Alerts', icon: 'alert', screens: [] },
   { key: 'topology', label: 'Topology', icon: 'networkTopology', screens: [] },
-  { key: 'reports', label: 'Reports', icon: 'report', screens: [] },
+  {
+    key: 'reports', label: 'Reports', icon: 'report',
+    screens: [
+      {
+        key: 'categories',
+        label: 'Report module',
+        description:
+          'Category-level Public/Private visibility and sharing. Paired padlock indicators, a ' +
+          'hover-only custom-category marker, and a four-step delete flow that reassigns or ' +
+          'force-deletes the reports inside a category.',
+        load: () => import('../report-categories/screen.js'),
+      },
+    ],
+  },
   {
     key: 'settings', label: 'Settings', icon: 'settings',
     screens: [
