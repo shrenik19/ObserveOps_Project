@@ -13,7 +13,19 @@ export const modules = [
   { key: 'alerts', label: 'Alerts', icon: 'alert', screens: [] },
   { key: 'topology', label: 'Topology', icon: 'networkTopology', screens: [] },
   { key: 'reports', label: 'Reports', icon: 'report', screens: [] },
-  { key: 'settings', label: 'Settings', icon: 'settings', screens: [] },
+  {
+    key: 'settings', label: 'Settings', icon: 'settings',
+    screens: [
+      {
+        key: 'lama',
+        label: 'LAMA integration',
+        description:
+          'The Create LAMA Profile drawer: interval or fixed-time scheduling, a counter catalogue ' +
+          'driven by the chosen Trading API with per-counter aggregation, and repeating metadata fields.',
+        load: () => import('../lama/screen.js'),
+      },
+    ],
+  },
 ]
 
 export const findModule = (mods, key) => mods.find((m) => m.key === key)
