@@ -25,7 +25,8 @@
 .reassign-dialog__head,
 .reassign-dialog__row {
   display: grid;
-  grid-template-columns: 1fr 260px;
+  /* auto = the tick box, sized to the DS checkbox rather than a guessed width. */
+  grid-template-columns: auto 1fr 260px;
   align-items: center;
   gap: 16px;
 }
@@ -63,7 +64,7 @@
 }
 
 .reassign-dialog__row-error {
-  grid-column: 2;
+  grid-column: 3;
   margin: 4px 0 0;
   color: var(--secondary-red);
   font-size: 0.85em;
@@ -90,4 +91,53 @@
 
 .reassign-dialog__spacer {
   flex: 1 1 auto;
+}
+
+/* ---------- Bulk move ---------- */
+
+/* The bar only exists while rows are ticked, so it reads as a response to a selection rather than
+   as permanent chrome. Tinted to separate it from the grid without inventing a colour. */
+/* The SAME track list as .reassign-dialog__row, so the bulk picker sits directly above the row
+   pickers rather than at its own width. The pill and the "Move to" label share the first two
+   tracks; the picker takes the third — the New Category column. */
+/* No fill and no frame. The pill carries its own tint, so a background behind it stacked two greys;
+   a border on top of that boxed in controls that are already bounded by the dialog. What is left is
+   the alignment, which is the only thing this rule needs to do.
+   Padding matches the grid rows' 12px inset, so the picker below sits in the same column. */
+.reassign-dialog__bulk {
+  display: grid;
+  grid-template-columns: auto 1fr 260px;
+  align-items: center;
+  gap: 16px;
+  /* NO vertical padding. With no fill and no border there is nothing for it to pad — it only made
+     the strip 48px tall to hold a 32px control, adding a band of empty space between the search box
+     and the grid. The 12px horizontal inset stays: it is what puts this picker in the same column as
+     the row pickers, which have the same inset. */
+  padding: 0 12px;
+}
+
+.reassign-dialog__bulk[hidden] {
+  display: none;
+}
+
+.reassign-dialog__bulk-count {
+  justify-self: start;
+  white-space: nowrap;
+}
+
+/* Pushed to the END of its track, so it sits against the picker it introduces rather than stranded
+   mid-bar. "Move to [Select a category]" then reads as one phrase across the gap. */
+.reassign-dialog__bulk-label {
+  justify-self: end;
+  color: var(--neutral-light);
+  white-space: nowrap;
+}
+
+.reassign-dialog__bulk obs-select {
+  min-width: 0;
+}
+
+/* A ticked row is tinted, so what the bulk bar is about to change is visible in the grid itself. */
+.reassign-dialog__row[data-selected='true'] {
+  background: var(--grid-header-bg);
 }

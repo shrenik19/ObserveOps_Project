@@ -155,13 +155,32 @@ describe('moveReportsAndDeleteCategory', () => {
     expect(moved).toEqual({ id: 'r1', category: 'all-reports', title: 'Switch Inventory', favorite: true, schedule: true })
   })
 
-  it('throws and changes nothing when a report has no destination', () => {
+  // A partial move is now a supported outcome: the reports given a destination are kept, the rest
+  // go with the category. The invariant the old throw protected still holds — nothing is left
+  // pointing at a category that no longer exists.
+  it('deletes the reports that were given no destination', () => {
     const store = withReports()
-    expect(() => store.moveReportsAndDeleteCategory('inventory', { r1: 'config' })).toThrow(
-      'No destination for report(s): r2'
-    )
-    expect(store.getCategory('inventory')).toBeDefined()
-    expect(store.getReportsByCategory('inventory')).toHaveLength(2)
+    store.moveReportsAndDeleteCategory('inventory', { r1: 'config' })
+
+    expect(store.getCategory('inventory')).toBeUndefined()
+    expect(store.getReportsByCategory('config').map((r) => r.id)).toContain('r1')
+    expect(store.getReports().map((r) => r.id)).not.toContain('r2')
+  })
+
+  it('leaves no report pointing at the deleted category', () => {
+    const store = withReports()
+    store.moveReportsAndDeleteCategory('inventory', { r1: 'config' })
+
+    expect(store.getReports().some((r) => r.category === 'inventory')).toBe(false)
+  })
+
+  it('deletes every report when no destination is given at all', () => {
+    const store = withReports()
+    store.moveReportsAndDeleteCategory('inventory', {})
+
+    expect(store.getCategory('inventory')).toBeUndefined()
+    expect(store.getReports().map((r) => r.id)).not.toContain('r1')
+    expect(store.getReports().map((r) => r.id)).not.toContain('r2')
   })
 
   it('throws when a destination is the category being deleted', () => {

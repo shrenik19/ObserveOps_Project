@@ -370,6 +370,28 @@ the library by brute force.
 `list_icons` MCP tool. The names already exist as keys in the bundle's icon map; exporting them
 would cost nothing and close this permanently.
 
+**Second instance (2026-08-27), same cost.** Marking custom categories in the side menu needed one
+glyph. Every name the product vocabulary suggests is absent:
+
+| Probed | Result |
+|---|---|
+| `customReport`, `custom_report`, `customreport` | ✗ missing |
+| `customCategory`, `custom_category`, `customcategory` | ✗ missing |
+| `category`, `categories`, `customCategories` | ✗ missing |
+| `reportAlt`, `reports` | ✗ missing |
+| `custom`, `customDashboard`, `report` | ✓ exist |
+
+**The library ships 552 glyphs and exactly two of them contain "custom"; not one contains
+"categ".** Establishing that took extracting the icon map straight out of the minified bundle with a
+regex over `name: { w, h, p }` entries — which is the same brute-force enumeration this gap was
+raised about the first time, a year of releases later. A consumer naming an icon after the domain
+concept it marks (a *category*) cannot discover that no such glyph exists without doing this.
+
+Note also that a missing name **fails silently**: `obs-icon` renders an element with an empty shadow
+root rather than warning, so a wrong guess reaches production as an invisible gap in the layout
+rather than as an error. Every icon in this app is now verified by asserting its shadow root
+actually contains an `<svg>`.
+
 ### New finding — G25: `obs-modal` emits `close` after `confirm`, and nothing says so
 
 **Severity: high — it silently breaks any multi-step flow.**

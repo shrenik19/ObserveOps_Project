@@ -104,6 +104,27 @@ const reports = [
   report('r18', 'VM Host Summary', 'virtualization', 'VM Host Summary', 'Performance', 'Default'),
   report('r19', 'Server Disk Usage', 'server', 'Server Disk Usage', 'Performance', 'Default'),
   report('r20', 'Service Check Summary', 'service-check', 'Service Check Summary', 'Availability', 'Default'),
+
+  // --- Inventory ------------------------------------------------------
+  // Deliberately the biggest category in the seed. The delete flow's reassign step is the screen
+  // that has to survive a real customer's data — a category with two reports never exercises the
+  // search box, the bulk bar or a scrolling grid, so it never showed what that step actually costs.
+  report('r21', 'Access Switch Inventory', 'inventory', 'Layer-2 access switches, by site', 'Inventory', 'Default', true),
+  report('r22', 'Core Switch Inventory', 'inventory', 'Core and distribution switches', 'Inventory', 'Default', false, true),
+  report('r23', 'Router Inventory', 'inventory', 'Edge and branch routers', 'Inventory', 'Default'),
+  report('r24', 'Firewall Inventory', 'inventory', 'Perimeter and internal firewalls', 'Inventory', 'Custom'),
+  report('r25', 'Wireless Controller Inventory', 'inventory', 'WLCs and their AP counts', 'Inventory', 'Default'),
+  report('r26', 'Server Hardware Inventory', 'inventory', 'Physical hosts, make and model', 'Inventory', 'Default'),
+  report('r27', 'Virtual Machine Inventory', 'inventory', 'Guests by cluster and datastore', 'Inventory', 'Custom'),
+  report('r28', 'Storage Array Inventory', 'inventory', 'Arrays, shelves and raw capacity', 'Inventory', 'Default'),
+  report('r29', 'Licence Expiry Report', 'inventory', 'Licences due to lapse in 90 days', 'Inventory', 'Custom', true, true),
+  report('r30', 'Warranty Expiry Report', 'inventory', 'Assets out of warranty this year', 'Inventory', 'Custom'),
+  report('r31', 'End of Life Devices', 'inventory', 'Hardware past vendor EoL', 'Inventory', 'Default', true),
+  report('r32', 'Unmanaged Devices', 'inventory', 'Discovered but not monitored', 'Inventory', 'Custom'),
+  report('r33', 'Interface Inventory', 'inventory', 'Ports by device, speed and state', 'Inventory', 'Default'),
+  report('r34', 'IP Address Inventory', 'inventory', 'Allocated and free addresses', 'Inventory', 'Default'),
+  report('r35', 'Software Version Spread', 'inventory', 'OS and firmware versions in use', 'Inventory', 'Custom'),
+  report('r36', 'Asset Tag Reconciliation', 'inventory', 'Assets missing an asset tag', 'Inventory', 'Custom'),
 ]
 
 const store = createStore({ categories: seedCategories, reports })

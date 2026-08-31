@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { renderDeleteConfirmDialog } from './deleteConfirmDialog.js'
+import { renderDeleteConfirmDialog, consequenceParts, consequenceText } from './deleteConfirmDialog.js'
 
 const build = (overrides = {}) =>
   renderDeleteConfirmDialog({ categoryName: 'Inventory', onConfirm: vi.fn(), onCancel: vi.fn(), ...overrides })
@@ -92,5 +92,61 @@ describe('renderDeleteConfirmDialog', () => {
     expect(dialog.querySelector('[data-role="delete-confirm-message"]').textContent).toBe(
       `Are you sure you want to delete Ravi's "Reports" Category?`
     )
+  })
+})
+
+
+describe('the consequence is three facts, not a paragraph', () => {
+  const parts = (name, n) => consequenceParts(name, n)
+
+  it('leads with the number, on its own', () => {
+    expect(parts('Inventory', 18).stake).toBe('18 reports are in this category.')
+  })
+
+  it('counts one report in the singular', () => {
+    expect(parts('Inventory', 1).stake).toBe('1 report is in this category.')
+  })
+
+  it('keeps the choice to a single clause', () => {
+    expect(parts('Inventory', 18).choice).toBe(
+      'You can move them to another category, or delete them along with it.'
+    )
+  })
+
+  it('always warns, whatever the count', () => {
+    expect(parts('Inventory', 18).warning).toBe('This action cannot be undone.')
+    expect(parts('Inventory', 0).warning).toBe('This action cannot be undone.')
+  })
+
+  it('offers no choice line for an empty category — there is nothing to decide', () => {
+    expect(parts('Capacity Planning', 0).choice).toBe('')
+  })
+
+  it('renders each fact as its own element', () => {
+    const dialog = renderDeleteConfirmDialog({ categoryName: 'Inventory', reportCount: 18 })
+
+    expect(dialog.querySelector('[data-role="delete-confirm-stake"]')).not.toBeNull()
+    expect(dialog.querySelector('[data-role="delete-confirm-choice"]')).not.toBeNull()
+    expect(dialog.querySelector('[data-role="delete-confirm-warning"]')).not.toBeNull()
+  })
+
+  it('omits the choice element entirely when there is no choice', () => {
+    const dialog = renderDeleteConfirmDialog({ categoryName: 'Capacity Planning', reportCount: 0 })
+    expect(dialog.querySelector('[data-role="delete-confirm-choice"]')).toBeNull()
+  })
+
+  it('keeps the warning as plain text — no glyph anywhere in the block', () => {
+    const dialog = renderDeleteConfirmDialog({ categoryName: 'Inventory', reportCount: 18 })
+    const warning = dialog.querySelector('[data-role="delete-confirm-warning"]')
+
+    expect(warning.querySelector('obs-icon')).toBeNull()
+    expect(warning.textContent).toBe('This action cannot be undone.')
+    expect(dialog.querySelector('[data-role="delete-confirm-consequence"] obs-icon')).toBeNull()
+  })
+
+  it('still offers the three facts flat, for anything that needs one string', () => {
+    const text = consequenceText('Inventory', 18)
+    expect(text).toContain('18 reports are in this category.')
+    expect(text).toContain('This action cannot be undone.')
   })
 })

@@ -39,3 +39,19 @@
   gap: 8px;
   width: 100%;
 }
+
+/* Back sits at the START of the modal header, opposite the × that closes at the end.
+   It is absolutely positioned against `dialog.modal` — obs-modal's own root, which is
+   position: fixed and therefore the containing block for slotted content. The 7px top centres a
+   35px control in the 49px header.
+   Kept out of the footer deliberately: rewinding is not one of the two decisions down there. */
+.force-delete-dialog__back {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  z-index: 1;
+}
+
+/* NO margin on the icon. obs-button already lays its slotted content out with a 6px gap, so a margin
+   here stacked on top of it — 12px from arrow to word, which read as two things sharing a button
+   rather than one control. The component's own gap is the correct spacing; let it do the job. */

@@ -13,6 +13,20 @@
 //   - hover-only reveal: the component also shows the pencil on the ACTIVE row, which reads as a
 //     permanent control rather than an affordance
 //
+// Custom categories carry a marker at the END of their name, revealed on hover like the pencil.
+// Built-in categories get nothing at all — the absence IS the distinction, so the marker never has to
+// be read as "this one is default".
+//
+// The glyph is `user` — a category someone made, as opposed to one that shipped with the product.
+//
+// It is not the obvious name, because the obvious names do not exist. The DS ships 552 glyphs;
+// exactly TWO contain "custom" (`custom`, `customDashboard`) and NONE contains "categ", so
+// `customCategory` and `customReport` are both unavailable (DS-GAPS G24 — established by extracting
+// the bundle's own glyph map, since there is still no published icon inventory).
+//
+// PROVISIONAL. It stands in for a custom-category glyph the DS does not ship; change the name here
+// if one ever arrives.
+//
 // Deleting a category is deliberately NOT here — it lives in the settings drawer, so the row stays
 // a navigation target with a single edit affordance.
 //
@@ -38,19 +52,38 @@ const AUGMENT_CSS = `
   .rbac-action:focus-visible {
     visibility: visible;
   }
-  /* The visibility indicator is state, not an action — smaller than the row's text and controls. */
+  /* The visibility indicator is state, not an action — smaller than the row's text and controls.
+     It stays where the component puts it: leading, in front of the name. */
   .r-ic {
     flex-shrink: 0;
   }
-  /* The component strips focus rings (catalogue-wide SF-001); restore one for the controls we own. */
-  .rbac-action:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
+  /* flex-GROW must be 0. The component gives .lbl flex:1, which makes the label eat the whole row
+     and shoves the custom marker against the right edge — where it reads as another action beside
+     the pencil rather than as a mark on the name. Shrinking is still allowed, so a long name
+     ellipsises instead of pushing the marker out of the row. */
+  .row .lbl {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-
-  /* The custom/default marker. Decorative only — it states a fact about the row, it does not act,
-     so it carries no role and no tabindex (adding those would repeat gap G22's mistake). Hidden
-     until hover, matching the pencil's behaviour. */
+  /* Hugs the end of the name. Without this the row's own gap strands it mid-row. */
+  .row .lbl + .rbac-type-marker {
+    margin-left: 6px;
+  }
+  /* The label no longer takes the slack, so the row's ACTIONS have to claim it — otherwise the
+     pencil creeps in beside the name instead of sitting at the row's right edge. The first match
+     takes all the free space; anything after it packs against it. */
+  .row .pencil,
+  .row .cnt {
+    margin-left: auto;
+  }
+  .row .pencil ~ .cnt {
+    margin-left: 4px;
+  }
+  /* Hidden until the row is hovered, exactly like the pencil — it is a detail, not a permanent
+     badge, so a resting list stays quiet. */
   .rbac-type-marker {
     flex-shrink: 0;
     visibility: hidden;
@@ -58,6 +91,12 @@ const AUGMENT_CSS = `
   }
   .row:hover .rbac-type-marker {
     visibility: visible;
+  }
+
+  /* The component strips focus rings (catalogue-wide SF-001); restore one for the controls we own. */
+  .rbac-action:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 
 `
@@ -116,16 +155,17 @@ export function augmentCategoryRows({ root, categories = [], onEdit, iconSize = 
     const indicator = row.querySelector('.r-ic')
     if (indicator) indicator.setAttribute('size', String(iconSize))
 
-    // Mark custom categories so a user can tell them from the built-in ones without opening the
-    // drawer. Default categories get nothing, which is the distinction.
+    // Sits immediately after the label, so it reads as a mark ON the name rather than as a second
+    // action next to the pencil. Decorative: it states a fact, it does not act, so it carries no role
+    // and no tabindex (adding those would repeat gap G22's mistake).
     if (category.type === 'custom' && !row.querySelector('.rbac-type-marker')) {
       const marker = document.createElement('obs-icon')
       marker.className = 'rbac-type-marker'
-      marker.setAttribute('name', 'cog')
+      marker.setAttribute('name', 'user')
       marker.setAttribute('size', String(iconSize))
       marker.setAttribute('aria-hidden', 'true')
-      const existingPencil = row.querySelector('.pencil')
-      if (existingPencil) row.insertBefore(marker, existingPencil)
+      const label = row.querySelector('.lbl')
+      if (label) label.insertAdjacentElement('afterend', marker)
       else row.appendChild(marker)
     }
 

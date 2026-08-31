@@ -94,20 +94,31 @@ export function createStore(initial) {
    * @param {string} id
    * @param {Record<string,string>} assignments  reportId -> destination categoryId
    */
+  /**
+   * Move the reports that were given a destination, DELETE the ones that were not, then delete the
+   * category. A partial move is a real outcome — "keep these seven, let the other three go" — so an
+   * unassigned report is a decision rather than an omission.
+   *
+   * This used to throw when any report lacked a destination. The invariant it was protecting is
+   * unchanged and still holds: after this runs, no report points at a category that no longer
+   * exists. The reports without a destination are removed rather than orphaned.
+   */
   function moveReportsAndDeleteCategory(id, assignments = {}) {
     assertDeletable(id)
 
     const held = reports.filter((r) => r.category === id)
-    const missing = held.filter((r) => !assignments[r.id]).map((r) => r.id)
-    if (missing.length) throw new Error(`No destination for report(s): ${missing.join(', ')}`)
 
     for (const report of held) {
       const destination = assignments[report.id]
+      if (!destination) continue // deliberately deleted along with the category
       if (destination === id) throw new Error(`Cannot move report ${report.id} into the category being deleted`)
       if (!categories.some((c) => c.id === destination)) throw new Error(`Unknown category: ${destination}`)
     }
 
-    reports = reports.map((r) => (r.category === id ? { ...r, category: assignments[r.id] } : r))
+    reports = reports
+      // Anything still in the doomed category with no destination goes with it.
+      .filter((r) => r.category !== id || Boolean(assignments[r.id]))
+      .map((r) => (r.category === id ? { ...r, category: assignments[r.id] } : r))
     removeCategory(id)
     notify()
   }

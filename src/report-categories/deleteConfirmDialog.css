@@ -5,3 +5,34 @@
   margin: 0;
   color: var(--page-text-color);
 }
+
+/* Three facts, three lines, three weights — NOT a paragraph.
+   A confirm dialog is skimmed, not read: fused into prose, the count that decides the answer sits
+   mid-sentence at body weight and the irreversible warning trails off the end. Split apart, the eye
+   lands on the number first and the warning last but marked. */
+.delete-confirm-dialog__consequence {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+
+/* The number is the fact that changes the answer, so it leads and it is not grey. */
+.delete-confirm-dialog__stake {
+  margin: 0;
+  font-weight: 600;
+  color: var(--page-text-color);
+}
+
+.delete-confirm-dialog__choice {
+  margin: 0;
+  color: var(--neutral-light);
+}
+
+/* A statement of fact, in the same quiet voice as the line above it. Its own line is enough
+   separation — a rule and a red tint made this step shout louder than the force-delete gate that
+   follows it, which is the one that is actually irreversible. */
+.delete-confirm-dialog__warning {
+  margin: 0;
+  color: var(--neutral-light);
+}

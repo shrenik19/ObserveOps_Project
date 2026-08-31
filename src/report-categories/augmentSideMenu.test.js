@@ -125,52 +125,99 @@ describe('augmentCategoryRows', () => {
 })
 
 
-describe('custom-category marker', () => {
-  it('marks a custom category row', () => {
+describe('the custom-category marker', () => {
+  const markerIn = (root, label) => rowFor(root, label).querySelector('.rbac-type-marker')
+
+  it('marks a CUSTOM category', () => {
     const root = buildRoot()
     augmentCategoryRows({ root, categories })
-    const marker = rowFor(root, 'Inventory').querySelector('.rbac-type-marker')
-    expect(marker).not.toBeNull()
-    expect(marker.getAttribute('name')).toBe('cog')
+    expect(markerIn(root, 'Inventory')).not.toBeNull()
   })
 
-  it('leaves a default category row unmarked', () => {
+  it('leaves a BUILT-IN category unmarked — the absence is the distinction', () => {
     const root = buildRoot()
     augmentCategoryRows({ root, categories })
-    expect(rowFor(root, 'All Reports').querySelector('.rbac-type-marker')).toBeNull()
+    expect(markerIn(root, 'All Reports')).toBeNull()
   })
 
-  it('hides the marker from assistive tech and keeps it unfocusable', () => {
+  it('uses a glyph the DS actually ships', () => {
     const root = buildRoot()
     augmentCategoryRows({ root, categories })
-    const marker = rowFor(root, 'Inventory').querySelector('.rbac-type-marker')
-    expect(marker.getAttribute('aria-hidden')).toBe('true')
-    expect(marker.hasAttribute('tabindex')).toBe(false)
-    expect(marker.getAttribute('role')).toBeNull()
+    // `user` — a category someone made. The obvious names are unavailable: of the DS's 552 glyphs,
+    // only `custom` and `customDashboard` contain "custom", and none contains "categ".
+    expect(markerIn(root, 'Inventory').getAttribute('name')).toBe('user')
   })
 
-  it('places the marker before the edit pencil', () => {
+  it('sits at the END of the name, directly after the label', () => {
     const root = buildRoot()
     augmentCategoryRows({ root, categories })
     const row = rowFor(root, 'Inventory')
-    const children = [...row.children]
-    expect(children.indexOf(row.querySelector('.rbac-type-marker'))).toBeLessThan(
-      children.indexOf(row.querySelector('.pencil'))
-    )
+    expect(row.querySelector('.lbl').nextElementSibling).toBe(markerIn(root, 'Inventory'))
   })
 
-  it('reveals the marker on hover only, like the pencil', () => {
+  it('is decorative — no role, no tabindex, hidden from assistive tech', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories })
+    const marker = markerIn(root, 'Inventory')
+
+    expect(marker.getAttribute('aria-hidden')).toBe('true')
+    expect(marker.getAttribute('role')).toBeNull()
+    expect(marker.hasAttribute('tabindex')).toBe(false)
+  })
+
+  it('is revealed on hover only, like the pencil', () => {
     const root = buildRoot()
     augmentCategoryRows({ root, categories })
     const css = root.querySelector('style[data-role="rbac-augment"]').textContent
+
     expect(css).toMatch(/\.rbac-type-marker \{[^}]*visibility: hidden/)
     expect(css).toMatch(/\.row:hover \.rbac-type-marker/)
   })
 
-  it('does not add a second marker when re-run over the same rows', () => {
+  it('is not duplicated when the pass runs again over the same rows', () => {
     const root = buildRoot()
     augmentCategoryRows({ root, categories })
+    for (const r of root.querySelectorAll('.row')) delete r.dataset.rbacBound
     augmentCategoryRows({ root, categories })
+
     expect(rowFor(root, 'Inventory').querySelectorAll('.rbac-type-marker')).toHaveLength(1)
+  })
+})
+
+
+describe('the visibility padlock leads the row', () => {
+  it('stays IN FRONT of the category name, where the component puts it', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories, onEdit: vi.fn() })
+
+    for (const row of root.querySelectorAll('.row')) {
+      const indicator = row.querySelector('.r-ic')
+      if (!indicator) continue
+      expect(indicator.nextElementSibling).toBe(row.querySelector('.lbl'))
+    }
+  })
+
+  it('is never moved, however many times the pass runs', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories, onEdit: vi.fn() })
+    for (const r of root.querySelectorAll('.row')) delete r.dataset.rbacBound
+    augmentCategoryRows({ root, categories, onEdit: vi.fn() })
+
+    const row = rowFor(root, 'Inventory')
+    expect(row.querySelector('.r-ic').nextElementSibling).toBe(row.querySelector('.lbl'))
+    expect(row.querySelectorAll('.r-ic')).toHaveLength(1)
+  })
+
+  it('orders the row: padlock, name, marker, pencil', () => {
+    const root = buildRoot()
+    augmentCategoryRows({ root, categories, onEdit: vi.fn() })
+    const row = rowFor(root, 'Inventory')
+
+    expect([...row.children].map((c) => c.className)).toEqual([
+      'r-ic',
+      'lbl',
+      'rbac-type-marker',
+      'pencil rbac-action',
+    ])
   })
 })

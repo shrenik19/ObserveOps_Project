@@ -1,10 +1,14 @@
 // The four-state category delete flow:
 //
-//   1. confirm          "Are you sure you want to delete X Category?"   No / Yes
+//   1. confirm          the question AND what it costs, in numbers      No / Yes
 //   2. branch           no reports -> delete outright; otherwise -> 3
-//   3. reassign         one destination per report                     Cancel / Move and Delete /
+//   3. reassign         a destination per report, in bulk or one by one Cancel / Move and Delete /
 //                                                                      Proceed Anyway
-//   4. force delete     type the category name to destroy it and its reports
+//   4. type the name    BOTH routes out of step 3 land here
+//
+// Step 4 used to gate only Proceed Anyway, with Move and Delete committing straight from the grid.
+// Both routes destroy the category, so both are now gated the same way and differ only in what the
+// dialog says: one lists where the reports are going, the other says how many are about to be lost.
 //
 // It owns the transitions only. Every rule about what may be deleted lives in store.js, and every
 // pixel lives in the three dialog modules — so this file stays small enough to read at a glance.
@@ -14,7 +18,7 @@
 
 import { renderDeleteConfirmDialog } from './deleteConfirmDialog.js'
 import { renderReassignReportsDialog } from './reassignReportsDialog.js'
-import { renderForceDeleteDialog } from './forceDeleteDialog.js'
+import { renderForceDeleteDialog, summariseMoves } from './forceDeleteDialog.js'
 
 /**
  * Categories a report can be moved INTO. Excludes the category being deleted and `all-reports`,
@@ -39,18 +43,56 @@ export function destinationsFor(store, excludeId) {
 export function startDeleteCategoryFlow({ category, store, mount, close, onDeleted } = {}) {
   const cancel = () => close?.()
 
+  /**
+   * What the reassign grid held when the user last left it. Kept at flow level, not inside the
+   * dialog, because the dialog is destroyed on every step change — going Back builds a NEW grid and
+   * this is what makes it come back filled in rather than blank.
+   */
+  let chosen = {}
+
   const finish = () => {
     close?.()
     onDeleted?.(category.id)
   }
 
+  /** How many reports the category holds right now — read fresh, never cached across steps. */
+  const reportCount = () => store.countReportsInCategory(category.id)
+
+  /** Step 4, destructive route: the category and every report in it. */
   function openForceDelete() {
     mount(
       renderForceDeleteDialog({
         categoryName: category.name,
+        mode: 'force',
+        reportCount: reportCount(),
+        onBack: openReassign,
         onCancel: cancel,
         onConfirm: () => {
           store.deleteCategoryWithReports(category.id)
+          finish()
+        },
+      })
+    )
+  }
+
+  /** Step 4, relocating route: the same gate, with the destinations spelled out. */
+  function openMoveConfirm(assignments) {
+    // Remembered before the confirmation replaces this step, so Back can hand it straight back.
+    chosen = { ...assignments }
+    const moves = summariseMoves(assignments, destinationsFor(store, category.id))
+    mount(
+      renderForceDeleteDialog({
+        categoryName: category.name,
+        mode: 'move',
+        // The whole category, and how much of it is being kept — the dialog needs both to say
+        // "7 out of 10".
+        reportCount: reportCount(),
+        movedCount: Object.keys(assignments).length,
+        moves,
+        onBack: openReassign,
+        onCancel: cancel,
+        onConfirm: () => {
+          store.moveReportsAndDeleteCategory(category.id, assignments)
           finish()
         },
       })
@@ -63,11 +105,11 @@ export function startDeleteCategoryFlow({ category, store, mount, close, onDelet
         categoryName: category.name,
         reports: store.getReportsByCategory(category.id).map((r) => ({ id: r.id, name: r.title })),
         categories: destinationsFor(store, category.id),
+        initialAssignments: chosen,
         onCancel: cancel,
-        onMoveAndDelete: (assignments) => {
-          store.moveReportsAndDeleteCategory(category.id, assignments)
-          finish()
-        },
+        // Hands off to the typed-name gate rather than committing — the grid decides WHERE the
+        // reports go, step 4 decides whether it happens at all.
+        onMoveAndDelete: openMoveConfirm,
         onProceedAnyway: openForceDelete,
       })
     )
@@ -76,9 +118,11 @@ export function startDeleteCategoryFlow({ category, store, mount, close, onDelet
   mount(
     renderDeleteConfirmDialog({
       categoryName: category.name,
+      // The first dialog now discloses the cost instead of only asking for consent.
+      reportCount: reportCount(),
       onCancel: cancel,
       onConfirm: () => {
-        if (store.countReportsInCategory(category.id) === 0) {
+        if (reportCount() === 0) {
           store.deleteCategory(category.id)
           return finish()
         }
