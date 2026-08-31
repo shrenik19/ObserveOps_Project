@@ -33,16 +33,26 @@ already declared, so it is a plain `npm install` rather than installing new scop
 still refuses, just run `npm install` in a terminal yourself; the packages are public on npm and
 need no auth.
 
-Then open the URL Vite prints, at **`/report-categories.html`** — e.g.
-<http://localhost:5173/report-categories.html>.
+Then open the URL Vite prints — just the root, e.g. <http://localhost:5173/>.
 
-> `index.html` is still the untouched Vite starter. The feature lives on `report-categories.html`.
+> The app is a single page. `/` lands on an Overview listing every screen; the screens themselves
+> are routes inside it — `#/reports/categories` and `#/settings/lama`. The sidebar navigates
+> between them.
 > If port 5173 is taken, Vite picks another and prints it — use whatever it says.
 
 ```bash
-npm test         # 67 tests
-npm run build    # builds both pages
+npm test         # the full suite
+npm run build    # builds the app and the two redirect stubs
 ```
+
+### Adding a screen
+
+1. Write `src/<name>/screen.js` exporting `meta` and `mount(root)`. `mount` receives the content
+   region and returns its own teardown function.
+2. Add one entry to the right module's `screens` array in `src/app/registry.js`.
+
+That is the whole procedure. The sidebar entry, the route and the Overview card are all generated
+from the registry — there is no `.html` file to add and no build config to touch.
 
 ### ⚠️ Do not copy `node_modules` between machines
 
@@ -64,14 +74,24 @@ Copying `node_modules` out of a zip on macOS/Linux can also strip the executable
 
 ## DS conformance check (optional)
 
+The checker takes a URL as well as a file, which is what it now needs: the screens are routes, so
+there is no static `.html` holding one. Run the dev server first, then point it at a route:
+
 ```bash
 npm install -D playwright-core
-node node_modules/@mtdt/observeops-ds-spec/conformance/ds-conformance.mjs ./report-categories.html
+npm run dev
+node node_modules/@mtdt/observeops-ds-spec/conformance/ds-conformance.mjs \
+  http://localhost:5173/#/reports/categories
 ```
 
 Expected: **100/100** on token / component / philosophy / layout.
 
-**Two traps:**
+**Three traps:**
+
+0. **The score alone is not evidence, and now less than ever.** Screens load by dynamic `import()`,
+   so Chromium can sample before the screen has mounted — which scores an almost-empty page very
+   highly. Compare the element count against a known-good run before believing the number, and read
+   the violations list.
 
 1. **Without `playwright-core` it exits 2 after printing one line** — which reads like a pass. Make
    sure you installed it.
@@ -108,15 +128,28 @@ behaviour. This has produced false "still broken" readings more than once — se
 ## Layout
 
 ```
-report-categories.html          the screen: app-shell regions + mount points
+index.html                      the app — an empty shell the router fills
+report-categories.html          redirect stub -> #/reports/categories
+lama.html                       redirect stub -> #/settings/lama
+src/app/
+  registry.js                   modules -> screens. The one file you edit to add a screen
+  router.js                     parse / resolve / href — pure, no DOM
+  shell.js                      the chrome: sidebar, app header, user menu
+  screenHost.js                 the mount/unmount lifecycle
+  overviewScreen.js             the default route, generated from the registry
+  cardList.js · pageHeader.js   shared markup helpers
+  main.js                       composition root, and the only DS import in the app
+  shell.css                     shell layout + the Overview grid
 src/report-categories/
-  main.js                       wiring: store ↔ side-menu ↔ table ↔ drawer ↔ dialog
-  store.js                      pure data store — no DOM, no DS   (8 tests)
-  categorySettingsPanel.js      the three-mode settings drawer    (23 tests)
-  deleteConfirmDialog.js        the confirm modal                 (10 tests)
-  augmentSideMenu.js            the one remaining DS extension    (13 tests)
+  screen.js                     wiring: store ↔ side-menu ↔ table ↔ drawer ↔ dialog
+  store.js                      pure data store — no DOM, no DS
+  categorySettingsPanel.js      the three-mode settings drawer
+  deleteCategoryFlow.js         the four-state delete flow
+  augmentSideMenu.js            the one remaining DS extension
   *.css                         token-only styling — no hex/rgb/hsl anywhere
-vite.config.js                  registers the second entry point
+src/lama/
+  screen.js                     the LAMA list and its Create Profile drawer
+vite.config.js                  index.html + the two redirect stubs
 docs/                           project context + the DS gap report
 ```
 

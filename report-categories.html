@@ -2,108 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Report — ObserveOps</title>
-    <!-- Inter, loaded the same way the DS loads Poppins. Matching weights to the DS's own set
-         (400/500/600/700) so every component keeps the weight it was designed at. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- This page is now a route inside the app shell. The path is kept as a redirect so the URL
+         published in CLAUDE.md, the README and anything already shared keeps working.
+         Both redirects are RELATIVE, so they resolve at the root locally and under /<repo>/ on
+         GitHub Pages. The <meta> is the no-JS fallback. -->
+    <meta http-equiv="refresh" content="0; url=./#/reports/categories" />
+    <script>
+      location.replace('./#/reports/categories')
+    </script>
   </head>
   <body>
-    <!-- App shell composed from the functional DS pieces. obs-layout-appshell is referenceOnly
-         (renders, but carries no data contract), so the regions are assembled here. -->
-    <div class="app-shell">
-      <obs-sidebar id="module-nav" active="reports" brand="ObserveOps"></obs-sidebar>
-
-      <div class="app-shell__main">
-        <!-- The `brand` SLOT, not the text attribute. obs-sidebar falls back to
-             <obs-logo name="motadata"> on its own; obs-app-header has no such fallback, so the mark
-             only appears if it is slotted. Mark + wordmark mirrors how obs-sidebar pairs them. -->
-        <obs-app-header id="app-header" build="8.2.6">
-          <span slot="brand" class="app-brand">
-            <obs-logo name="motadata" size="26"></obs-logo>
-            ObserveOps
-          </span>
-
-          <!-- The `user` SLOT with obs-user-menu, not the `user` text attribute. The attribute
-               renders initials only: the avatar carries role="button" and tabindex but emits
-               nothing, so it looks clickable and isn't (gap G22). obs-user-menu is the real
-               dropdown, and it also drives Dark/Light/Auto. -->
-          <obs-user-menu
-            slot="user"
-            id="user-menu"
-            name="Motadata Admin"
-            subtitle="admin@motadata.com"
-            initials="MA"
-            theme-toggle
-            theme="light"
-            manage-theme
-            logout
-          ></obs-user-menu>
-        </obs-app-header>
-
-        <!-- The module-screen recipe puts the module title strip on obs-page-header. -->
-        <!-- No `no-divider`: the DS shows the bottom rule by default, "per the 54x render", which is
-             what the product has. -->
-        <obs-page-header heading="Report">
-          <obs-icon slot="before" name="report" size="20"></obs-icon>
-        </obs-page-header>
-
-        <div class="module-tabs">
-          <obs-tabs id="report-tabs" value="metric"></obs-tabs>
-          <obs-button variant="primary" data-role="create-custom-report">Create Custom Report</obs-button>
-        </div>
-
-        <div class="app-shell__body">
-          <!-- obs-side-menu mode="list" — the DS's report / saved-views rail. Its registry names
-               this exact case: "All Reports (active) · ★ Favorites · user categories", as seen in
-               report-sidebar.vue. It supplies the chrome (search, flat border-split rows, ★ row,
-               active weight-500, pencil-on-hover); per its own known-issue the create/delete
-               affordances and the wiring are the consumer's. -->
-          <nav class="category-side-menu" aria-label="Report categories">
-            <obs-side-menu id="category-list" mode="list" placeholder="Search">
-              <!-- The DS projects this slot beside the search box, so the create affordance is a
-                   real slotted child — it used to be injected into the shadow root. -->
-              <obs-button slot="search-action" data-role="new-category" variant="primary" squared aria-label="New Category">
-                <obs-icon name="plus" size="14"></obs-icon>
-              </obs-button>
-            </obs-side-menu>
-          </nav>
-
-          <main class="app-shell__content">
-            <!-- obs-toolbar (grid variant): `start` slot is the left group, the default slot the
-                 right one, space-between, 8px internal gaps. This was a hand-rolled flex div. -->
-            <obs-toolbar data-role="content-toolbar">
-              <obs-input slot="start" type="search" placeholder="Search" class="content-toolbar__search"></obs-input>
-              <obs-button variant="neutral-lightest" squared aria-label="Export as PDF">
-                <obs-icon name="exportPdf" size="14"></obs-icon>
-              </obs-button>
-              <obs-button variant="neutral-lightest" squared aria-label="Export as spreadsheet">
-                <obs-icon name="exportXlsx" size="14"></obs-icon>
-              </obs-button>
-              <obs-button variant="neutral-lightest" squared aria-label="Filter">
-                <obs-icon name="filter" size="14"></obs-icon>
-              </obs-button>
-            </obs-toolbar>
-
-            <!-- The real FilterBar. Was hand-composed from obs-select/obs-radio/obs-button while
-                 obs-filters was referenceOnly; as of elements@0.1.143 kind="bar" is functional —
-                 pass `fields`, read `value`, listen for `change`. It brings its own "+ Filter",
-                 Match All/Any and Clear All. -->
-            <obs-filters id="filter-bar" kind="bar"></obs-filters>
-
-            <obs-table id="reports-table" row-key="id" sort="name:asc" page-size="10" sticky-header max-height="100%"></obs-table>
-          </main>
-        </div>
-      </div>
-    </div>
-
-    <div id="panel-root"></div>
-    <div id="dialog-root"></div>
-    <script type="module" src="/src/report-categories/main.js"></script>
+    <p>Redirecting to <a href="./#/reports/categories">the Report screen</a>…</p>
   </body>
 </html>
