@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <title>ObserveOps — reference screens</title>
+    <title>ObserveOps</title>
+    <!-- Inter, loaded the same way the DS loads Poppins. Matching weights to the DS's own set
+         (400/500/600/700) so every component keeps the weight it was designed at. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,49 +15,9 @@
     />
   </head>
   <body>
-    <!-- The landing page for the deployed site. Both screens are real pages of their own; this
-         exists so the site root is something other than a build artefact. Links are RELATIVE so
-         they work at any base path — a GitHub Pages project site serves from /<repo>/. -->
-    <main class="landing">
-      <header class="landing__head">
-        <span class="landing__mark">
-          <obs-logo name="motadata" size="28"></obs-logo>
-          ObserveOps
-        </span>
-        <h1 class="landing__title">Reference screens</h1>
-        <p class="landing__blurb">
-          Two product screens rebuilt entirely from the published
-          <code>@mtdt/observeops-ds-*</code> packages, as an outside consumer would. No hardcoded
-          colours, no invented components. The design-system gap report these screens produced is in
-          <code>docs/DS-GAPS.md</code>.
-        </p>
-      </header>
-
-      <div class="landing__cards">
-        <a class="card" href="./report-categories.html">
-          <obs-icon name="report" size="22"></obs-icon>
-          <h2 class="card__title">Report module</h2>
-          <p class="card__text">
-            Category-level Public/Private visibility and sharing. Paired padlock indicators, a
-            hover-only custom-category marker, and a four-step delete flow that reassigns or
-            force-deletes the reports inside a category.
-          </p>
-          <span class="card__go">Open screen</span>
-        </a>
-
-        <a class="card" href="./lama.html">
-          <obs-icon name="settings" size="22"></obs-icon>
-          <h2 class="card__title">LAMA integration</h2>
-          <p class="card__text">
-            The Create LAMA Profile drawer: interval or fixed-time scheduling, a counter catalogue
-            driven by the chosen Trading API with per-counter aggregation, and repeating metadata
-            fields.
-          </p>
-          <span class="card__go">Open screen</span>
-        </a>
-      </div>
-    </main>
-
-    <script type="module" src="/src/landing/main.js"></script>
+    <!-- The shell is rendered by src/app/shell.js into <body>, and screens are mounted into it by
+         the router. There is deliberately no markup here: a screen is added by writing a module and
+         one registry line, never by editing this file. -->
+    <script type="module" src="/src/app/main.js"></script>
   </body>
 </html>
