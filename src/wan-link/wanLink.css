@@ -120,3 +120,44 @@
   color: var(--secondary-text-color);
   margin-left: 2px;
 }
+
+.wl-drawer__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wl-drawer__probe { color: var(--secondary-text-color); font-weight: 400; }
+
+.wl-donut {
+  width: 112px;
+  height: 112px;
+  margin: 14px auto 8px;
+  border: 15px solid var(--chart-vivid-teal);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 11px;
+  color: var(--secondary-text-color);
+}
+
+.wl-donut b { display: block; font-size: 15px; color: var(--text-color); }
+
+.wl-bar { margin-bottom: 12px; }
+
+.wl-bar__track {
+  height: 9px;
+  border-radius: 3px;
+  border: 1px solid var(--chart-border-color);
+  background: var(--chart-emerald-green);
+}
+
+.wl-bar__ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--chart-legend-color);
+}

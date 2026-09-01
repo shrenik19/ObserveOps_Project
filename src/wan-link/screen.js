@@ -1,5 +1,6 @@
 import { pageHeaderHTML } from '../app/pageHeader.js'
 import { LINKS, PROBES } from './probes.js'
+import { renderDetailDrawer } from './detailDrawer.js'
 import './wanLink.css'
 
 export const meta = { pageHeader: { heading: 'Monitors', icon: 'monitor' } }
@@ -77,5 +78,19 @@ export function mount(root) {
   ]
   filters.value = []
 
-  return function unmount() {}
+  // The shell provides one #overlay-root per screen and clears it between navigations.
+  const overlay = document.getElementById('overlay-root')
+  const detailValue = (event) => (Array.isArray(event.detail) ? event.detail[0] : event.detail)
+  const closeOverlay = () => overlay?.replaceChildren()
+
+  table.addEventListener('rowclick', (event) => {
+    const id = detailValue(event)?.id
+    const link = LINKS.find((l) => l.id === id)
+    if (!link || !overlay) return
+    overlay.replaceChildren(renderDetailDrawer({ link, onClose: closeOverlay }))
+  })
+
+  return function unmount() {
+    closeOverlay()
+  }
 }
