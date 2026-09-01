@@ -16,6 +16,8 @@ const CATEGORIES = [
 
 const tabKey = (label) => label.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
+const SEVERITIES = ['down', 'critical', 'major', 'warning', 'clear', 'unreachable']
+
 const TEMPLATE = `
   ${pageHeaderHTML({ heading: 'Monitors', icon: 'monitor' })}
   <div class="module-tabs">
@@ -35,6 +37,9 @@ const TEMPLATE = `
       </obs-toolbar>
       <obs-filters id="wan-link-filters" kind="bar"></obs-filters>
       <obs-table id="wan-link-table" row-key="id" sort="name:asc" page-size="50" sticky-header max-height="100%"></obs-table>
+
+      <!-- The product's severity legend, which sits under every monitor list. -->
+      <div class="wl-legend" id="wan-link-legend"></div>
     </main>
   </div>
 `
@@ -60,7 +65,9 @@ export function mount(root) {
     { key: 'sourceInterface', title: 'SOURCE INTERFACE', width: 160 },
     // RTT sits BEFORE status, per the reference screenshot.
     { key: 'rtt', title: 'RTT', width: 90 },
-    { key: 'status', title: 'STATUS', width: 110 },
+    // type="status" renders the product's status pill (obs-tag status="…"). Neither this nor
+    // type="severity" is listed in elements-api.json — both were found by rendering. See DS-GAPS.
+    { key: 'status', title: 'STATUS', width: 110, type: 'status' },
   ]
 
   const toRow = (l) => ({
@@ -79,13 +86,22 @@ export function mount(root) {
   ]
   filters.value = []
 
+  // obs-severity display-text renders the dot plus its own capitalised label, so the legend needs
+  // no text of ours — one element per level.
+  root.querySelector('#wan-link-legend').innerHTML = SEVERITIES
+    .map((s) => `<obs-severity severity="${s}" shape="dot" display-text></obs-severity>`)
+    .join('')
+
   // The shell provides one #overlay-root per screen and clears it between navigations.
   const overlay = document.getElementById('overlay-root')
   const detailValue = (event) => (Array.isArray(event.detail) ? event.detail[0] : event.detail)
   const closeOverlay = () => overlay?.replaceChildren()
 
   table.addEventListener('rowclick', (event) => {
-    const id = detailValue(event)?.id
+    // Confirmed by rendering: obs-table emits the ROW KEY as a bare string — detail is ['l10'],
+    // not [{ id: 'l10' }]. The object shape is tolerated in case the contract widens.
+    const payload = detailValue(event)
+    const id = typeof payload === 'string' ? payload : payload?.id
     const link = LINKS.find((l) => l.id === id)
     if (!link || !overlay) return
     overlay.replaceChildren(renderDetailDrawer({ link, onClose: closeOverlay }))

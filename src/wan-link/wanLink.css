@@ -110,6 +110,10 @@
   padding-bottom: 4px;
 }
 
+/* A tile is a .wl-card for its surface, but it sits in the 6-column tile grid, not the 12-column
+   widget grid — without this it inherits span 12 and every tile claims its own row. */
+.wl-tile { grid-column: auto; }
+
 .wl-tile__values { display: flex; gap: 18px; }
 .wl-tile__label { font-size: 11px; color: var(--secondary-text-color); }
 .wl-tile__value { font-size: 19px; font-weight: 600; color: var(--text-color); }
@@ -174,3 +178,23 @@
 
 .wl-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .wl-form__note { font-size: 12px; color: var(--secondary-text-color); }
+
+/* The legend is pinned under the grid, as in the product. For that the table has to scroll inside
+   its own box rather than growing the page: the content column needs min-height:0 so it can shrink
+   below its content, and the table needs to be the flex item that absorbs the remaining space. */
+#wan-link-content { min-height: 0; }
+
+#wan-link-content obs-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.wl-legend {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  padding: 10px 0 2px;
+  font-size: 12px;
+}

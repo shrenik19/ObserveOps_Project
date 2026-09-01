@@ -51,4 +51,35 @@ describe('wan-link list', () => {
       new Set(['ICMP Echo', 'UDP Echo', 'UDP Jitter']),
     )
   })
+
+  // obs-table emits the row KEY as a bare string, confirmed by rendering — detail is ['l10'], not
+  // [{ id: 'l10' }]. Reading detail[0].id silently opened nothing, and jsdom could not see it.
+  it('opens the detail drawer from the row-key string obs-table actually emits', () => {
+    const overlay = document.createElement('div')
+    overlay.id = 'overlay-root'
+    document.body.append(overlay)
+
+    const root = document.createElement('div')
+    mount(root)
+    root.querySelector('#wan-link-table')
+      .dispatchEvent(new CustomEvent('rowclick', { detail: ['l10'] }))
+
+    expect(overlay.querySelector('obs-drawer')).not.toBeNull()
+    expect(overlay.textContent).toContain('nxosudpjitter-VI')
+    overlay.remove()
+  })
+
+  it('still opens the drawer if the contract widens to the row object', () => {
+    const overlay = document.createElement('div')
+    overlay.id = 'overlay-root'
+    document.body.append(overlay)
+
+    const root = document.createElement('div')
+    mount(root)
+    root.querySelector('#wan-link-table')
+      .dispatchEvent(new CustomEvent('rowclick', { detail: [{ id: 'l1' }] }))
+
+    expect(overlay.querySelector('obs-drawer')).not.toBeNull()
+    overlay.remove()
+  })
 })
