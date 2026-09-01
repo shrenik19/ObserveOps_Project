@@ -1,0 +1,122 @@
+/* Token-only: every colour resolves through a var(--token). The deploy workflow greps this whole
+   directory for literal colour syntax and fails the build on a match — comments included. */
+
+.wl-name { font-family: var(--chart-font-family, monospace); }
+
+.wl-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  padding: 16px 0;
+}
+
+.wl-card {
+  grid-column: span var(--wl-span, 12);
+  border: 1px solid var(--chart-border-color);
+  border-radius: 6px;
+  background: var(--card-background-color);
+  padding: 12px 14px;
+}
+
+.wl-card__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.wl-card--chart {
+  min-height: 218px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wl-chart {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 9px;
+  flex: 1;
+  margin-top: 10px;
+}
+
+.wl-chart__y {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 104px;
+  text-align: right;
+  font: 10px var(--chart-font-family, monospace);
+  color: var(--chart-legend-color);
+}
+
+.wl-chart__plot {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  height: 104px;
+  border-left: 1px solid var(--chart-grid-line-color);
+  border-bottom: 1px solid var(--chart-grid-line-color);
+}
+
+.wl-chart__plot polyline {
+  fill: none;
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.wl-chart__plot line {
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.wl-chart__x {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  justify-content: space-between;
+  font: 10px var(--chart-font-family, monospace);
+  color: var(--chart-legend-color);
+}
+
+.wl-chart__legend {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font: 10.5px var(--chart-font-family, monospace);
+  color: var(--chart-legend-color);
+}
+
+.wl-chart__key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wl-chart__key i {
+  width: 15px;
+  height: 2px;
+}
+
+.wl-tiles {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+.wl-tile__values { display: flex; gap: 18px; }
+.wl-tile__label { font-size: 11px; color: var(--secondary-text-color); }
+.wl-tile__value { font-size: 19px; font-weight: 600; color: var(--text-color); }
+
+.wl-tile__unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--secondary-text-color);
+  margin-left: 2px;
+}

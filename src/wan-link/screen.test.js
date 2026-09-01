@@ -30,3 +30,25 @@ describe('wan-link screen registration', () => {
     expect(keys).toContain('inventory')
   })
 })
+
+describe('wan-link list', () => {
+  it('renders the nine columns with RTT before STATUS', () => {
+    const root = document.createElement('div')
+    mount(root)
+    const keys = root.querySelector('#wan-link-table').columns.map((c) => c.key)
+    expect(keys).toEqual([
+      'name', 'monitor', 'type', 'probe', 'sourceIp',
+      'destinationIp', 'sourceInterface', 'rtt', 'status',
+    ])
+  })
+
+  it('lists every seeded link, labelled by probe', () => {
+    const root = document.createElement('div')
+    mount(root)
+    const rows = root.querySelector('#wan-link-table').rows
+    expect(rows).toHaveLength(14)
+    expect(new Set(rows.map((r) => r.probe))).toEqual(
+      new Set(['ICMP Echo', 'UDP Echo', 'UDP Jitter']),
+    )
+  })
+})
