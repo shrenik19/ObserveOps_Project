@@ -23,6 +23,9 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G29** `multiple`+`disabled` select loses its trigger | 🆕 **OPEN** | The template swaps `.trig` for a bare `<div class="pills">`, so the field has no border, background or chevron — it reads as a caption, not a disabled field |
 | **G30** two-pane description ignores the selected option | 🆕 **OPEN** | The pane is driven by a hover-only highlight index; a select that already has a value opens on "Hover an option to see details." instead of that option's own description. **Found with a real mouse** |
 | **G31** no card / tile component | 🆕 **OPEN** | A navigational index of screens has to hand-compose its cards from raw `<a>`. Conformance scores that page **70/100, component 0, 2 raw controls** — the only screen in the project that cannot reach 100 |
+| **G32** `elements-api.json` omits event `detail` payloads | 🆕 **OPEN** | `rowclick` emits the row KEY as a bare string, not the row. Reading `detail[0].id` silently opened nothing; unit tests asserted the assumed shape and passed. **Found only by clicking a real row** |
+| **G33** `obs-table` copies the host `id` into its shadow root | 🆕 **OPEN** | `#wan-link-table` matches twice under any shadow-piercing engine; a Playwright strict locator throws. The consumer cannot address its own element by the id it set |
+| **G34** no chart element | 🆕 **OPEN** | 47 elements, none draws a series — the palette file states the product uses Highcharts. A monitoring screen is eight time-series charts; the DS covers everything around them and stops at the plot |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1131,3 +1134,129 @@ Worth recording so the good parts are not lost in a gap report:
   `--button-transparent-hover-text` at `--primary` restyled a button's hover state from outside its
   shadow DOM with no piercing and no hardcoded colour — and conformance stayed at 100/100. More
   elements exposing their internals as custom properties would reduce consumer workarounds a lot.
+
+---
+
+### New finding — G32: `elements-api.json` documents event NAMES but never their `detail` payloads
+
+`elements-api.json` earns its keep — it is the reason "never guess a component's API" is workable.
+But for events it lists only names:
+
+```json
+"events": ["change", "sort", "rowaction", "pagechange", "rowclick", "edit", "save", …]
+```
+
+There is no payload shape. The file's own `$note` says events "deliver the value in `event.detail`
+as an ARRAY (unwrap `detail[0]`)" — which says how to unwrap, never what is inside.
+
+**Repro.** The WAN Link list opens a detail drawer on row click. The obvious reading of `rowclick`
+is that it hands you the row:
+
+```js
+table.addEventListener('rowclick', (event) => {
+  const link = LINKS.find((l) => l.id === event.detail[0].id)   // undefined, every time
+  …
+})
+```
+
+`obs-table` emits the **row key as a bare string**. A live probe on the rendered page:
+
+```
+events fired: [["rowclick","[\"l10\"]"]]
+```
+
+so `detail[0]` is `'l10'`, and `detail[0].id` is `undefined`. **The drawer silently never opened.**
+Nothing threw, nothing logged, and the unit tests passed — they dispatched the shape the consumer
+had assumed, so they asserted the bug. Only clicking a real row in a real browser found it.
+
+This is the same class as **G10** (slots omitted): the manifest is trusted precisely because it is
+"the ACTUAL API … parsed from the element source", so a consumer reasonably reads a missing payload
+as "there is nothing to know", not "this was not extracted".
+
+**Consumer workaround:** accept both shapes, and pin the real one with a test.
+
+```js
+const payload = Array.isArray(event.detail) ? event.detail[0] : event.detail
+const id = typeof payload === 'string' ? payload : payload?.id
+```
+
+**Ask:** extract the `detail` payload alongside each event name, the way attributes already carry
+`type` and `note` — e.g. `{ name: 'rowclick', detail: 'String  // the row-key value' }`. Ten words
+per event would have removed an entire debugging cycle, and the failure mode is silent.
+
+**Class: DS — discoverability.**
+
+---
+
+### New finding — G33: `obs-table` copies the consumer's `id` onto an internal shadow-DOM element
+
+Give the grid an id and the component reproduces it inside its own shadow root:
+
+```
+locator('#wan-link-table') resolved to 2 elements:
+  1) <obs-table … id="wan-link-table">          the host, ours
+  2) <div class="wrap" id="wan-link-table">…    obs-table's internal wrapper
+```
+
+Any shadow-piercing selector engine — Playwright's included — now matches twice, and a strict-mode
+locator throws outright:
+
+```
+locator.waitFor: Error: strict mode violation
+```
+
+Duplicate ids across shadow boundaries are legal DOM, so nothing warns. But an internal node has no
+business carrying an identifier the consumer chose: it makes the consumer's own id ambiguous to
+every tool that pierces shadow roots, which is exactly the tooling this project's method depends on
+("verify by rendering, never by reading").
+
+**Consumer workaround:** never select the grid by bare id — always qualify by tag,
+`obs-table#wan-link-table`.
+
+**Ask:** give the internal wrapper its own name (a `part`, or an id derived from the host's, or no
+id at all). Consumers should be able to address their own element by the id they set.
+
+**Class: DS — capability (minor, but it breaks tooling).**
+
+---
+
+### New finding — G34: no chart element, on a design system whose product is full of charts
+
+The DS ships **47 elements and not one of them draws a series.** Searching for
+`chart|graph|plot|spark|gauge|donut|viz` returns three, none of which plots anything:
+
+| Element | What it is |
+|---|---|
+| `obs-dataviz-tooltip` | the tooltip *around* a chart |
+| `obs-metric-list` | no attributes, no slots in `elements-api.json` |
+| `obs-metric-picker` | choosing a metric, not drawing it |
+
+The DS knows this. `tokens/chart-palette.json` says so plainly:
+
+> The product's CATEGORICAL chart series palette (**Highcharts**) … Source of truth:
+> `src/utils/chart-colors.js`
+
+So charts live in the product, behind a library the DS does not expose. A WAN Link monitor screen is
+eight time-series charts and a donut — the DS covers its shell, its grid, its drawers and its
+severity chips, and then stops at the thing the screen exists to show.
+
+**Consumer workaround — and credit where it is due.** The charts are hand-rolled inline SVG, but
+they are *not* off-system: the DS ships 28 `--chart-*` custom properties, and every one of them is
+used. Series hues are consumed **in palette order** per the palette's own rule, so nothing is
+hand-picked, and light/dark come free:
+
+```js
+export const SERIES_TOKENS = ['--chart-vivid-teal', '--chart-sunset-orange', … ]
+export const seriesToken = (i) => SERIES_TOKENS[i % SERIES_TOKENS.length]
+```
+
+Verified on the rendered page: 29 plotted series, **0 unresolved strokes**, 5 distinct hues, and the
+no-hardcoded-colours guard passes across all of `src/`. The tokens did their job. What is missing is
+the element.
+
+**Ask:** publish the product's Highcharts wrapper as `obs-chart` — series, axes, legend, tooltip,
+theme, taking the palette automatically. Failing that, publish the *chrome* (axis, legend,
+`obs-dataviz-tooltip` wiring) so consumers hand-roll only the plot. Every consumer building a
+monitoring surface will otherwise rebuild axes and legends, and each will drift from the product.
+
+**Class: DS — capability.**
