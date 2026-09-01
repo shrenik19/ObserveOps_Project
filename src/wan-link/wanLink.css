@@ -161,3 +161,16 @@
   font-size: 10px;
   color: var(--chart-legend-color);
 }
+
+.wl-form__legend {
+  margin: 22px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--chart-border-color);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--secondary-text-color);
+}
+
+.wl-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wl-form__note { font-size: 12px; color: var(--secondary-text-color); }

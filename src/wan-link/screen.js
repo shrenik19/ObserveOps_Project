@@ -1,6 +1,7 @@
 import { pageHeaderHTML } from '../app/pageHeader.js'
 import { LINKS, PROBES } from './probes.js'
 import { renderDetailDrawer } from './detailDrawer.js'
+import { renderConfigDrawer } from './configDrawer.js'
 import './wanLink.css'
 
 export const meta = { pageHeader: { heading: 'Monitors', icon: 'monitor' } }
@@ -88,6 +89,11 @@ export function mount(root) {
     const link = LINKS.find((l) => l.id === id)
     if (!link || !overlay) return
     overlay.replaceChildren(renderDetailDrawer({ link, onClose: closeOverlay }))
+  })
+
+  root.querySelector('[data-role="add-probe"]').addEventListener('click', () => {
+    if (!overlay) return
+    overlay.replaceChildren(renderConfigDrawer({ onClose: closeOverlay }))
   })
 
   return function unmount() {
