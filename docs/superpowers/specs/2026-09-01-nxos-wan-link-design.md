@@ -83,7 +83,7 @@ Both probes produce identical CLI output, so they share one layout.
 NX-OS reports **no min or max RTT** for these probes, so the two extra `RTT History` charts in the
 XE/XR template are dropped. The drawer states this rather than leaving the omission silent.
 
-### UDP Jitter — 6 tiles + 10 charts
+### UDP Jitter — 6 tiles + 8 widgets
 
 The tile row is **capped at 6**.
 
@@ -106,8 +106,6 @@ The tile row is **capped at 6**.
 | B | Packet Loss Statistics | 4/12 | Packet Skipped · Out Of Sequence · Packet Late Arrival · Tail Drop |
 | C | Source to Destination Latency | 6/12 | Min · Avg · Max Latency |
 | C | Destination to Source Latency | 6/12 | Min · Avg · Max Latency |
-| D | Source to Destination Loss Periods | 6/12 | Loss Periods · Period Length Min/Max · Inter-Loss Length Min/Max |
-| D | Destination to Source Loss Periods | 6/12 | same, DS direction |
 
 **Changes from the XE/XR jitter template, all forced by the NX-OS counter set:**
 
@@ -116,15 +114,23 @@ The tile row is **capped at 6**.
 - `Packet Error` has no equivalent; `Tail Drop` replaces it.
 - The **Average Jitter** and **Avg Latency** charts are dropped — both re-drew series already
   plotted by the directional charts.
-- **Loss Periods** is new, one chart per direction. Splitting by direction leaves room for both
-  halves of every Min/Max pair.
+- **Loss periods are not charted.** NX-OS reports loss-period depth that XE/XR has no widget for,
+  and it is left out here too — the counters are listed as not covered rather than given a chart.
 
 ### Counters deliberately not covered
 
-`Latest operation start time` · `Operation time to live` · `IPSLA operation id` (metadata, not
-metrics) · `Number Of RTT` · `Number of Latency one-way Samples` · `Number of SD Jitter Samples` ·
-`Number of DS Jitter Samples` (sample counts) · `Mean Opinion Score (MOS)` · `ICPIF` (dropped when
-the tile row was capped at 6).
+**Metadata, not metrics** — `Latest operation start time` · `Operation time to live` ·
+`IPSLA operation id`
+
+**Sample counts** — `Number Of RTT` · `Number of Latency one-way Samples` ·
+`Number of SD Jitter Samples` · `Number of DS Jitter Samples`
+
+**Voice score** — `Mean Opinion Score (MOS)` · `ICPIF`, dropped when the tile row was capped at 6
+
+**Loss-period depth**, both directions — `… Loss Periods Number` ·
+`… Loss Period Length Min/Max` · `… Inter Loss Period Length Min/Max`
+
+`Loss Source to Destination` and `Loss Destination to Source` remain covered by the Packet Lost tile.
 
 ## Probe config drawer
 

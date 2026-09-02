@@ -50,9 +50,9 @@ describe('probes', () => {
     expect(rtt.series).toEqual(['ipsla.latency.ms.avg'])
   })
 
-  it('caps the jitter tile row at six and gives it ten charts', () => {
+  it('caps the jitter tile row at six and gives it eight widgets', () => {
     expect(tilesFor('udp-jitter')).toHaveLength(6)
-    expect(chartsFor('udp-jitter')).toHaveLength(10)
+    expect(chartsFor('udp-jitter')).toHaveLength(8)
   })
 
   it('has no MOS or ICPIF tile', () => {
@@ -61,19 +61,11 @@ describe('probes', () => {
     expect(titles).not.toContain('ICPIF')
   })
 
-  it('splits loss periods by direction, both halves of each pair', () => {
-    const loss = chartsFor('udp-jitter').filter((c) => c.title.endsWith('Loss Periods'))
-    expect(loss).toHaveLength(2)
-    expect(loss[0].series).toEqual([
-      'Loss Periods', 'Period Length Min', 'Period Length Max',
-      'Inter-Loss Length Min', 'Inter-Loss Length Max',
-    ])
-  })
-
-  it('drops the Average Jitter and Avg Latency charts', () => {
+  it('drops the Average Jitter, Avg Latency and Loss Periods charts', () => {
     const titles = chartsFor('udp-jitter').map((c) => c.title)
     expect(titles).not.toContain('Average Jitter')
     expect(titles).not.toContain('Avg Latency')
+    expect(titles.filter((t) => t.endsWith('Loss Periods'))).toEqual([])
   })
 
   it('fills each chart row to twelve columns', () => {

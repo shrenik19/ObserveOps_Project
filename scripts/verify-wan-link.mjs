@@ -94,6 +94,6 @@ await browser.close()
 
 const ok =
   errors.length === 0 && unresolved.length === 0 &&
-  rows === 3 && sepsPainted === 2 && groupTags.length === 2 && iconsDrawn === 6 && valueRows === 1 && tiles === 6 && tileRows === 1 && charts === 8 && widgets === 10 && polylines === 29 &&
+  rows === 3 && sepsPainted === 2 && groupTags.length === 2 && iconsDrawn === 6 && valueRows === 1 && tiles === 6 && tileRows === 1 && charts === 6 && widgets === 8 && polylines === 19 &&
   echoWidgets === 3 && echoCharts === 1
 process.exit(ok ? 0 : 1)

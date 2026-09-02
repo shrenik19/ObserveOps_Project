@@ -25,7 +25,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G31** no card / tile component | 🆕 **OPEN** | A navigational index of screens has to hand-compose its cards from raw `<a>`. Conformance scores that page **70/100, component 0, 2 raw controls** — the only screen in the project that cannot reach 100 |
 | **G32** `elements-api.json` omits event `detail` payloads | 🆕 **OPEN** | `rowclick` emits the row KEY as a bare string, not the row. Reading `detail[0].id` silently opened nothing; unit tests asserted the assumed shape and passed. **Found only by clicking a real row** |
 | **G33** `obs-table` copies the host `id` into its shadow root | 🆕 **OPEN** | `#wan-link-table` matches twice under any shadow-piercing engine; a Playwright strict locator throws. The consumer cannot address its own element by the id it set |
-| **G34** no chart element | 🆕 **OPEN** | 47 elements, none draws a series — the palette file states the product uses Highcharts. A monitoring screen is eight time-series charts; the DS covers everything around them and stops at the plot |
+| **G34** no chart element | 🆕 **OPEN** | 47 elements, none draws a series — the palette file states the product uses Highcharts. A monitoring screen is six time-series charts; the DS covers everything around them and stops at the plot |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1237,7 +1237,7 @@ The DS knows this. `tokens/chart-palette.json` says so plainly:
 > `src/utils/chart-colors.js`
 
 So charts live in the product, behind a library the DS does not expose. A WAN Link monitor screen is
-eight time-series charts and a donut — the DS covers its shell, its grid, its drawers and its
+six time-series charts and a donut — the DS covers its shell, its grid, its drawers and its
 severity chips, and then stops at the thing the screen exists to show.
 
 **Consumer workaround — and credit where it is due.** The charts are hand-rolled inline SVG, but
@@ -1250,7 +1250,7 @@ export const SERIES_TOKENS = ['--chart-vivid-teal', '--chart-sunset-orange', …
 export const seriesToken = (i) => SERIES_TOKENS[i % SERIES_TOKENS.length]
 ```
 
-Verified on the rendered page: 29 plotted series, **0 unresolved strokes**, 5 distinct hues, and the
+Verified on the rendered page: 19 plotted series, **0 unresolved strokes**, 4 distinct hues, and the
 no-hardcoded-colours guard passes across all of `src/`. The tokens did their job. What is missing is
 the element.
 

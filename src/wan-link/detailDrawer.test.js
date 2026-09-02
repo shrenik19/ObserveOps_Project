@@ -20,12 +20,12 @@ describe('detail drawer', () => {
     expect(drawer.querySelectorAll('.wl-tile')).toHaveLength(0)
   })
 
-  it('gives UDP Jitter six tiles and eight plotted charts', () => {
+  it('gives UDP Jitter six tiles and six plotted charts', () => {
     const drawer = renderDetailDrawer({ link: linkOf('udp-jitter'), onClose: () => {} })
     expect(drawer.querySelectorAll('.wl-tile')).toHaveLength(6)
-    expect(drawer.querySelectorAll('.wl-card--chart')).toHaveLength(8)
-    // Ten widgets in the grid: eight charts plus the donut and the bars.
-    expect(drawer.querySelectorAll('.wl-grid > .wl-card')).toHaveLength(10)
+    expect(drawer.querySelectorAll('.wl-card--chart')).toHaveLength(6)
+    // Eight widgets in the grid: six charts plus the donut and the bars.
+    expect(drawer.querySelectorAll('.wl-grid > .wl-card')).toHaveLength(8)
   })
 
   it('labels the availability windows per probe', () => {

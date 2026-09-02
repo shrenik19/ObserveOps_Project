@@ -62,11 +62,6 @@ const ECHO_CHARTS = [
   },
 ]
 
-const LOSS_SERIES = [
-  'Loss Periods', 'Period Length Min', 'Period Length Max',
-  'Inter-Loss Length Min', 'Inter-Loss Length Max',
-]
-
 const JITTER_CHARTS = [
   { row: 'A', title: "Today's Availability", span: 2, kind: 'donut', series: [] },
   { row: 'A', title: 'Availability Last 30 Days', span: 4, kind: 'bars', series: [] },
@@ -97,15 +92,6 @@ const JITTER_CHARTS = [
   {
     row: 'C', title: 'Destination to Source Latency', span: 6, kind: 'line',
     series: ['Min. Latency', 'Avg. Latency', 'Max. Latency'], yTicks: YT, xTicks: XT,
-  },
-
-  {
-    row: 'D', title: 'Source to Destination Loss Periods', span: 6, kind: 'line',
-    series: LOSS_SERIES, yTicks: ['20', '15', '10', '5', '0'], xTicks: XT,
-  },
-  {
-    row: 'D', title: 'Destination to Source Loss Periods', span: 6, kind: 'line',
-    series: LOSS_SERIES, yTicks: ['20', '15', '10', '5', '0'], xTicks: XT,
   },
 ]
 
