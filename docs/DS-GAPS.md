@@ -27,6 +27,8 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G33** `obs-table` copies the host `id` into its shadow root | 🆕 **OPEN** | `#wan-link-table` matches twice under any shadow-piercing engine; a Playwright strict locator throws. The consumer cannot address its own element by the id it set |
 | **G34** no chart element | ⚖️ **ANSWERED, by design** | 0.1.210 documents the decision: charts are Highcharts, app-rendered, so no obs-* will ship. Superseded by G35 |
 | **G35** the 32 chart fixtures are documented but not published | 🆕 **OPEN** | `data-viz.json` says they ship under `charts/` with a `charts/manifest.json`; `package.json` `files` omits the directory and it is absent from the tarball. The one shippable path for a standalone consumer is documented and unreachable |
+| **G36** `obs-table` cannot pin its pager to the bottom of a taller container | 🆕 **OPEN** | The host stretches to 605px; the internal wrap stays at its 183px content height, so the pager sits mid-page. No attribute, no `part`, no custom property, and a definite host height changes nothing. The product's bottom-pinned footer has to be rebuilt by the consumer |
+| **G37** the conformance checker scores a **disabled** `obs-button` as off-reference | 🆕 **OPEN** | 4 disabled pager buttons drop the run 100 → 91 (component 69), and the failure line prints the SAME colour on both sides: "bg rgb(236, 241, 249) vs rgb(236, 241, 249)". Removing `disabled` restores 100/100 |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1337,3 +1339,79 @@ showcase is named as an alternative, but a URL cannot be diffed, version-pinned 
 elsewhere, correct `data-viz.json` — it currently names this package twice.
 
 **Class: DS — packaging.**
+
+---
+
+### New finding — G36: `obs-table` cannot pin its pager to the bottom of a taller container
+
+Every monitor list in the product ends in one band at the **bottom of the page**: pagination, page
+size, the severity legend and the item count, on one line. `obs-table` renders its own pager
+immediately after the rows, at the table's content height. With three rows that lands the pager
+mid-page, roughly 400px above where the product puts it.
+
+**The host stretches; the internals do not.** Measured on the rendered page:
+
+| | height |
+|---|---|
+| `obs-table` host (a flex child, `flex: 1 1 auto`) | **605px** |
+| its internal `.wrap` | **183px** |
+| `.pager` bottom | **429px**, against a host bottom of 851px |
+
+Every outside lever was tried, and none moves it:
+
+- `max-height="100%"` + `sticky-header` — documented as "cap the grid height + scroll the body", but
+  it only *caps*; with three rows there is nothing to scroll and the wrap stays at content height.
+- A **definite** host height (`height: 500px`, and `display:flex; flex-direction:column` with it) —
+  wrap 183px, pager 429px, unchanged in both cases.
+- `::part()` — `obs-table` exposes **no parts at all**: `shadowRoot.querySelectorAll('[part]')`
+  returns an empty list.
+- No `height`, `fill` or `stretch` attribute exists in `elements-api.json`.
+
+Injecting `.wrap{height:100%;display:flex;flex-direction:column}` **into the shadow root** did not
+move it either (429 → 429), so this is not a percentage-resolution problem a consumer could solve
+even by piercing — the component sizes itself to its content.
+
+**Consumer workaround:** turn the pager off with the documented `page-size="0"` and rebuild the whole
+band — first/prev/next/last, the page-size select, legend and count — from `obs-button`,
+`obs-icon`, `obs-select` and `obs-severity`. That is what this screen does. It reaches 100/100 and
+0 raw controls, so nothing is off-system; it is simply a component's own footer rebuilt by hand.
+
+**Ask:** either let the grid fill its host (a `fill`/`stretch` attribute, or `:host{height:100%}`
+with an internal flex column), or expose the pager as a `part` so a consumer can place it. A
+bottom-pinned list footer is the shape of every list screen in the product.
+
+**Class: DS — capability.**
+
+---
+
+### New finding — G37: the conformance checker scores a **disabled** `obs-button` as off-reference
+
+The four pager arrows are `disabled`, because the list has one page — the same greyed state the
+product shows. That alone drops the screen from **100/100 to 91/100**, component 100 → 69:
+
+```
+OVERALL: 91/100  ·  token 100  component 69  philosophy 100  layout 100
+  ✗ <obs-button variant="neutral-lightest"> renders off-reference
+    (bg rgb(236, 241, 249) vs rgb(236, 241, 249)) — variant looks overridden,
+    not the real "neutral-lightest"
+```
+
+**The failure line reports the same colour on both sides.** Nothing is overridden: the two export
+buttons in the toolbar above use the identical `variant="neutral-lightest" squared` and pass. The
+only difference is the `disabled` attribute — a first-class, documented property of the component.
+Removing it restores 100/100 with 0 off-ref; adding it back drops it again. Nothing else changes.
+
+So the checker appears to compare a disabled instance against an enabled reference render, find a
+difference in some property it does not print, and report it as an overridden variant while
+displaying matching backgrounds.
+
+**Consumer decision:** the `disabled` state is kept. It is the correct affordance — enabled-looking
+arrows that do nothing are a worse product than greyed ones — and this repo already has precedent
+for choosing the product over the score (**G31**, where a raw anchor was kept deliberately). The
+deploy workflow gates on tests, build and the colour guard, not on conformance, so nothing is
+blocked. This is the same family as **G8**: the checker rejecting valid work.
+
+**Ask:** compare a disabled component against a disabled reference, and print the property that
+actually differs rather than one that matches.
+
+**Class: DS — discoverability (tooling).**

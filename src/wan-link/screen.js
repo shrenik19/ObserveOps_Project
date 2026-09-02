@@ -36,10 +36,42 @@ const TEMPLATE = `
         </obs-button>
       </obs-toolbar>
       <obs-filters id="wan-link-filters" kind="bar"></obs-filters>
-      <obs-table id="wan-link-table" row-key="id" sort="name:asc" page-size="50" sticky-header max-height="100%"></obs-table>
+      <!-- page-size="0" turns obs-table's own pager off. The product puts pagination, page size,
+           the severity legend and the item count in ONE band pinned to the bottom of the page;
+           obs-table renders its pager at its own content height and offers no attribute, part or
+           custom property to move it, so the band below is ours. See DS-GAPS G36. -->
+      <obs-table id="wan-link-table" row-key="id" sort="name:asc" page-size="0" sticky-header max-height="100%"></obs-table>
 
-      <!-- The product's severity legend, which sits under every monitor list. -->
-      <div class="wl-legend" id="wan-link-legend"></div>
+      <div class="wl-footer">
+        <!-- The arrows are disabled because there is one page. The conformance checker scores a
+             disabled obs-button as off-reference while reporting identical colours on both sides
+             (DS-GAPS G37); the correct affordance is kept over the better score. -->
+        <div class="wl-footer__pager">
+          <obs-button variant="neutral-lightest" squared disabled aria-label="First page">
+            <obs-icon name="chevron-double-left" size="12"></obs-icon>
+          </obs-button>
+          <obs-button variant="neutral-lightest" squared disabled aria-label="Previous page">
+            <obs-icon name="chevron-left" size="12"></obs-icon>
+          </obs-button>
+          <span class="wl-footer__page">1</span>
+          <obs-button variant="neutral-lightest" squared disabled aria-label="Next page">
+            <obs-icon name="chevron-right" size="12"></obs-icon>
+          </obs-button>
+          <obs-button variant="neutral-lightest" squared disabled aria-label="Last page">
+            <obs-icon name="chevron-double-right" size="12"></obs-icon>
+          </obs-button>
+          <!-- block makes the control fill its host instead of the fixed 240px, which is the only
+               supported way to narrow it: sizing the host alone is overflowed by the inner control.
+               (No backticks in this comment: the template is a JS template literal.) -->
+          <obs-select id="wan-link-page-size" value="50" block></obs-select>
+          <span class="wl-footer__label">items per page</span>
+        </div>
+
+        <!-- The product's severity legend sits under every monitor list. -->
+        <div class="wl-legend" id="wan-link-legend"></div>
+
+        <div class="wl-footer__count" id="wan-link-count"></div>
+      </div>
     </main>
   </div>
 `
@@ -91,6 +123,12 @@ export function mount(root) {
   root.querySelector('#wan-link-legend').innerHTML = SEVERITIES
     .map((s) => `<obs-severity severity="${s}" shape="dot" display-text></obs-severity>`)
     .join('')
+
+  root.querySelector('#wan-link-page-size').options = [25, 50, 100]
+    .map((n) => ({ value: String(n), text: String(n) }))
+
+  const total = table.rows.length
+  root.querySelector('#wan-link-count').textContent = `1 - ${total} of ${total} items`
 
   // The shell provides one #overlay-root per screen and clears it between navigations.
   const overlay = document.getElementById('overlay-root')

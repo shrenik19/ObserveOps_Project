@@ -249,12 +249,45 @@
   min-height: 0;
 }
 
-.wl-legend {
+/* One band pinned to the bottom of the page, as in the product: pager and page size on the left,
+   the severity legend centred, the item count on the right. */
+.wl-footer {
   flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 4px 2px;
+  border-top: 1px solid var(--border-color);
+}
+
+.wl-footer__pager { display: flex; align-items: center; gap: 6px; }
+
+/* obs-select is a fixed 240px unless `block`; the page-size control is a two-digit field. */
+.wl-footer__pager obs-select { width: 84px; margin-left: 6px; }
+
+.wl-footer__page {
+  min-width: 26px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.wl-footer__label,
+.wl-footer__count {
+  font-size: 12px;
+  color: var(--secondary-text-color);
+  white-space: nowrap;
+}
+
+.wl-footer__count { justify-self: end; }
+
+.wl-legend {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: 6px 18px;
-  padding: 10px 0 2px;
   font-size: 12px;
 }

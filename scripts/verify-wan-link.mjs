@@ -25,6 +25,23 @@ await page.waitForTimeout(600)
 
 const rows = await page.locator('obs-table#wan-link-table').evaluate((t) => t.rows.length)
 const headers = await page.locator('obs-table#wan-link-table').evaluate((t) => t.columns.map((c) => c.title))
+// The footer band must sit at the BOTTOM of the content region, not at the table's content height.
+// obs-table's own pager cannot be moved there, which is why this band is ours (DS-GAPS G36).
+const footer = await page.locator('.wl-footer').evaluate((el) => {
+  const f = el.getBoundingClientRect()
+  const content = document.querySelector('#wan-link-content')
+  const c = content.getBoundingClientRect()
+  // The content region carries its own padding; measure to its padding box, not its border box.
+  const padBottom = parseFloat(getComputedStyle(content).paddingBottom) || 0
+  return {
+    gapFromBottom: Math.round(c.bottom - padBottom - f.bottom),
+    inViewport: f.bottom <= window.innerHeight + 1,
+  }
+})
+const footerPinned = footer.gapFromBottom <= 2 && footer.inViewport
+const pagerButtons = await page.locator('.wl-footer__pager obs-button').count()
+const itemCount = await page.locator('#wan-link-count').textContent()
+
 await page.screenshot({ path: 'docs/shots/wan-link-list.png' })
 
 // A real click on a real row, not a synthetic event.
@@ -84,7 +101,7 @@ const echoCharts = await page.locator('.wl-card--chart').count()
 await page.screenshot({ path: 'docs/shots/wan-link-echo.png' })
 
 const result = {
-  rows, headers, seps, sepsPainted, groupTags, tileIcons, iconsDrawn, valueRows, tiles, tileRows, charts, widgets, polylines,
+  rows, headers, footer, footerPinned, pagerButtons, itemCount, seps, sepsPainted, groupTags, tileIcons, iconsDrawn, valueRows, tiles, tileRows, charts, widgets, polylines,
   distinctStrokes, unresolved: unresolved.length,
   echoWidgets, echoCharts, errors,
 }
@@ -94,6 +111,6 @@ await browser.close()
 
 const ok =
   errors.length === 0 && unresolved.length === 0 &&
-  rows === 3 && sepsPainted === 2 && groupTags.length === 2 && iconsDrawn === 6 && valueRows === 1 && tiles === 6 && tileRows === 1 && charts === 6 && widgets === 8 && polylines === 19 &&
+  rows === 3 && footerPinned && pagerButtons === 4 && sepsPainted === 2 && groupTags.length === 2 && iconsDrawn === 6 && valueRows === 1 && tiles === 6 && tileRows === 1 && charts === 6 && widgets === 8 && polylines === 19 &&
   echoWidgets === 3 && echoCharts === 1
 process.exit(ok ? 0 : 1)
