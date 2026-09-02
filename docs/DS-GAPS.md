@@ -25,7 +25,8 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G31** no card / tile component | 🆕 **OPEN** | A navigational index of screens has to hand-compose its cards from raw `<a>`. Conformance scores that page **70/100, component 0, 2 raw controls** — the only screen in the project that cannot reach 100 |
 | **G32** `elements-api.json` omits event `detail` payloads | 🆕 **OPEN** | `rowclick` emits the row KEY as a bare string, not the row. Reading `detail[0].id` silently opened nothing; unit tests asserted the assumed shape and passed. **Found only by clicking a real row** |
 | **G33** `obs-table` copies the host `id` into its shadow root | 🆕 **OPEN** | `#wan-link-table` matches twice under any shadow-piercing engine; a Playwright strict locator throws. The consumer cannot address its own element by the id it set |
-| **G34** no chart element | 🆕 **OPEN** | 47 elements, none draws a series — the palette file states the product uses Highcharts. A monitoring screen is six time-series charts; the DS covers everything around them and stops at the plot |
+| **G34** no chart element | ⚖️ **ANSWERED, by design** | 0.1.210 documents the decision: charts are Highcharts, app-rendered, so no obs-* will ship. Superseded by G35 |
+| **G35** the 32 chart fixtures are documented but not published | 🆕 **OPEN** | `data-viz.json` says they ship under `charts/` with a `charts/manifest.json`; `package.json` `files` omits the directory and it is absent from the tarball. The one shippable path for a standalone consumer is documented and unreachable |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1260,3 +1261,79 @@ theme, taking the palette automatically. Failing that, publish the *chrome* (axi
 monitoring surface will otherwise rebuild axes and legends, and each will drift from the product.
 
 **Class: DS — capability.**
+
+---
+
+### G34 — ⚖️ ANSWERED in spec@0.1.210, and the answer is "by design"
+
+The gap asked for `obs-chart`. **The DS has now answered it, explicitly and in writing.** A new
+registry entry, `components/registry/data-viz.json`, states the position:
+
+> The product's charts, stat tiles, topology graph and dashboard grid — a decision GUIDE, not a web
+> component. Charts are Highcharts v10, topology is Cytoscape, the dashboard grid is
+> vue-grid-layout: **all app-rendered and licensed/heavy, so the DS does not ship an `obs-*` for
+> them.**
+
+That closes the ask. It is a legitimate answer — a licensed charting engine is a poor fit for a
+component library — and it is far better documented than the silence that produced the original
+finding. Two things in it change how a consumer should behave, and both are new:
+
+1. **The colour rule is now explicit**, and matches what this screen already does: "Colour series
+   from the categorical palette / severity tokens, never the brand navy `--primary`." Our charts
+   consume `SERIES_TOKENS` in palette order; verified again after the upgrade — 19 series, 0
+   unresolved strokes, all `--chart-*`.
+2. **Standalone consumers are told to stop and ask**: render "with the product's Chart/Graph/Widgets
+   component (in-repo) or **STOP-and-ASK (standalone)**." This app is standalone. So the hand-rolled
+   SVG is no longer an unsanctioned workaround — it is the case the DS says to raise, and this is
+   the raising of it.
+
+**Remaining ask:** publish the *chrome* — axis, gridline, legend, and `obs-dataviz-tooltip` wiring —
+as a headless container an app-rendered plot can sit inside. Every standalone consumer currently
+rebuilds axes and legends by hand and each will drift from the product.
+
+---
+
+### New finding — G35: the 32 chart fixtures are documented but not published
+
+`data-viz.json` in spec@0.1.210 announces real, usable material:
+
+> The DS now ships **32 CAPTURED chart configurations across 9 categories** — the product's own
+> chart-builder output, sanitised. They are shipped in this spec package under `charts/` (config
+> JSON per fixture) with an index at `charts/manifest.json`.
+
+This is exactly what a standalone consumer needs: not a component, but the product's own configs to
+copy. **The directory is not in the package.**
+
+```
+$ ls node_modules/@mtdt/observeops-ds-spec/
+AGENTS.md  README.md  authoring-playbook.md  components  conformance
+elements-api.json  foundation  index.js  layout  llms.txt  package.json
+spec.manifest.json  tokens
+
+$ find . -iname "*chart*"
+./tokens/chart-palette.json          # the palette, and nothing else
+```
+
+`package.json` shows why — `files` never lists it:
+
+```json
+"files": ["index.js","elements-api.json","AGENTS.md","llms.txt","authoring-playbook.md",
+          "spec.manifest.json","components/","tokens/","layout/","foundation/",
+          "conformance/","README.md"]
+```
+
+`exports` has a `"./*"` passthrough, so the path would resolve if the files were there. They are
+not: this is the tarball's `files` allow-list, the same packaging class as **G7** (the documented
+CSS import path missing from `exports`).
+
+The cost is specific. The registry sends a standalone consumer down exactly one supported road —
+copy a fixture's `config`, render it with Highcharts — and that road is unreachable from npm. The
+showcase is named as an alternative, but a URL cannot be diffed, version-pinned or read by a build.
+
+**Consumer workaround:** none for the configs themselves. The hand-rolled SVG stays, coloured from
+`--chart-*`, which the same registry entry endorses.
+
+**Ask:** add `"charts/"` to `files` in `@mtdt/observeops-ds-spec`. If the fixtures are meant to ship
+elsewhere, correct `data-viz.json` — it currently names this package twice.
+
+**Class: DS — packaging.**
