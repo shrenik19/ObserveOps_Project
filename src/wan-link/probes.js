@@ -110,17 +110,19 @@ const JITTER_CHARTS = [
 ]
 
 // Values are the ones from the NX-OS sample output, so every tile traces back to a CLI line.
+// Icon names were confirmed by rendering — the DS publishes no icon inventory, and an unknown
+// name renders an empty box rather than failing. Direction is carried by upload / download.
 const JITTER_TILES = [
   {
-    title: 'RTT', caption: 'Avg: 2 ms',
+    title: 'RTT', caption: 'Avg: 2 ms', icon: 'exchange',
     values: [{ label: 'Min', value: '1', unit: 'ms' }, { label: 'Max', value: '4', unit: 'ms' }],
   },
-  { title: 'SRC to DST Jitter', caption: '', values: [{ label: '', value: '1', unit: 'ms' }] },
-  { title: 'DST to SRC Jitter', caption: '', values: [{ label: '', value: '1', unit: 'ms' }] },
-  { title: 'SRC to DST Latency', caption: '', values: [{ label: '', value: '0', unit: 'ms' }] },
-  { title: 'DST to SRC Latency', caption: '', values: [{ label: '', value: '0', unit: 'ms' }] },
+  { title: 'SRC to DST Jitter', caption: '', icon: 'upload', values: [{ label: '', value: '1', unit: 'ms' }] },
+  { title: 'DST to SRC Jitter', caption: '', icon: 'download', values: [{ label: '', value: '1', unit: 'ms' }] },
+  { title: 'SRC to DST Latency', caption: '', icon: 'upload', values: [{ label: '', value: '0', unit: 'ms' }] },
+  { title: 'DST to SRC Latency', caption: '', icon: 'download', values: [{ label: '', value: '0', unit: 'ms' }] },
   {
-    title: 'Packet Lost', caption: '',
+    title: 'Packet Lost', caption: '', icon: 'cube',
     values: [
       { label: 'SRC to DST', value: '0', unit: '' },
       { label: 'DST to SRC', value: '0', unit: '' },

@@ -114,9 +114,53 @@
    widget grid — without this it inherits span 12 and every tile claims its own row. */
 .wl-tile { grid-column: auto; }
 
-.wl-tile__values { display: flex; gap: 18px; }
-.wl-tile__label { font-size: 11px; color: var(--secondary-text-color); }
-.wl-tile__value { font-size: 19px; font-weight: 600; color: var(--text-color); }
+/* Icon at the top, title and caption under it, values pinned to the BOTTOM — so every tile's
+   numbers sit on one line across the row whether or not the tile has a caption. */
+.wl-tile {
+  display: flex;
+  flex-direction: column;
+  min-height: 176px;
+}
+
+.wl-tile__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+  /* The reference badge is the dark filled surface with a light glyph. The availability-icon pair
+     is a pale tint, so the primary-button pair is the right one — it is defined as a filled
+     surface with a foreground guaranteed to read against it. */
+  background: var(--primary-button-bg);
+  color: var(--primary-button-text);
+}
+
+.wl-tile .wl-card__title { margin-bottom: 3px; }
+.wl-tile__caption { font-size: 11px; color: var(--secondary-text-color); }
+
+.wl-tile__values {
+  margin-top: auto;
+  padding-top: 20px;
+  /* Two equal columns, as in the reference: a second value starts at the tile's midpoint, and a
+     lone value sits in the left half rather than centring. */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wl-tile__label {
+  font-size: 11px;
+  color: var(--secondary-text-color);
+  margin-bottom: 3px;
+}
+
+.wl-tile__value {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-color);
+}
 
 .wl-tile__unit {
   font-size: 11px;

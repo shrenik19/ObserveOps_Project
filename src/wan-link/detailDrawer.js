@@ -8,11 +8,12 @@ const escape = (value) =>
 
 const tileHTML = (tile) => `
   <div class="wl-card wl-tile">
+    <span class="wl-tile__icon"><obs-icon name="${escape(tile.icon)}" size="16"></obs-icon></span>
     <h3 class="wl-card__title">${escape(tile.title)}</h3>
-    ${tile.caption ? `<div class="wl-tile__label">${escape(tile.caption)}</div>` : ''}
+    ${tile.caption ? `<div class="wl-tile__caption">${escape(tile.caption)}</div>` : ''}
     <div class="wl-tile__values">
       ${tile.values.map((v) => `
-        <div>
+        <div class="wl-tile__cell">
           ${v.label ? `<div class="wl-tile__label">${escape(v.label)}</div>` : ''}
           <div class="wl-tile__value">${escape(v.value)}${v.unit ? `<span class="wl-tile__unit">${escape(v.unit)}</span>` : ''}</div>
         </div>`).join('')}

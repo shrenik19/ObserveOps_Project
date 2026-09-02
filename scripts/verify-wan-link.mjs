@@ -42,6 +42,19 @@ const seps = await page.locator('.wl-drawer__sep').evaluateAll((els) =>
 const sepsPainted = seps.filter((s) => s.w > 0 && s.h > 0 && s.colour && s.colour !== 'none').length
 const groupTags = await page.locator('.wl-drawer__groups obs-tag').allTextContents()
 
+// An unknown icon name renders an empty badge with no error, so check each one actually drew.
+const tileIcons = await page.locator('.wl-tile__icon obs-icon').evaluateAll((els) =>
+  els.map((e) => ({
+    name: e.getAttribute('name'),
+    drawn: !!e.shadowRoot && /<svg|<path|<use/.test(e.shadowRoot.innerHTML),
+  })))
+const iconsDrawn = tileIcons.filter((i) => i.drawn).length
+
+// Every tile's numbers must sit on one line across the row, whether or not it has a caption.
+const valueTops = await page.locator('.wl-tile__value').evaluateAll((els) =>
+  [...new Set(els.map((e) => Math.round(e.getBoundingClientRect().top)))])
+const valueRows = valueTops.length
+
 const tiles = await page.locator('.wl-tile').count()
 // The six tiles must sit on ONE row. They inherit .wl-card, whose grid-column is span 12, so a
 // missing override silently stacks them — a layout bug no unit test can see.
@@ -71,7 +84,7 @@ const echoCharts = await page.locator('.wl-card--chart').count()
 await page.screenshot({ path: 'docs/shots/wan-link-echo.png' })
 
 const result = {
-  rows, headers, seps, sepsPainted, groupTags, tiles, tileRows, charts, widgets, polylines,
+  rows, headers, seps, sepsPainted, groupTags, tileIcons, iconsDrawn, valueRows, tiles, tileRows, charts, widgets, polylines,
   distinctStrokes, unresolved: unresolved.length,
   echoWidgets, echoCharts, errors,
 }
@@ -81,6 +94,6 @@ await browser.close()
 
 const ok =
   errors.length === 0 && unresolved.length === 0 &&
-  rows === 3 && sepsPainted === 2 && groupTags.length === 2 && tiles === 6 && tileRows === 1 && charts === 8 && widgets === 10 && polylines === 29 &&
+  rows === 3 && sepsPainted === 2 && groupTags.length === 2 && iconsDrawn === 6 && valueRows === 1 && tiles === 6 && tileRows === 1 && charts === 8 && widgets === 10 && polylines === 29 &&
   echoWidgets === 3 && echoCharts === 1
 process.exit(ok ? 0 : 1)
