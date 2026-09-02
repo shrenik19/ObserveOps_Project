@@ -58,10 +58,18 @@ export function renderDetailDrawer({ link, onClose }) {
   drawer.setAttribute('open', '')
 
   drawer.innerHTML = `
-    <div slot="title" class="wl-drawer__title">
-      <span class="wl-name">${escape(link.name)}</span>
-      <span class="wl-drawer__probe">${escape(probe.label)}</span>
-      <obs-severity severity="${escape(link.status)}" shape="chip" display-text></obs-severity>
+    <div slot="title">
+      <div class="wl-drawer__title">
+        <span class="wl-name">${escape(link.name)}</span>
+        <span class="wl-drawer__sep" aria-hidden="true"></span>
+        <span class="wl-drawer__probe">${escape(probe.label)}</span>
+        <span class="wl-drawer__sep" aria-hidden="true"></span>
+        <obs-severity severity="${escape(link.status)}" shape="chip" display-text></obs-severity>
+      </div>
+      <div class="wl-drawer__groups">
+        <obs-tag>${escape(link.group)}</obs-tag>
+        ${link.moreGroups ? `<obs-tag>+${escape(link.moreGroups)}</obs-tag>` : ''}
+      </div>
     </div>
     ${tiles.length ? `<div class="wl-tiles">${tiles.map(tileHTML).join('')}</div>` : ''}
     <div class="wl-grid">${body}</div>

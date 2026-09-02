@@ -132,7 +132,23 @@
   flex-wrap: wrap;
 }
 
+/* The product separates name │ probe type │ status with vertical rules, not whitespace. A real
+   border rather than a "|" glyph, so it keeps its weight and height at any font size. */
+.wl-drawer__sep {
+  align-self: stretch;
+  width: 0;
+  min-height: 18px;
+  border-left: 1px solid var(--border-color);
+}
+
 .wl-drawer__probe { color: var(--secondary-text-color); font-weight: 400; }
+
+.wl-drawer__groups {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
 
 .wl-donut {
   width: 112px;

@@ -14,6 +14,11 @@ export const PROBES = {
  */
 export const displayRtt = (status, rtt) => (status === 'down' ? '' : rtt)
 
+// The monitor's group path, shown as a chip under the drawer title. The product shows the first
+// path plus a "+N" chip for the groups that do not fit; NX-OS devices are Nexus switches.
+const GROUP = 'Network > Switch > Cisco Systems'
+const MORE_GROUPS = 2
+
 const link = (id, probe, carrier, src, dst, iface, status, rtt) => ({
   id,
   probe,
@@ -24,6 +29,8 @@ const link = (id, probe, carrier, src, dst, iface, status, rtt) => ({
   sourceInterface: iface,
   rtt: displayRtt(status, rtt),
   status,
+  group: GROUP,
+  moreGroups: MORE_GROUPS,
 })
 
 // One sample per probe — the list is here to reach each probe's detail drawer, not to demonstrate

@@ -35,6 +35,17 @@ describe('detail drawer', () => {
     expect(jitter.textContent).toContain('30 Days')
   })
 
+  it('separates name, probe type and status with two vertical rules', () => {
+    const drawer = renderDetailDrawer({ link: linkOf('udp-jitter'), onClose: () => {} })
+    expect(drawer.querySelectorAll('.wl-drawer__sep')).toHaveLength(2)
+  })
+
+  it('shows the group path and the overflow count as chips', () => {
+    const drawer = renderDetailDrawer({ link: linkOf('udp-jitter'), onClose: () => {} })
+    const tags = [...drawer.querySelectorAll('.wl-drawer__groups obs-tag')]
+    expect(tags.map((t) => t.textContent)).toEqual(['Network > Switch > Cisco Systems', '+2'])
+  })
+
   it('carries the link status as a severity chip', () => {
     const drawer = renderDetailDrawer({ link: linkOf('udp-jitter'), onClose: () => {} })
     const chip = drawer.querySelector('obs-severity')
