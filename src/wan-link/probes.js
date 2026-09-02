@@ -96,19 +96,22 @@ const JITTER_CHARTS = [
 ]
 
 // Values are the ones from the NX-OS sample output, so every tile traces back to a CLI line.
-// Icon names were confirmed by rendering — the DS publishes no icon inventory, and an unknown
-// name renders an empty box rather than failing. Direction is carried by upload / download.
+//
+// The icons are the product's own, and all four are real DS glyphs — spec@0.1.210 publishes the
+// inventory at components/registry/icon.json (names.list, 635 entries), so these are looked up
+// rather than guessed. Direction is carried by the left-to-right / right-to-left arrows, which is
+// why the jitter and latency pairs share a glyph.
 const JITTER_TILES = [
   {
-    title: 'RTT', caption: 'Avg: 2 ms', icon: 'exchange',
+    title: 'RTT', caption: 'Avg: 2 ms', icon: 'rtt',
     values: [{ label: 'Min', value: '1', unit: 'ms' }, { label: 'Max', value: '4', unit: 'ms' }],
   },
-  { title: 'SRC to DST Jitter', caption: '', icon: 'upload', values: [{ label: '', value: '1', unit: 'ms' }] },
-  { title: 'DST to SRC Jitter', caption: '', icon: 'download', values: [{ label: '', value: '1', unit: 'ms' }] },
-  { title: 'SRC to DST Latency', caption: '', icon: 'upload', values: [{ label: '', value: '0', unit: 'ms' }] },
-  { title: 'DST to SRC Latency', caption: '', icon: 'download', values: [{ label: '', value: '0', unit: 'ms' }] },
+  { title: 'SRC to DST Jitter', caption: '', icon: 'left-to-right-arrow', values: [{ label: '', value: '1', unit: 'ms' }] },
+  { title: 'DST to SRC Jitter', caption: '', icon: 'right-to-left-arrow', values: [{ label: '', value: '1', unit: 'ms' }] },
+  { title: 'SRC to DST Latency', caption: '', icon: 'left-to-right-arrow', values: [{ label: '', value: '0', unit: 'ms' }] },
+  { title: 'DST to SRC Latency', caption: '', icon: 'right-to-left-arrow', values: [{ label: '', value: '0', unit: 'ms' }] },
   {
-    title: 'Packet Lost', caption: '', icon: 'cube',
+    title: 'Packet Lost', caption: '', icon: 'rejected-connections',
     values: [
       { label: 'SRC to DST', value: '0', unit: '' },
       { label: 'DST to SRC', value: '0', unit: '' },
