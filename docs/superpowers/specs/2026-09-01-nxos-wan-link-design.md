@@ -59,8 +59,11 @@ Clicking a row opens that link's detail drawer (`obs-table` `rowclick`).
 
 ### Seed data
 
-Enough rows that all three probes appear several times with a realistic status mix — the reference
-list holds 19. Down rows carry no RTT, mirroring the product.
+**One link per probe.** The list exists to reach each probe's detail drawer, not to demonstrate a
+populated inventory, so three rows is the whole seed.
+
+A down link carries no RTT, mirroring the product. No seeded link is down, so that rule lives in an
+exported `displayRtt(status, rtt)` and is tested directly rather than through the seed.
 
 ## Detail drawer
 

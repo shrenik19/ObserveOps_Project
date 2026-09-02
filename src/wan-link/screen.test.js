@@ -46,14 +46,14 @@ describe('wan-link list', () => {
     const root = document.createElement('div')
     mount(root)
     const rows = root.querySelector('#wan-link-table').rows
-    expect(rows).toHaveLength(14)
+    expect(rows).toHaveLength(3)
     expect(new Set(rows.map((r) => r.probe))).toEqual(
       new Set(['ICMP Echo', 'UDP Echo', 'UDP Jitter']),
     )
   })
 
-  // obs-table emits the row KEY as a bare string, confirmed by rendering — detail is ['l10'], not
-  // [{ id: 'l10' }]. Reading detail[0].id silently opened nothing, and jsdom could not see it.
+  // obs-table emits the row KEY as a bare string, confirmed by rendering — detail is ['l3'], not
+  // [{ id: 'l3' }]. Reading detail[0].id silently opened nothing, and jsdom could not see it.
   it('opens the detail drawer from the row-key string obs-table actually emits', () => {
     const overlay = document.createElement('div')
     overlay.id = 'overlay-root'
@@ -62,7 +62,7 @@ describe('wan-link list', () => {
     const root = document.createElement('div')
     mount(root)
     root.querySelector('#wan-link-table')
-      .dispatchEvent(new CustomEvent('rowclick', { detail: ['l10'] }))
+      .dispatchEvent(new CustomEvent('rowclick', { detail: ['l3'] }))
 
     expect(overlay.querySelector('obs-drawer')).not.toBeNull()
     expect(overlay.textContent).toContain('nxosudpjitter-VI')

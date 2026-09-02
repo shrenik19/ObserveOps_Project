@@ -7,6 +7,13 @@ export const PROBES = {
   'udp-jitter': { key: 'udp-jitter', label: 'UDP Jitter', needsPort: true },
 }
 
+/**
+ * The product leaves RTT empty on a down link rather than showing a stale number. Exported so the
+ * rule is testable on its own — the seed list is one link per probe and need not contain a down
+ * one for this to stay covered.
+ */
+export const displayRtt = (status, rtt) => (status === 'down' ? '' : rtt)
+
 const link = (id, probe, carrier, src, dst, iface, status, rtt) => ({
   id,
   probe,
@@ -15,26 +22,16 @@ const link = (id, probe, carrier, src, dst, iface, status, rtt) => ({
   sourceIp: src,
   destinationIp: dst,
   sourceInterface: iface,
-  // The product leaves RTT empty on a down link rather than showing a stale number.
-  rtt: status === 'down' ? '' : rtt,
+  rtt: displayRtt(status, rtt),
   status,
 })
 
+// One sample per probe — the list is here to reach each probe's detail drawer, not to demonstrate
+// a populated inventory. Same three links the approved wireframe used.
 export const LINKS = [
   link('l1', 'icmp-echo', 'Jio', '70.70.70.2', '70.70.70.1', 'Eth1/1', 'up', '12 ms'),
-  link('l2', 'icmp-echo', 'Airtel', '70.70.70.2', '172.16.14.53', 'Eth1/2', 'up', '8 ms'),
-  link('l3', 'icmp-echo', 'Vodafone', '172.16.14.52', '70.70.70.1', 'Eth1/3', 'down', ''),
-  link('l4', 'icmp-echo', 'Docomo', '172.16.14.52', '65.65.65.1', 'Eth1/4', 'up', '19 ms'),
-  link('l5', 'icmp-echo', 'Aircel', '192.168.60.1', '172.16.14.51', 'Eth1/5', 'clear', '7 ms'),
-  link('l6', 'udp-echo', 'Airtel', '70.70.70.2', '70.70.70.1', 'Eth1/6', 'up', '9 ms'),
-  link('l7', 'udp-echo', 'Jio', '70.70.70.2', '65.65.65.2', 'Eth1/7', 'up', '14 ms'),
-  link('l8', 'udp-echo', 'Vodafone', '172.16.14.52', '70.70.70.1', 'Eth1/8', 'down', ''),
-  link('l9', 'udp-echo', 'Docomo', '172.16.14.52', '172.16.14.53', 'Eth1/9', 'warning', '31 ms'),
-  link('l10', 'udp-jitter', 'VI', '70.70.70.2', '70.70.70.1', 'Eth2/1', 'up', '15 ms'),
-  link('l11', 'udp-jitter', 'Airtel', '172.16.14.52', '70.70.70.1', 'Eth2/2', 'up', '11 ms'),
-  link('l12', 'udp-jitter', 'Jio', '60.60.60.2', '60.60.60.1', 'Eth2/3', 'down', ''),
-  link('l13', 'udp-jitter', 'Aircel', '172.16.14.52', '65.65.65.2', 'Eth2/4', 'critical', '87 ms'),
-  link('l14', 'udp-jitter', 'Docomo', '192.168.60.1', '172.16.14.53', 'Eth2/5', 'up', '22 ms'),
+  link('l2', 'udp-echo', 'Airtel', '70.70.70.2', '70.70.70.1', 'Eth1/2', 'up', '9 ms'),
+  link('l3', 'udp-jitter', 'VI', '70.70.70.2', '70.70.70.1', 'Eth2/1', 'up', '15 ms'),
 ]
 
 const ECHO_WINDOWS = ['Last Day', 'Last 7 Days', 'Last 15 Days']

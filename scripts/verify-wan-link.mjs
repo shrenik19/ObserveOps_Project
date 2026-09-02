@@ -70,6 +70,6 @@ await browser.close()
 
 const ok =
   errors.length === 0 && unresolved.length === 0 &&
-  rows === 14 && tiles === 6 && tileRows === 1 && charts === 8 && widgets === 10 && polylines === 29 &&
+  rows === 3 && tiles === 6 && tileRows === 1 && charts === 8 && widgets === 10 && polylines === 29 &&
   echoWidgets === 3 && echoCharts === 1
 process.exit(ok ? 0 : 1)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PROBES, LINKS, availabilityWindows, tilesFor, chartsFor } from './probes.js'
+import { PROBES, LINKS, displayRtt, availabilityWindows, tilesFor, chartsFor } from './probes.js'
 
 describe('probes', () => {
   it('defines exactly the three NX-OS probes', () => {
@@ -12,16 +12,21 @@ describe('probes', () => {
     expect(PROBES['udp-jitter'].needsPort).toBe(true)
   })
 
-  it('seeds every probe several times', () => {
+  it('seeds exactly one link per probe', () => {
+    expect(LINKS).toHaveLength(3)
     for (const key of Object.keys(PROBES)) {
-      expect(LINKS.filter((l) => l.probe === key).length).toBeGreaterThanOrEqual(4)
+      expect(LINKS.filter((l) => l.probe === key)).toHaveLength(1)
     }
   })
 
-  it('leaves RTT blank on links that are down', () => {
-    const down = LINKS.filter((l) => l.status === 'down')
-    expect(down.length).toBeGreaterThan(0)
-    expect(down.every((l) => l.rtt === '')).toBe(true)
+  it('blanks RTT on a down link and keeps it otherwise', () => {
+    expect(displayRtt('down', '12 ms')).toBe('')
+    expect(displayRtt('up', '12 ms')).toBe('12 ms')
+    expect(displayRtt('warning', '31 ms')).toBe('31 ms')
+  })
+
+  it('holds that rule across the seed', () => {
+    expect(LINKS.every((l) => (l.status === 'down' ? l.rtt === '' : l.rtt !== ''))).toBe(true)
   })
 
   it('uses NX-OS interface names', () => {
