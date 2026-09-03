@@ -184,6 +184,26 @@ than five screens.
 
 **No alerting artboard.** Decided 2026-09-03; see Decision D7.
 
+### The scenario, pinned down
+
+Built 2026-09-03 as `redundancy-slo/wireframe.html`. The outline above left the timings loose, and
+they do not survive contact with arithmetic: for App Tier to fall to 1 of 3 at 14:00, **APP-2 must
+still be down** when APP-3 fails. The day is therefore:
+
+| Monitor | Down | For | Group state | Effect |
+|---|---|---|---|---|
+| STOR-2 | 04:00–05:05 | 1 h 05 m | Storage Nodes 3 of 4 ≥ 3 | absorbed |
+| APP-2 | 09:00–14:47 | 5 h 47 m | App Tier 2 of 3 ≥ 2 | absorbed until 14:00 |
+| APP-3 | 14:00–14:47 | 47 m | App Tier **1 of 3 < 2** | **quorum lost** |
+
+- **Redundant** — violated 47 m → 1393/1440 = **96.736%**, breached against the 99% target.
+- **Strict** — violated 65 + 347 = 412 m → 1028/1440 = **71.4%**, the ghost marker on artboard 5.
+- **At 13:00** (artboards 3 and 4) — redundant violated 0 → **100% · Ok**; strict 305/780 → **60.9%**.
+
+So the ghost marker reads **60.9%** on artboard 3 and **71.4%** on artboard 5. Both are the same
+counterfactual at different points in the period; only the full-day figure is the 71.4% quoted
+above. **6 h 05 m of member downtime cost the SLO nothing; 47 minutes of it cost everything.**
+
 ## 8. Out of scope
 
 - **Phase 2 — porting into this app.** obs-* components, a registry entry, Vitest, no hardcoded
@@ -293,7 +313,11 @@ renders it.**
 
 ## 11. Success criteria — phase 1
 
-The canvas is done when all of these hold, each **verified by rendering**:
+The canvas is done when all of these hold, each **verified by rendering**.
+
+> **Status 2026-09-03:** criteria 1–6 are met by `redundancy-slo/wireframe.html` and asserted by
+> `redundancy-slo/verify.mjs` — **97 checks, all passing in real Chrome**. Criterion 7 is
+> outstanding and is the only thing standing between this and sign-off.
 
 1. Five artboards exist and read as one scenario, not five screens.
 2. Artboard 4 shows a monitor reading **Breached** whose impact reads **Absorbed by redundancy**, on
