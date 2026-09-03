@@ -339,3 +339,26 @@ The canvas is done when all of these hold, each **verified by rendering**.
   `<script type="text/x-dc">` block.
 - **The shipped screens:** `D:\Claude design\Screenshots\SLO\` — `SLO_1` list, `SLO_2` detail
   Overview, `SLO_3` monitor drawer, `SLO_4` SLO History, `SLO_5` historical instance.
+- **The shipped SLO settings** *(added 2026-09-03)* — `SLO_setup_1` is
+  **Settings → Service Level Objective (BETA) → SLO Profile**, a table with the columns
+  `SLO TYPE · SLO NAME · FREQUENCY · WARNING · TARGET · BUSINESS SERVICE NAME · START DATE`.
+  `SLO_setup_2` is the **real Create SLO Profile modal**: a left Availability / Performance rail, a
+  three-column field grid (`SLO Name · SLO Description · Business Service Name` / `SLO For ·
+  Source Filter · Source` / `Frequency · Target · Warning` / `Start Date`), then full-width `Tags`
+  and `Notify Team`, with a `Reset` / `Create SLO Profile` footer.
+- **`Screenshots\SLO\BS\`** *(added 2026-09-03)* — Business Service is a **first-class entity**,
+  created and picked from a searchable dropdown during Application Registration and used in APM to
+  group services. The form's `Business Service Name *` binds to one of those, not to free text.
+
+> **The sketch says *what* to build; the shipped screens say *where it goes*.** The sketch is a
+> Claude Design canvas and its chrome — its dark theme, its field order, its always-visible
+> Help Card matrix — is **reference, not target**. Anything this design adds must land inside
+> `SLO_setup_1` and `SLO_setup_2` as they actually are.
+>
+> Applied to the canvas on 2026-09-03: artboard 2 is now the shipped form field for field, with
+> **Evaluation Logic as the only addition**, full width between `Start Date` and `Tags`.
+> Still outstanding: the `EVALUATION LOGIC` column on the `SLO_setup_1` table.
+>
+> **Out of scope** (confirmed 2026-09-03): redesigning the Help Card — the shipped one is a
+> three-section educational accordion, and §3 above describes the *sketch's*, not the product's —
+> and the `Correction Profile` / `Penalty Profile` siblings in that nav.
