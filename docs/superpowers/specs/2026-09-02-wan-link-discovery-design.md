@@ -58,6 +58,10 @@ four bespoke forms.
 `SNMP` / `SSH` cards at the top of today's drawer are removed outright and no replacement field is
 shown. Method survives only as the filter on the Credential Profiles dropdown.
 
+The product already does this: **the Juniper drawer has no `SNMP` / `SSH` cards at all** — it opens
+straight onto the Single / Bulk tabs, because Juniper RPM has only one method. Removing the cards for
+Cisco applies a rule the product already follows, rather than inventing one.
+
 **Probe names are not normalised.** IOS XE says `Path Echo` where IOS XR says `ICMP Path Echo`;
 Juniper says `ICMP Ping` where Cisco says `ICMP Echo`. Each platform's dropdown shows that platform's
 own vocabulary, because the device CLI is what an engineer will check against.
@@ -73,8 +77,8 @@ own vocabulary, because the device CLI is what an engineer will check against.
 
 Left rail: the existing category tree, `WAN Link` selected as a leaf.
 Right column, top-right of the first row: a `Single | CSV` segmented control, matching the
-`IP/Host | IP Range | CSV | CIDR` control the template already uses. **`CSV` is rendered disabled** —
-bulk is deferred pending product facts.
+`IP/Host | IP Range | CSV | CIDR` control the template already uses. It replaces today's
+`Single WAN Link Configuration` / `Bulk WAN Link Configuration` tab strip.
 
 ### Block 1 — Profile
 
@@ -106,9 +110,44 @@ Replaces the template's `IP/Host`.
 | **Destination Port** * | Only for `UDP Echo` and `UDP Jitter` — the sole conditional field on the form |
 | Timeout | Always |
 
-### Block 4 — IP SLA Operations Test Parameters
+### Block 4 — Operations Test Parameters
 
 `Payload` · `Type of Service` · `Frequency *` · `Operation Timeout *` — unchanged from today's drawer.
+
+**The section title is vendor-specific**, and the product already varies it:
+
+| Vendor | Section title |
+|---|---|
+| Cisco Systems | `IP SLA Operations Test Parameters` |
+| Juniper | `Juniper RPM Operations Test Parameters` |
+
+It follows `Vendor`, so it resolves from the monitor along with everything else in Block 2.
+
+### CSV mode
+
+Selecting `CSV` replaces Block 3's per-link fields with a single upload, and leaves everything else
+standing. This matches today's Bulk tab exactly, and is **identical across every Device OS**.
+
+| Field | Notes |
+|---|---|
+| **CSV** * | `Select File` + `Upload CSV`, with a `⤓ Sample CSV` download beneath it |
+| Timeout | Stays — it is profile-level, not per-link |
+
+`Monitor`, `Vendor`, `Device OS`, `Credential Profiles`, `Timeout`, the Operations Test Parameters
+and `Notifications` are unchanged and apply to **every row** in the file. Only the per-link fields
+move into the CSV:
+
+`wan_probe · isp · source_interface · source_router_location · destination_ip · destination_router_location · destination_port`
+
+— exactly the fields the Single form asks per link. `destination_port` is blank on rows whose probe
+is not a UDP probe.
+
+*Inferred, not observed:* today's Bulk tab shows no `WAN Probe` field, so the probe must be a CSV
+column and a single file may therefore mix probe types. The wireframe assumes it can.
+
+One profile in CSV mode produces **N** links, which is what makes the grid's `DISCOVERED OBJECTS`
+column, the progress screen's `Total / Discovered / Failed` tiles and the provision grid's checkbox
+column meaningful.
 
 ### Block 5 — Notifications
 
@@ -199,7 +238,6 @@ a provisioned link you delete it and create a new profile.
 
 | Item | Why |
 |---|---|
-| **Bulk / CSV configuration** | Deferred. The segmented control's `CSV` slot is designed and rendered disabled; the field mapping awaits product facts. |
 | **Monitor templates for `Path Echo` and `ICMP Path Jitter`** | Only NX-OS templates are being built (ICMP Echo, UDP Echo, UDP Jitter). Both path probes remain selectable in the form — the operation is valid — but nothing renders their per-hop data yet. Known gap. |
 | **Juniper RPM monitor template** | Same reason. `ICMP Ping` is selectable; no template exists. |
 
@@ -223,6 +261,7 @@ a provisioned link you delete it and create a new profile.
 | Vendor disabled, Device OS editable | Both locked; both free |
 | Method derived and not shown | Keeping the `SNMP` / `SSH` cards |
 | Declare → push → verify | Reading existing IP SLA ops off the device; doing both |
-| Single only, CSV slot reserved | Building bulk now; dropping bulk entirely |
+| `Single \| CSV` segmented control | Keeping the Single / Bulk tab strip |
+| One CSV covers every Device OS | A per-platform CSV shape |
 | In-device drawer retired | Keeping both entry points; a full-screen overlay |
 | Provisioned profiles immutable | Locking three fields but allowing re-run; free editing with teardown on re-run |
