@@ -166,7 +166,7 @@ unit, because a bolt-on would leave the misleading headline intact.
 - **Historical instance (`SLO_5`)** — inherits every Overview change. Correction / Penalty fields
   untouched.
 
-## 7. The canvas — 5 artboards, one story
+## 7. The canvas — 6 artboards, one story
 
 **Scenario: E-commerce Platform.** Edge Firewalls (FW-A, FW-B, ≥ 1) · App Tier (APP-1/2/3, ≥ 2) ·
 Storage Nodes (4 nodes, ≥ 3) · plus an ungrouped remainder.
@@ -178,6 +178,7 @@ Storage Nodes (4 nodes, ≥ 3) · plus an ungrouped remainder.
 | 3 | **SLO Detail / Overview** | The day it paid off: APP-2 down 09:00–11:00, **absorbed**, SLO Ok. |
 | 4 | **Configured Entities + monitor drawer** | The same day one level down: APP-2 reads Breached, impact **Absorbed**. |
 | 5 | **The breach** | 14:00, APP-3 also fails. App Tier drops to 1 of 3, quorum lost, **47 minutes breached**, attributed on the group lane and in History. |
+| 6 | **Settings · SLO Profile** | *(added 2026-09-03)* Where the SLO lives — `Settings → Service Level Objective → SLO Profile`, the shipped list with `EVALUATION LOGIC` added beside `FREQUENCY`. A Performance SLO reads `—`, not Strict. |
 
 **Artboards 3–5 are the same SLO at increasing depth** — that is what makes it a scenario rather
 than five screens.
@@ -356,8 +357,11 @@ The canvas is done when all of these hold, each **verified by rendering**.
 > `SLO_setup_1` and `SLO_setup_2` as they actually are.
 >
 > Applied to the canvas on 2026-09-03: artboard 2 is now the shipped form field for field, with
-> **Evaluation Logic as the only addition**, full width between `Start Date` and `Tags`.
-> Still outstanding: the `EVALUATION LOGIC` column on the `SLO_setup_1` table.
+> **Evaluation Logic as the only addition**, full width between `Start Date` and `Tags`, and
+> `Business Service Name` rendered as the **entity picker it really is** — a dropdown with a
+> search box and a `+` to create. A new **artboard 6** carries the `SLO_setup_1` settings list,
+> with `EVALUATION LOGIC` added next to `FREQUENCY`; its `Create SLO Profile` button navigates
+> to artboard 2, which is the real path through the product.
 >
 > **Out of scope** (confirmed 2026-09-03): redesigning the Help Card — the shipped one is a
 > three-section educational accordion, and §3 above describes the *sketch's*, not the product's —
