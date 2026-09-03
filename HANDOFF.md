@@ -10,6 +10,12 @@ Availability SLO** — taken through `superpowers:brainstorming` on the architec
 is settled and approved in conversation but **the spec was never written to disk**, so the section
 "The design, in full" below *is* the spec until it is transcribed. Do not lose it.
 
+> **Update 2026-09-03 — transcribed.** The design now lives in
+> **`docs/superpowers/specs/2026-09-01-redundancy-slo-design.md`**, which is the authoritative copy
+> and carries three decisions this handoff predates (D5, D7, OQ2 — see below). "The design, in full"
+> below is retained as the historical record, but **read the spec, not this file**. This handoff is
+> no longer the only copy and is now safe to replace.
+
 Then read **"Open challenges"** before writing that spec. Six things the design asserts rather than
 answers are listed there — one of them (the ungrouped-monitor noise floor) is worth re-testing
 against a real customer estate *before* the canvas is built, because it gets expensive to revisit
