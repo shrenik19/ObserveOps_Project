@@ -1,7 +1,9 @@
 import { pageHeaderHTML } from '../app/pageHeader.js'
 import { LINKS, PROBES } from './probes.js'
 import { renderDetailDrawer } from './detailDrawer.js'
-import { renderConfigDrawer } from './configDrawer.js'
+// configDrawer.js is deliberately NOT imported: the Add WAN Link Probe button was dropped, so the
+// screen has no entry point to it. The module and its tests are kept, unreached by the page — the
+// same treatment categoryRow.js gets in the report-categories screen.
 import './wanLink.css'
 
 export const meta = { pageHeader: { heading: 'Monitors', icon: 'monitor' } }
@@ -27,7 +29,6 @@ const TEMPLATE = `
     <main class="app-shell__content" id="wan-link-content">
       <obs-toolbar data-role="content-toolbar">
         <obs-input slot="start" type="search" placeholder="Search" class="content-toolbar__search"></obs-input>
-        <obs-button variant="primary" data-role="add-probe">Add WAN Link Probe</obs-button>
         <obs-button variant="neutral-lightest" squared aria-label="Export as PDF">
           <obs-icon name="exportPdf" size="14"></obs-icon>
         </obs-button>
@@ -143,11 +144,6 @@ export function mount(root) {
     const link = LINKS.find((l) => l.id === id)
     if (!link || !overlay) return
     overlay.replaceChildren(renderDetailDrawer({ link, onClose: closeOverlay }))
-  })
-
-  root.querySelector('[data-role="add-probe"]').addEventListener('click', () => {
-    if (!overlay) return
-    overlay.replaceChildren(renderConfigDrawer({ onClose: closeOverlay }))
   })
 
   return function unmount() {

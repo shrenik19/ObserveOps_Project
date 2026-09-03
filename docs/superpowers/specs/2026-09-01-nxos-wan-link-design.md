@@ -134,7 +134,13 @@ The tile row is **capped at 6**.
 
 ## Probe config drawer
 
-`obs-drawer` opened from a toolbar action, `footer="cancel-save"`.
+> **Not reachable from the screen.** The *Add WAN Link Probe* toolbar button was dropped, and with
+> it the only entry point. `configDrawer.js` and its five tests are kept — the module is complete
+> and correct, simply unmounted, the same treatment `categoryRow.js` gets in the report-categories
+> screen. Re-attach it by rendering it into `#overlay-root` from whatever affordance replaces the
+> button.
+
+`obs-drawer`, `footer="cancel-save"`.
 
 | Group | Fields |
 |---|---|
