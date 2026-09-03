@@ -54,7 +54,7 @@ Route: `#/settings/wan-link-discovery`.
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `VENDORS: string[]`, `PLATFORMS: Record<string, {key, vendor, label, method, probes: string[]}>`, `osOptions(vendor) → {value,text}[]`, `probeOptions(osKey) → {value,text}[]`, `needsPort(probe) → boolean`, `hasTemplate(probe) → boolean`, `slaTitle(vendor) → string`, `defaultOsFor(vendor) → string`.
+- Produces: `VENDORS: string[]`, `PLATFORMS: Record<string, {key, vendor, label, method, probes: string[]}>`, `osOptions(vendor) → {value,text}[]`, `probeOptions(osKey) → {value,text}[]`, `needsPort(probe) → boolean`, `hasTemplate(probe) → boolean`, `slaTitle(vendor) → string`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -62,7 +62,7 @@ Route: `#/settings/wan-link-discovery`.
 // src/wan-link-discovery/platforms.test.js
 import { describe, it, expect } from 'vitest'
 import {
-  VENDORS, PLATFORMS, osOptions, probeOptions, needsPort, hasTemplate, slaTitle, defaultOsFor,
+  VENDORS, PLATFORMS, osOptions, probeOptions, needsPort, hasTemplate, slaTitle,
 } from './platforms.js'
 
 describe('platform matrix', () => {
@@ -98,7 +98,6 @@ describe('platform matrix', () => {
     expect(osOptions('Cisco Systems').map((o) => o.value)).toEqual(['ios-xe', 'ios-xr', 'nx-os'])
     expect(osOptions('Juniper').map((o) => o.value)).toEqual(['rpm'])
     expect(osOptions('Cisco Systems')[2].text).toBe('NX-OS')
-    expect(defaultOsFor('Juniper')).toBe('rpm')
   })
 
   it('needs a UDP port for exactly the two UDP probes', () => {
@@ -186,8 +185,6 @@ export const platformsFor = (vendor) =>
 
 export const osOptions = (vendor) =>
   platformsFor(vendor).map((p) => ({ value: p.key, text: p.label }))
-
-export const defaultOsFor = (vendor) => platformsFor(vendor)[0]?.key ?? ''
 
 export const probeOptions = (osKey) =>
   (PLATFORMS[osKey]?.probes ?? []).map((probe) => ({
@@ -406,7 +403,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Test: `src/wan-link-discovery/csv.test.js`
 
 **Interfaces:**
-- Consumes: `PLATFORMS`, `needsPort` from `./platforms.js`; `findMonitor` from `./monitors.js`.
+- Consumes: `PLATFORMS`, `needsPort` from `./platforms.js` — and nothing else. `findMonitor` appears in the TEST only; do not import monitors.js into csv.js.
 - Produces: `CSV_COLUMNS: string[]`, `sampleCsv(monitor, osKey) → string`, `parseCsv(text) → {rows: Link[], errors: string[]}` where `Link = {probe, isp, iface, srcLocation, dip, dstLocation, port}`.
 
 - [ ] **Step 1: Write the failing test**
@@ -1215,7 +1212,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Test: `src/wan-link-discovery/createForm.test.js`
 
 **Interfaces:**
-- Consumes: `PLATFORMS`, `VENDORS`, `osOptions`, `probeOptions`, `needsPort`, `slaTitle` from `./platforms.js`; `MONITORS`, `findMonitor`, `monitorOptions`, `credentialOptions`, `interfaceOptions`, `prefillCredential` from `./monitors.js`.
+- Consumes: `PLATFORMS`, `osOptions`, `probeOptions`, `needsPort`, `slaTitle` from `./platforms.js`; `findMonitor`, `monitorOptions`, `credentialOptions`, `interfaceOptions`, `prefillCredential` from `./monitors.js`. Import exactly these — no more.
 - Produces: `renderCreateForm({monitorId, locked, onCancel, onRun}) → HTMLElement`. `onRun` receives `{name, monitor, osKey, mode, links}` where `links` is `[{probe, isp, iface, srcLocation, dip, dstLocation, port}]`. Validation failures never call `onRun`.
 
 - [ ] **Step 1: Look up the components**
@@ -1854,7 +1851,7 @@ Add the import at the top of `createForm.js`:
 import { CSV_COLUMNS, sampleCsv, parseCsv } from './csv.js'
 ```
 
-Add this after `syncPort` is defined, and call `setMode('single')` from `syncMonitor`'s tail:
+Declare `mode` and `csv` **immediately after `const monitor = …`** — NOT after `syncPort`. `syncPort` reads `mode`, and `syncMonitor()` runs at the bottom of the factory, so a lower declaration throws a TDZ ReferenceError at render time that no static read will show you. Add the rest of this block after `syncPort` is defined, and call `setMode('single')` from `syncMonitor`'s tail:
 
 ```js
   let mode = 'single'
