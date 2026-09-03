@@ -66,6 +66,11 @@ Cisco applies a rule the product already follows, rather than inventing one.
 Juniper says `ICMP Ping` where Cisco says `ICMP Echo`. Each platform's dropdown shows that platform's
 own vocabulary, because the device CLI is what an engineer will check against.
 
+*Open:* the IOS XR drawer labels its probes `IPSLA SSH UDP Echo` and `IPSLA SSH UDP Jitter` — a
+longer form than the bare names used here. The full IOS XR label set has not been observed, so the
+spec keeps the short names throughout rather than invent prefixes for the other three. Worth
+settling before the DS build.
+
 ## Entry points
 
 | Entry | Behaviour |
@@ -107,8 +112,8 @@ Replaces the template's `IP/Host`.
 | Source Router Location | Always |
 | Destination IP * | Always |
 | Destination Router Location | Always |
-| **Destination Port** * | Only for `UDP Echo` and `UDP Jitter` — the sole conditional field on the form |
 | Timeout | Always |
+| **UDP Port** * | Only for `UDP Echo` and `UDP Jitter` — the sole conditional field on the form. It sits in the **right column beside Timeout**, not on a row of its own |
 
 ### Block 4 — Operations Test Parameters
 
@@ -137,10 +142,10 @@ standing. This matches today's Bulk tab exactly, and is **identical across every
 and `Notifications` are unchanged and apply to **every row** in the file. Only the per-link fields
 move into the CSV:
 
-`wan_probe · isp · source_interface · source_router_location · destination_ip · destination_router_location · destination_port`
+`wan_probe · isp · source_interface · source_router_location · destination_ip · destination_router_location · udp_port`
 
-— exactly the fields the Single form asks per link. `destination_port` is blank on rows whose probe
-is not a UDP probe.
+— exactly the fields the Single form asks per link. `udp_port` is blank on rows whose probe is not a
+UDP probe.
 
 *Inferred, not observed:* today's Bulk tab shows no `WAN Probe` field, so the probe must be a CSV
 column and a single file may therefore mix probe types. The wireframe assumes it can.
@@ -159,7 +164,7 @@ column meaningful.
 - Changing **Device OS** re-filters `WAN Probe`. If the selected probe is unavailable on the new OS it
   is cleared with an inline note, never silently swapped.
 - Changing **Monitor** resets `Source Interface` and re-evaluates the credential prefill.
-- `Destination Port` appears and becomes required when the probe is `UDP Echo` or `UDP Jitter`.
+- `UDP Port` appears and becomes required when the probe is `UDP Echo` or `UDP Jitter`. In CSV mode it never appears — it is a column in the file.
 
 ### Footer
 
