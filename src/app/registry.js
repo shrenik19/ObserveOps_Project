@@ -9,7 +9,19 @@
 
 export const modules = [
   { key: 'dashboard', label: 'Dashboard', icon: 'dashboard', screens: [] },
-  { key: 'monitors', label: 'Monitors', icon: 'monitor', screens: [] },
+  {
+    key: 'monitors', label: 'Monitors', icon: 'monitor',
+    screens: [
+      {
+        key: 'wan-link',
+        label: 'WAN Link',
+        description:
+          'Cisco NX-OS WAN Link monitoring: ICMP Echo, UDP Echo and UDP Jitter probes, each with ' +
+          'a detail drawer built from the counters `show ip sla statistics` actually reports.',
+        load: () => import('../wan-link/screen.js'),
+      },
+    ],
+  },
   { key: 'alerts', label: 'Alerts', icon: 'alert', screens: [] },
   { key: 'topology', label: 'Topology', icon: 'networkTopology', screens: [] },
   {

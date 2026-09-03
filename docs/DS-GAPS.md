@@ -23,6 +23,12 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G29** `multiple`+`disabled` select loses its trigger | 🆕 **OPEN** | The template swaps `.trig` for a bare `<div class="pills">`, so the field has no border, background or chevron — it reads as a caption, not a disabled field |
 | **G30** two-pane description ignores the selected option | 🆕 **OPEN** | The pane is driven by a hover-only highlight index; a select that already has a value opens on "Hover an option to see details." instead of that option's own description. **Found with a real mouse** |
 | **G31** no card / tile component | 🆕 **OPEN** | A navigational index of screens has to hand-compose its cards from raw `<a>`. Conformance scores that page **70/100, component 0, 2 raw controls** — the only screen in the project that cannot reach 100 |
+| **G32** `elements-api.json` omits event `detail` payloads | 🆕 **OPEN** | `rowclick` emits the row KEY as a bare string, not the row. Reading `detail[0].id` silently opened nothing; unit tests asserted the assumed shape and passed. **Found only by clicking a real row** |
+| **G33** `obs-table` copies the host `id` into its shadow root | 🆕 **OPEN** | `#wan-link-table` matches twice under any shadow-piercing engine; a Playwright strict locator throws. The consumer cannot address its own element by the id it set |
+| **G34** no chart element | ⚖️ **ANSWERED, by design** | 0.1.210 documents the decision: charts are Highcharts, app-rendered, so no obs-* will ship. Superseded by G35 |
+| **G35** the 32 chart fixtures are documented but not published | 🆕 **OPEN** | `data-viz.json` says they ship under `charts/` with a `charts/manifest.json`; `package.json` `files` omits the directory and it is absent from the tarball. The one shippable path for a standalone consumer is documented and unreachable |
+| **G36** `obs-table` cannot pin its pager to the bottom of a taller container | 🆕 **OPEN** | The host stretches to 605px; the internal wrap stays at its 183px content height, so the pager sits mid-page. No attribute, no `part`, no custom property, and a definite host height changes nothing. The product's bottom-pinned footer has to be rebuilt by the consumer |
+| **G37** the conformance checker scores a **disabled** `obs-button` as off-reference | 🆕 **OPEN** | 4 disabled pager buttons drop the run 100 → 91 (component 69), and the failure line prints the SAME colour on both sides: "bg rgb(236, 241, 249) vs rgb(236, 241, 249)". Removing `disabled` restores 100/100 |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1131,3 +1137,281 @@ Worth recording so the good parts are not lost in a gap report:
   `--button-transparent-hover-text` at `--primary` restyled a button's hover state from outside its
   shadow DOM with no piercing and no hardcoded colour — and conformance stayed at 100/100. More
   elements exposing their internals as custom properties would reduce consumer workarounds a lot.
+
+---
+
+### New finding — G32: `elements-api.json` documents event NAMES but never their `detail` payloads
+
+`elements-api.json` earns its keep — it is the reason "never guess a component's API" is workable.
+But for events it lists only names:
+
+```json
+"events": ["change", "sort", "rowaction", "pagechange", "rowclick", "edit", "save", …]
+```
+
+There is no payload shape. The file's own `$note` says events "deliver the value in `event.detail`
+as an ARRAY (unwrap `detail[0]`)" — which says how to unwrap, never what is inside.
+
+**Repro.** The WAN Link list opens a detail drawer on row click. The obvious reading of `rowclick`
+is that it hands you the row:
+
+```js
+table.addEventListener('rowclick', (event) => {
+  const link = LINKS.find((l) => l.id === event.detail[0].id)   // undefined, every time
+  …
+})
+```
+
+`obs-table` emits the **row key as a bare string**. A live probe on the rendered page:
+
+```
+events fired: [["rowclick","[\"l10\"]"]]
+```
+
+so `detail[0]` is `'l10'`, and `detail[0].id` is `undefined`. **The drawer silently never opened.**
+Nothing threw, nothing logged, and the unit tests passed — they dispatched the shape the consumer
+had assumed, so they asserted the bug. Only clicking a real row in a real browser found it.
+
+This is the same class as **G10** (slots omitted): the manifest is trusted precisely because it is
+"the ACTUAL API … parsed from the element source", so a consumer reasonably reads a missing payload
+as "there is nothing to know", not "this was not extracted".
+
+**Consumer workaround:** accept both shapes, and pin the real one with a test.
+
+```js
+const payload = Array.isArray(event.detail) ? event.detail[0] : event.detail
+const id = typeof payload === 'string' ? payload : payload?.id
+```
+
+**Ask:** extract the `detail` payload alongside each event name, the way attributes already carry
+`type` and `note` — e.g. `{ name: 'rowclick', detail: 'String  // the row-key value' }`. Ten words
+per event would have removed an entire debugging cycle, and the failure mode is silent.
+
+**Class: DS — discoverability.**
+
+---
+
+### New finding — G33: `obs-table` copies the consumer's `id` onto an internal shadow-DOM element
+
+Give the grid an id and the component reproduces it inside its own shadow root:
+
+```
+locator('#wan-link-table') resolved to 2 elements:
+  1) <obs-table … id="wan-link-table">          the host, ours
+  2) <div class="wrap" id="wan-link-table">…    obs-table's internal wrapper
+```
+
+Any shadow-piercing selector engine — Playwright's included — now matches twice, and a strict-mode
+locator throws outright:
+
+```
+locator.waitFor: Error: strict mode violation
+```
+
+Duplicate ids across shadow boundaries are legal DOM, so nothing warns. But an internal node has no
+business carrying an identifier the consumer chose: it makes the consumer's own id ambiguous to
+every tool that pierces shadow roots, which is exactly the tooling this project's method depends on
+("verify by rendering, never by reading").
+
+**Consumer workaround:** never select the grid by bare id — always qualify by tag,
+`obs-table#wan-link-table`.
+
+**Ask:** give the internal wrapper its own name (a `part`, or an id derived from the host's, or no
+id at all). Consumers should be able to address their own element by the id they set.
+
+**Class: DS — capability (minor, but it breaks tooling).**
+
+---
+
+### New finding — G34: no chart element, on a design system whose product is full of charts
+
+The DS ships **47 elements and not one of them draws a series.** Searching for
+`chart|graph|plot|spark|gauge|donut|viz` returns three, none of which plots anything:
+
+| Element | What it is |
+|---|---|
+| `obs-dataviz-tooltip` | the tooltip *around* a chart |
+| `obs-metric-list` | no attributes, no slots in `elements-api.json` |
+| `obs-metric-picker` | choosing a metric, not drawing it |
+
+The DS knows this. `tokens/chart-palette.json` says so plainly:
+
+> The product's CATEGORICAL chart series palette (**Highcharts**) … Source of truth:
+> `src/utils/chart-colors.js`
+
+So charts live in the product, behind a library the DS does not expose. A WAN Link monitor screen is
+six time-series charts and a donut — the DS covers its shell, its grid, its drawers and its
+severity chips, and then stops at the thing the screen exists to show.
+
+**Consumer workaround — and credit where it is due.** The charts are hand-rolled inline SVG, but
+they are *not* off-system: the DS ships 28 `--chart-*` custom properties, and every one of them is
+used. Series hues are consumed **in palette order** per the palette's own rule, so nothing is
+hand-picked, and light/dark come free:
+
+```js
+export const SERIES_TOKENS = ['--chart-vivid-teal', '--chart-sunset-orange', … ]
+export const seriesToken = (i) => SERIES_TOKENS[i % SERIES_TOKENS.length]
+```
+
+Verified on the rendered page: 19 plotted series, **0 unresolved strokes**, 4 distinct hues, and the
+no-hardcoded-colours guard passes across all of `src/`. The tokens did their job. What is missing is
+the element.
+
+**Ask:** publish the product's Highcharts wrapper as `obs-chart` — series, axes, legend, tooltip,
+theme, taking the palette automatically. Failing that, publish the *chrome* (axis, legend,
+`obs-dataviz-tooltip` wiring) so consumers hand-roll only the plot. Every consumer building a
+monitoring surface will otherwise rebuild axes and legends, and each will drift from the product.
+
+**Class: DS — capability.**
+
+---
+
+### G34 — ⚖️ ANSWERED in spec@0.1.210, and the answer is "by design"
+
+The gap asked for `obs-chart`. **The DS has now answered it, explicitly and in writing.** A new
+registry entry, `components/registry/data-viz.json`, states the position:
+
+> The product's charts, stat tiles, topology graph and dashboard grid — a decision GUIDE, not a web
+> component. Charts are Highcharts v10, topology is Cytoscape, the dashboard grid is
+> vue-grid-layout: **all app-rendered and licensed/heavy, so the DS does not ship an `obs-*` for
+> them.**
+
+That closes the ask. It is a legitimate answer — a licensed charting engine is a poor fit for a
+component library — and it is far better documented than the silence that produced the original
+finding. Two things in it change how a consumer should behave, and both are new:
+
+1. **The colour rule is now explicit**, and matches what this screen already does: "Colour series
+   from the categorical palette / severity tokens, never the brand navy `--primary`." Our charts
+   consume `SERIES_TOKENS` in palette order; verified again after the upgrade — 19 series, 0
+   unresolved strokes, all `--chart-*`.
+2. **Standalone consumers are told to stop and ask**: render "with the product's Chart/Graph/Widgets
+   component (in-repo) or **STOP-and-ASK (standalone)**." This app is standalone. So the hand-rolled
+   SVG is no longer an unsanctioned workaround — it is the case the DS says to raise, and this is
+   the raising of it.
+
+**Remaining ask:** publish the *chrome* — axis, gridline, legend, and `obs-dataviz-tooltip` wiring —
+as a headless container an app-rendered plot can sit inside. Every standalone consumer currently
+rebuilds axes and legends by hand and each will drift from the product.
+
+---
+
+### New finding — G35: the 32 chart fixtures are documented but not published
+
+`data-viz.json` in spec@0.1.210 announces real, usable material:
+
+> The DS now ships **32 CAPTURED chart configurations across 9 categories** — the product's own
+> chart-builder output, sanitised. They are shipped in this spec package under `charts/` (config
+> JSON per fixture) with an index at `charts/manifest.json`.
+
+This is exactly what a standalone consumer needs: not a component, but the product's own configs to
+copy. **The directory is not in the package.**
+
+```
+$ ls node_modules/@mtdt/observeops-ds-spec/
+AGENTS.md  README.md  authoring-playbook.md  components  conformance
+elements-api.json  foundation  index.js  layout  llms.txt  package.json
+spec.manifest.json  tokens
+
+$ find . -iname "*chart*"
+./tokens/chart-palette.json          # the palette, and nothing else
+```
+
+`package.json` shows why — `files` never lists it:
+
+```json
+"files": ["index.js","elements-api.json","AGENTS.md","llms.txt","authoring-playbook.md",
+          "spec.manifest.json","components/","tokens/","layout/","foundation/",
+          "conformance/","README.md"]
+```
+
+`exports` has a `"./*"` passthrough, so the path would resolve if the files were there. They are
+not: this is the tarball's `files` allow-list, the same packaging class as **G7** (the documented
+CSS import path missing from `exports`).
+
+The cost is specific. The registry sends a standalone consumer down exactly one supported road —
+copy a fixture's `config`, render it with Highcharts — and that road is unreachable from npm. The
+showcase is named as an alternative, but a URL cannot be diffed, version-pinned or read by a build.
+
+**Consumer workaround:** none for the configs themselves. The hand-rolled SVG stays, coloured from
+`--chart-*`, which the same registry entry endorses.
+
+**Ask:** add `"charts/"` to `files` in `@mtdt/observeops-ds-spec`. If the fixtures are meant to ship
+elsewhere, correct `data-viz.json` — it currently names this package twice.
+
+**Class: DS — packaging.**
+
+---
+
+### New finding — G36: `obs-table` cannot pin its pager to the bottom of a taller container
+
+Every monitor list in the product ends in one band at the **bottom of the page**: pagination, page
+size, the severity legend and the item count, on one line. `obs-table` renders its own pager
+immediately after the rows, at the table's content height. With three rows that lands the pager
+mid-page, roughly 400px above where the product puts it.
+
+**The host stretches; the internals do not.** Measured on the rendered page:
+
+| | height |
+|---|---|
+| `obs-table` host (a flex child, `flex: 1 1 auto`) | **605px** |
+| its internal `.wrap` | **183px** |
+| `.pager` bottom | **429px**, against a host bottom of 851px |
+
+Every outside lever was tried, and none moves it:
+
+- `max-height="100%"` + `sticky-header` — documented as "cap the grid height + scroll the body", but
+  it only *caps*; with three rows there is nothing to scroll and the wrap stays at content height.
+- A **definite** host height (`height: 500px`, and `display:flex; flex-direction:column` with it) —
+  wrap 183px, pager 429px, unchanged in both cases.
+- `::part()` — `obs-table` exposes **no parts at all**: `shadowRoot.querySelectorAll('[part]')`
+  returns an empty list.
+- No `height`, `fill` or `stretch` attribute exists in `elements-api.json`.
+
+Injecting `.wrap{height:100%;display:flex;flex-direction:column}` **into the shadow root** did not
+move it either (429 → 429), so this is not a percentage-resolution problem a consumer could solve
+even by piercing — the component sizes itself to its content.
+
+**Consumer workaround:** turn the pager off with the documented `page-size="0"` and rebuild the whole
+band — first/prev/next/last, the page-size select, legend and count — from `obs-button`,
+`obs-icon`, `obs-select` and `obs-severity`. That is what this screen does. It reaches 100/100 and
+0 raw controls, so nothing is off-system; it is simply a component's own footer rebuilt by hand.
+
+**Ask:** either let the grid fill its host (a `fill`/`stretch` attribute, or `:host{height:100%}`
+with an internal flex column), or expose the pager as a `part` so a consumer can place it. A
+bottom-pinned list footer is the shape of every list screen in the product.
+
+**Class: DS — capability.**
+
+---
+
+### New finding — G37: the conformance checker scores a **disabled** `obs-button` as off-reference
+
+The four pager arrows are `disabled`, because the list has one page — the same greyed state the
+product shows. That alone drops the screen from **100/100 to 91/100**, component 100 → 69:
+
+```
+OVERALL: 91/100  ·  token 100  component 69  philosophy 100  layout 100
+  ✗ <obs-button variant="neutral-lightest"> renders off-reference
+    (bg rgb(236, 241, 249) vs rgb(236, 241, 249)) — variant looks overridden,
+    not the real "neutral-lightest"
+```
+
+**The failure line reports the same colour on both sides.** Nothing is overridden: the two export
+buttons in the toolbar above use the identical `variant="neutral-lightest" squared` and pass. The
+only difference is the `disabled` attribute — a first-class, documented property of the component.
+Removing it restores 100/100 with 0 off-ref; adding it back drops it again. Nothing else changes.
+
+So the checker appears to compare a disabled instance against an enabled reference render, find a
+difference in some property it does not print, and report it as an overridden variant while
+displaying matching backgrounds.
+
+**Consumer decision:** the `disabled` state is kept. It is the correct affordance — enabled-looking
+arrows that do nothing are a worse product than greyed ones — and this repo already has precedent
+for choosing the product over the score (**G31**, where a raw anchor was kept deliberately). The
+deploy workflow gates on tests, build and the colour guard, not on conformance, so nothing is
+blocked. This is the same family as **G8**: the checker rejecting valid work.
+
+**Ask:** compare a disabled component against a disabled reference, and print the property that
+actually differs rather than one that matches.
+
+**Class: DS — discoverability (tooling).**

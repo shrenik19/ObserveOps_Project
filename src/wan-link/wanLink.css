@@ -1,0 +1,293 @@
+/* Token-only: every colour resolves through a var(--token). The deploy workflow greps this whole
+   directory for literal colour syntax and fails the build on a match — comments included. */
+
+.wl-name { font-family: var(--chart-font-family, monospace); }
+
+.wl-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  padding: 16px 0;
+}
+
+.wl-card {
+  grid-column: span var(--wl-span, 12);
+  border: 1px solid var(--chart-border-color);
+  border-radius: 6px;
+  background: var(--card-background-color);
+  padding: 12px 14px;
+}
+
+.wl-card__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.wl-card--chart {
+  min-height: 218px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wl-chart {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px 9px;
+  flex: 1;
+  margin-top: 10px;
+}
+
+.wl-chart__y {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 104px;
+  text-align: right;
+  font: 10px var(--chart-font-family, monospace);
+  color: var(--chart-legend-color);
+}
+
+.wl-chart__plot {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+  height: 104px;
+  border-left: 1px solid var(--chart-grid-line-color);
+  border-bottom: 1px solid var(--chart-grid-line-color);
+}
+
+.wl-chart__plot polyline {
+  fill: none;
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.wl-chart__plot line {
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.wl-chart__x {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  justify-content: space-between;
+  font: 10px var(--chart-font-family, monospace);
+  color: var(--chart-legend-color);
+}
+
+.wl-chart__legend {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font: 10.5px var(--chart-font-family, monospace);
+  color: var(--chart-legend-color);
+}
+
+.wl-chart__key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wl-chart__key i {
+  width: 15px;
+  height: 2px;
+}
+
+.wl-tiles {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  padding-bottom: 4px;
+}
+
+/* A tile is a .wl-card for its surface, but it sits in the 6-column tile grid, not the 12-column
+   widget grid — without this it inherits span 12 and every tile claims its own row. */
+.wl-tile { grid-column: auto; }
+
+/* Icon at the top, title and caption under it, values pinned to the BOTTOM — so every tile's
+   numbers sit on one line across the row whether or not the tile has a caption. */
+.wl-tile {
+  display: flex;
+  flex-direction: column;
+  min-height: 176px;
+}
+
+.wl-tile__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 12px;
+  /* The reference badge is the dark filled surface with a light glyph. The availability-icon pair
+     is a pale tint, so the primary-button pair is the right one — it is defined as a filled
+     surface with a foreground guaranteed to read against it. */
+  background: var(--primary-button-bg);
+  color: var(--primary-button-text);
+}
+
+.wl-tile .wl-card__title { margin-bottom: 3px; }
+.wl-tile__caption { font-size: 11px; color: var(--secondary-text-color); }
+
+.wl-tile__values {
+  margin-top: auto;
+  padding-top: 20px;
+  /* Two equal columns, as in the reference: a second value starts at the tile's midpoint, and a
+     lone value sits in the left half rather than centring. */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wl-tile__label {
+  font-size: 11px;
+  color: var(--secondary-text-color);
+  margin-bottom: 3px;
+}
+
+.wl-tile__value {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-color);
+}
+
+.wl-tile__unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--secondary-text-color);
+  margin-left: 2px;
+}
+
+.wl-drawer__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* The product separates name │ probe type │ status with vertical rules, not whitespace. A real
+   border rather than a "|" glyph, so it keeps its weight and height at any font size. */
+.wl-drawer__sep {
+  align-self: stretch;
+  width: 0;
+  min-height: 18px;
+  border-left: 1px solid var(--border-color);
+}
+
+.wl-drawer__probe { color: var(--secondary-text-color); font-weight: 400; }
+
+.wl-drawer__groups {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.wl-donut {
+  width: 112px;
+  height: 112px;
+  margin: 14px auto 8px;
+  border: 15px solid var(--chart-vivid-teal);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 11px;
+  color: var(--secondary-text-color);
+}
+
+.wl-donut b { display: block; font-size: 15px; color: var(--text-color); }
+
+.wl-bar { margin-bottom: 12px; }
+
+.wl-bar__track {
+  height: 9px;
+  border-radius: 3px;
+  border: 1px solid var(--chart-border-color);
+  background: var(--chart-emerald-green);
+}
+
+.wl-bar__ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--chart-legend-color);
+}
+
+.wl-form__legend {
+  margin: 22px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--chart-border-color);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--secondary-text-color);
+}
+
+.wl-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wl-form__note { font-size: 12px; color: var(--secondary-text-color); }
+
+/* The legend is pinned under the grid, as in the product. For that the table has to scroll inside
+   its own box rather than growing the page: the content column needs min-height:0 so it can shrink
+   below its content, and the table needs to be the flex item that absorbs the remaining space. */
+#wan-link-content { min-height: 0; }
+
+#wan-link-content obs-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* One band pinned to the bottom of the page, as in the product: pager and page size on the left,
+   the severity legend centred, the item count on the right. */
+.wl-footer {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 4px 2px;
+  border-top: 1px solid var(--border-color);
+}
+
+.wl-footer__pager { display: flex; align-items: center; gap: 6px; }
+
+/* obs-select is a fixed 240px unless `block`; the page-size control is a two-digit field. */
+.wl-footer__pager obs-select { width: 84px; margin-left: 6px; }
+
+.wl-footer__page {
+  min-width: 26px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.wl-footer__label,
+.wl-footer__count {
+  font-size: 12px;
+  color: var(--secondary-text-color);
+  white-space: nowrap;
+}
+
+.wl-footer__count { justify-self: end; }
+
+.wl-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 12px;
+}

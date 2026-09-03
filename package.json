@@ -16,8 +16,8 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "@mtdt/observeops-ds-css": "^0.1.0",
-    "@mtdt/observeops-ds-elements": "^0.1.141",
-    "@mtdt/observeops-ds-spec": "^0.1.180"
+    "@mtdt/observeops-ds-css": "^0.1.6",
+    "@mtdt/observeops-ds-elements": "^0.1.167",
+    "@mtdt/observeops-ds-spec": "^0.1.210"
   }
 }

@@ -1,0 +1,124 @@
+// The NX-OS WAN Link template, derived from what `show ip sla statistics` actually reports.
+// See docs/superpowers/specs/2026-09-01-nxos-wan-link-design.md for the full counter mapping.
+
+export const PROBES = {
+  'icmp-echo': { key: 'icmp-echo', label: 'ICMP Echo', needsPort: false },
+  'udp-echo': { key: 'udp-echo', label: 'UDP Echo', needsPort: true },
+  'udp-jitter': { key: 'udp-jitter', label: 'UDP Jitter', needsPort: true },
+}
+
+/**
+ * The product leaves RTT empty on a down link rather than showing a stale number. Exported so the
+ * rule is testable on its own — the seed list is one link per probe and need not contain a down
+ * one for this to stay covered.
+ */
+export const displayRtt = (status, rtt) => (status === 'down' ? '' : rtt)
+
+// The monitor's group path, shown as a chip under the drawer title. The product shows the first
+// path plus a "+N" chip for the groups that do not fit; NX-OS devices are Nexus switches.
+const GROUP = 'Network > Switch > Cisco Systems'
+const MORE_GROUPS = 2
+
+const link = (id, probe, carrier, src, dst, iface, status, rtt) => ({
+  id,
+  probe,
+  name: `nxos${probe.replace('-', '')}-${carrier}-${src}→${dst}`,
+  monitor: 'site2.test2.com',
+  sourceIp: src,
+  destinationIp: dst,
+  sourceInterface: iface,
+  rtt: displayRtt(status, rtt),
+  status,
+  group: GROUP,
+  moreGroups: MORE_GROUPS,
+})
+
+// One sample per probe — the list is here to reach each probe's detail drawer, not to demonstrate
+// a populated inventory. Same three links the approved wireframe used.
+export const LINKS = [
+  link('l1', 'icmp-echo', 'Jio', '70.70.70.2', '70.70.70.1', 'Eth1/1', 'up', '12 ms'),
+  link('l2', 'udp-echo', 'Airtel', '70.70.70.2', '70.70.70.1', 'Eth1/2', 'up', '9 ms'),
+  link('l3', 'udp-jitter', 'VI', '70.70.70.2', '70.70.70.1', 'Eth2/1', 'up', '15 ms'),
+]
+
+const ECHO_WINDOWS = ['Last Day', 'Last 7 Days', 'Last 15 Days']
+const JITTER_WINDOWS = ['7 Days', '15 Days', '30 Days']
+
+export const availabilityWindows = (probeKey) =>
+  (probeKey === 'udp-jitter' ? JITTER_WINDOWS : ECHO_WINDOWS)
+
+const XT = ['12:00', '18:00', '24:00', '06:00', '12:00']
+const YT = ['120', '85', '65', '35', '0']
+
+// Both echo probes report a single timing value, `Latest RTT`. There is no min or max, so the two
+// extra RTT History charts in the XE/XR template have no source and are not carried over.
+const ECHO_CHARTS = [
+  { row: 'A', title: "Today's Availability", span: 2, kind: 'donut', series: [] },
+  { row: 'A', title: 'Availability Statistics', span: 4, kind: 'bars', series: [] },
+  {
+    row: 'A', title: 'RTT History', span: 6, kind: 'line', flat: true,
+    series: ['ipsla.latency.ms.avg'],
+    yTicks: ['8 ms'], xTicks: ['1. Sep', '04:00', '08:00', '12:00', '16:00'],
+  },
+]
+
+const JITTER_CHARTS = [
+  { row: 'A', title: "Today's Availability", span: 2, kind: 'donut', series: [] },
+  { row: 'A', title: 'Availability Last 30 Days', span: 4, kind: 'bars', series: [] },
+  {
+    row: 'A', title: 'RTT History', span: 6, kind: 'line',
+    series: ['Min. RTT', 'Avg. RTT', 'Max. RTT'],
+    yTicks: ['25', '20', '15', '10', '5', '0'], xTicks: XT,
+  },
+
+  {
+    row: 'B', title: 'Source to Destination Jitter', span: 4, kind: 'line',
+    series: ['Min. Jitter', 'Avg. Jitter', 'Max. Jitter'], yTicks: YT, xTicks: XT,
+  },
+  {
+    row: 'B', title: 'Destination to Source Jitter', span: 4, kind: 'line',
+    series: ['Min. Jitter', 'Avg. Jitter', 'Max. Jitter'], yTicks: YT, xTicks: XT,
+  },
+  {
+    row: 'B', title: 'Packet Loss Statistics', span: 4, kind: 'line',
+    series: ['Packet Skipped', 'Out Of Sequence', 'Packet Late Arrival', 'Tail Drop'],
+    yTicks: YT, xTicks: XT,
+  },
+
+  {
+    row: 'C', title: 'Source to Destination Latency', span: 6, kind: 'line',
+    series: ['Min. Latency', 'Avg. Latency', 'Max. Latency'], yTicks: YT, xTicks: XT,
+  },
+  {
+    row: 'C', title: 'Destination to Source Latency', span: 6, kind: 'line',
+    series: ['Min. Latency', 'Avg. Latency', 'Max. Latency'], yTicks: YT, xTicks: XT,
+  },
+]
+
+// Values are the ones from the NX-OS sample output, so every tile traces back to a CLI line.
+//
+// The icons are the product's own, and all four are real DS glyphs — spec@0.1.210 publishes the
+// inventory at components/registry/icon.json (names.list, 635 entries), so these are looked up
+// rather than guessed. Direction is carried by the left-to-right / right-to-left arrows, which is
+// why the jitter and latency pairs share a glyph.
+const JITTER_TILES = [
+  {
+    title: 'RTT', caption: 'Avg: 2 ms', icon: 'rtt',
+    values: [{ label: 'Min', value: '1', unit: 'ms' }, { label: 'Max', value: '4', unit: 'ms' }],
+  },
+  { title: 'SRC to DST Jitter', caption: '', icon: 'left-to-right-arrow', values: [{ label: '', value: '1', unit: 'ms' }] },
+  { title: 'DST to SRC Jitter', caption: '', icon: 'right-to-left-arrow', values: [{ label: '', value: '1', unit: 'ms' }] },
+  { title: 'SRC to DST Latency', caption: '', icon: 'left-to-right-arrow', values: [{ label: '', value: '0', unit: 'ms' }] },
+  { title: 'DST to SRC Latency', caption: '', icon: 'right-to-left-arrow', values: [{ label: '', value: '0', unit: 'ms' }] },
+  {
+    title: 'Packet Lost', caption: '', icon: 'rejected-connections',
+    values: [
+      { label: 'SRC to DST', value: '0', unit: '' },
+      { label: 'DST to SRC', value: '0', unit: '' },
+    ],
+  },
+]
+
+export const tilesFor = (probeKey) => (probeKey === 'udp-jitter' ? JITTER_TILES : [])
+
+export const chartsFor = (probeKey) => (probeKey === 'udp-jitter' ? JITTER_CHARTS : ECHO_CHARTS)
