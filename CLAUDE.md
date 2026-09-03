@@ -24,7 +24,7 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 - **Vanilla JS + Vite 8** — no framework. The DS ships web components, so the app is plain DOM. This
   is deliberate: it keeps the DS's components on the critical path so anything awkward about them
   surfaces immediately instead of being smoothed over by a wrapper.
-- **Vitest + jsdom** — 123 tests across 9 files.
+- **Vitest + jsdom** — 416 tests across 21 files.
 - `@mtdt/observeops-ds-elements` · `-ds-css` · `-ds-spec` (public on npm, no auth).
 - The **`observeops-ds` MCP server** for component discovery and token resolution — registered by
   the project's own `.mcp.json`.
@@ -32,9 +32,20 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 ## Structure
 
 ```
-report-categories.html          the screen: app-shell regions + mount points
+index.html                      the app — an empty shell the router fills
+report-categories.html          redirect stub -> #/reports/categories
+lama.html                       redirect stub -> #/settings/lama
+src/app/
+  registry.js                   modules -> screens. THE file you edit to add a screen
+  router.js                     parse / resolve / href — pure, no DOM, no registry import
+  shell.js                      the chrome, rendered once: sidebar, app header, user menu
+  screenHost.js                 the mount/unmount lifecycle, and overlay clearing
+  overviewScreen.js             the default route, generated from the registry
+  cardList.js · pageHeader.js   shared markup helpers
+  main.js                       composition root, and the ONLY DS import in the app
+  shell.css                     shell layout + the Overview grid
 src/report-categories/
-  main.js                       wiring: store ↔ side-menu ↔ table ↔ drawer ↔ dialog
+  screen.js                     wiring: store ↔ side-menu ↔ table ↔ drawer ↔ dialog
   store.js                      categories + reports — no DOM, no DS   (24 tests)
   categorySettingsPanel.js      the three-mode settings drawer         (23 tests)
   deleteCategoryFlow.js         the four-state category delete flow    (10 tests)
@@ -44,7 +55,9 @@ src/report-categories/
   augmentSideMenu.js            the ONE remaining DS extension         (17 tests)
   categoryRow.js                superseded — kept, unused by the page  (13 tests)
   *.css                         token-only styling — no hex/rgb/hsl anywhere
-vite.config.js                  registers report-categories.html as a 2nd entry point
+src/lama/
+  screen.js                     the LAMA list and its Create LAMA Profile drawer
+vite.config.js                  index.html + the two redirect stubs
 .mcp.json                       registers the observeops-ds MCP server
 .claude/settings.json           pre-approves the npm commands
 docs/                           see "Key context" below
@@ -56,19 +69,37 @@ docs/                           see "Key context" below
 
 ```bash
 npm install
-npm run dev            # then open /report-categories.html — NOT /
-npm test               # 123 tests
-npm run build          # builds both pages
+npm run dev            # then open / — the app is one page
+npm test               # 416 tests across 21 files
+npm run build          # builds the app and the two redirect stubs
 ```
 
-`index.html` is still the untouched Vite starter. The feature lives on `report-categories.html`.
+**The app is a single page.** `/` is the Overview; the screens are routes inside the shell —
+`#/reports/categories` and `#/settings/lama` — and the sidebar navigates between them. The two
+`.html` files are redirect stubs kept only so already-published URLs keep working.
 
-DS conformance (expects **100/100**):
+### Adding a screen
+
+1. Write `src/<name>/screen.js` exporting `meta` and `mount(root)`. `mount` gets the content region
+   and returns its own teardown.
+2. Add one entry to the right module's `screens` array in `src/app/registry.js`.
+
+That is all. The sidebar entry, the route and the Overview card are generated from the registry.
+A module with no screens renders in the rail and does nothing when clicked, by design.
+
+DS conformance (expects **100/100**) — it takes a URL as well as a file, which is what it now needs,
+since no static `.html` holds a screen any more:
 
 ```bash
 npm install -D playwright-core
-node node_modules/@mtdt/observeops-ds-spec/conformance/ds-conformance.mjs ./report-categories.html
+npm run dev
+node node_modules/@mtdt/observeops-ds-spec/conformance/ds-conformance.mjs \
+  http://localhost:5173/#/reports/categories
 ```
+
+**Screens load by dynamic `import()`, so Chromium can sample before the screen has mounted** — which
+scores an almost-empty page very highly. Check the element count against a known-good run before
+believing the number.
 
 ## Key context
 
@@ -136,13 +167,19 @@ no-hardcoded-colours guard before it publishes — a red suite blocks the deploy
 site, so it serves from `/ObserveOps_Project/`; `vite.config.js` takes that prefix from
 `BASE_PATH` rather than hardcoding it, so the same build works locally and live.
 
-The three pages:
+One page, three URLs — the last two are redirect stubs into the shell's routes, kept so links
+published before the refactor keep working:
 
-| Page | Live |
+| Screen | Live |
 |---|---|
-| Landing | https://shrenik19.github.io/ObserveOps_Project/ |
-| LAMA | https://shrenik19.github.io/ObserveOps_Project/lama.html |
-| Report / Category RBAC | https://shrenik19.github.io/ObserveOps_Project/report-categories.html |
+| Overview | https://shrenik19.github.io/ObserveOps_Project/ |
+| LAMA | https://shrenik19.github.io/ObserveOps_Project/#/settings/lama |
+| Report / Category RBAC | https://shrenik19.github.io/ObserveOps_Project/#/reports/categories |
+| ↳ old LAMA link | `…/lama.html` → redirects to `#/settings/lama` |
+| ↳ old Report link | `…/report-categories.html` → redirects to `#/reports/categories` |
+
+Both redirects are **relative**, so they hold under the `/ObserveOps_Project/` base path as well as
+at a domain root. Verified against a `BASE_PATH` build, not assumed.
 
 ## Handoff
 

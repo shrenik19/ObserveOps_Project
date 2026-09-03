@@ -13,7 +13,10 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        // The app. One page; screens are routes inside it.
         main: resolve(root, 'index.html'),
+        // Redirect stubs, kept only so already-published URLs keep working. This list grows when a
+        // URL needs preserving — never when a screen is added.
         reportCategories: resolve(root, 'report-categories.html'),
         lama: resolve(root, 'lama.html'),
       },

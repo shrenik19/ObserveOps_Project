@@ -46,21 +46,9 @@ body {
   font-size: 1.15rem;
   font-weight: 600;
   color: var(--page-text-color);
-}
-
-/* Tab row with the primary action pinned right. */
-.module-tabs {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 0 8px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.module-tabs obs-tabs {
-  flex: 1 1 auto;
-  min-width: 0;
+  /* It is an <a> now — the way back to the Overview — so it needs the underline removed that a
+     <span> never had. */
+  text-decoration: none;
 }
 
 /* Category nav + content sit side by side and fill the rest. */
@@ -82,58 +70,83 @@ body {
   overflow: auto;
 }
 
-.content-toolbar__search {
-  flex: 0 0 320px;
+/* The Overview screen and the module-index grid. Colours are var(--token) — the same constraint
+   the screens hold to.
+
+   These rules came from the old standalone landing page. Its `.landing__mark` and `.landing__title`
+   are gone: the shell's app-header now carries the brand, and obs-page-header carries the title. */
+
+.landing {
+  /* On the old standalone page this was a plain block. It is a flex item now, so the auto margins
+     make it shrink-to-fit unless it is told to fill first — without width:100% the card grid
+     collapses to a single narrow column. */
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  color: var(--page-text-color);
 }
 
+.landing__blurb {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--neutral-light);
+}
 
-/* obs-side-menu is width:100% and fills its container — the registry says to set the WIDTH per
-   mode: list = ~15-25% of the viewport, ~340px if fixed. */
-.category-side-menu {
+.landing__blurb code {
+  color: var(--page-text-color);
+}
+
+.landing__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 40px;
+}
+
+.card {
   display: flex;
   flex-direction: column;
-  flex: 0 0 280px;
+  gap: 10px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
   background: var(--page-background-color);
-  border-right: 1px solid var(--border-color);
-  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms ease;
 }
 
-.category-side-menu obs-side-menu {
+.card:hover {
+  border-color: var(--primary);
+}
+
+.card obs-icon {
+  color: var(--primary);
+}
+
+.card__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.card__text {
+  margin: 0;
+  color: var(--neutral-light);
+}
+
+.card__go {
+  margin-top: 6px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+/* The region a screen mounts into: a flex column filling what is left under the app header, so a
+   screen's own obs-page-header sits at the top and its content area takes the remainder. */
+.app-shell__screen {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
 }
-
-.category-favorites {
-  display: block;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.category-favorites obs-icon {
-  margin-right: 8px;
-}
-
-/* The product paints the favourites star amber; --severity-warning is the catalogued amber. */
-.category-favorites obs-icon {
-  color: var(--severity-warning);
-}
-
-.category-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  flex: 1 1 auto;
-}
-
-/* The product's category list uses a full-width rule between rows. */
-.category-list .category-row {
-  padding: 12px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.category-row.is-active {
-  background: var(--neutral-lightest);
-  box-shadow: inset 2px 0 0 var(--primary);
-  font-weight: 500;
-}
-

@@ -34,13 +34,15 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Build all three pages
+      - name: Build the app and the redirect stubs
         run: npm run build
 
+      # A glob, not a hand-listed set of paths. The old list named src/landing/*.css and went stale
+      # the moment that directory was absorbed into the app shell.
       - name: Guard the no-hardcoded-colours rule
         run: |
-          if grep -rnE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(' src/lama/*.css src/lama/*.js \
-               src/report-categories/*.css src/report-categories/*.js src/landing/*.css; then
+          if grep -rnE '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(' \
+               --include='*.css' --include='*.js' src/; then
             echo "::error::Hardcoded colour found. Every colour must be a var(--token)."
             exit 1
           fi
