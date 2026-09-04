@@ -146,21 +146,30 @@ describe('create form — reset', () => {
     const onRun = vi.fn()
     const el = form({ onRun })
     change(el.querySelector('#wld-monitor'), 'm-nxos')
+    change(el.querySelector('#wld-probe'), 'UDP Echo')
     el.querySelector('#wld-freq').value = '120'
     el.querySelector('#wld-optimeout').value = '9999'
+    el.querySelector('#wld-port').value = '1234'
 
     el.querySelector('#wld-reset').click()
 
+    // The port default is what Reset is really under test for here — UDP Echo needs it, and it must
+    // have come back as the field's initial default rather than surviving as '1234' or going blank.
+    expect(el.querySelector('#wld-port').value).toBe('5000')
+
     el.querySelector('#wld-name').value = 'NX Core → Airtel'
     change(el.querySelector('#wld-monitor'), 'm-nxos')
-    change(el.querySelector('#wld-probe'), 'ICMP Echo')
+    change(el.querySelector('#wld-probe'), 'UDP Echo')
     el.querySelector('#wld-isp').value = 'Airtel'
     el.querySelector('#wld-dip').value = '8.8.8.8'
     el.querySelector('#wld-run').click()
 
     expect(onRun).toHaveBeenCalledOnce()
+    const payload = onRun.mock.calls[0][0]
+    expect(payload.links[0].port).toBe('5000')
     expect(el.querySelector('#wld-error').textContent).not.toContain('Frequency')
     expect(el.querySelector('#wld-error').textContent).not.toContain('Operation Timeout')
+    expect(el.querySelector('#wld-error').textContent).not.toContain('UDP Port')
   })
 
   it('keeps the monitor locked in after reset when opened from a device', () => {
@@ -355,5 +364,20 @@ describe('create form — csv mode', () => {
     el.querySelector('#wld-reset').click()
 
     expect(el.querySelector('#wld-csv-name').getAttribute('value')).toBe('')
+  })
+
+  it('clears the uploaded-file display on a mode round-trip, and Run then reports it missing', () => {
+    const onRun = vi.fn()
+    const el = csvForm({ onRun })
+    el.querySelector('#wld-csv-upload').click()
+    expect(el.querySelector('#wld-csv-name').getAttribute('value')).toContain('rows parsed')
+
+    el.querySelector('#wld-mode-single').click()
+    el.querySelector('#wld-mode-csv').click()
+
+    expect(el.querySelector('#wld-csv-name').getAttribute('value')).toBe('')
+    el.querySelector('#wld-run').click()
+    expect(onRun).not.toHaveBeenCalled()
+    expect(el.querySelector('#wld-error').textContent).toContain('CSV')
   })
 })

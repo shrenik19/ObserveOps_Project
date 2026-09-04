@@ -192,8 +192,13 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
 
   function setMode(next) {
     mode = next
-    csv = next === 'single' ? null : csv
-    csvError = next === 'single' ? null : csvError
+    if (next === 'single') {
+      // Leaving CSV mode discards the loaded file — the upload display must say so too, or a
+      // round-trip back into CSV mode shows a stale "N rows parsed" for a file that no longer exists.
+      csv = null
+      csvError = null
+      $('wld-csv-name').setAttribute('value', '')
+    }
     $('wld-mode-single').toggleAttribute('data-selected', next === 'single')
     $('wld-mode-csv').toggleAttribute('data-selected', next === 'csv')
     $('wld-link-fields').hidden = next !== 'single'
