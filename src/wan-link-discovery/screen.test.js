@@ -60,3 +60,94 @@ describe('discovery profile list', () => {
     expect(typeof mount(root)).toBe('function')
   })
 })
+
+describe('the four views', () => {
+  const mounted = () => {
+    const root = document.createElement('div')
+    mount(root)
+    return root
+  }
+  const change = (el, value) => {
+    el.setAttribute('value', value)
+    el.value = value
+    el.dispatchEvent(new CustomEvent('change', { detail: [value] }))
+  }
+
+  const fillAndRun = (root) => {
+    root.querySelector('#wld-create').click()
+    const form = root.querySelector('.wld-form')
+    change(form.querySelector('#wld-monitor'), 'm-nxos')
+    form.querySelector('#wld-name').value = 'NX Core → Airtel'
+    change(form.querySelector('#wld-probe'), 'ICMP Echo')
+    change(form.querySelector('#wld-iface'), 'Ethernet1/48')
+    form.querySelector('#wld-isp').value = 'Airtel'
+    form.querySelector('#wld-dip').value = '8.8.8.8'
+    form.querySelector('#wld-run').click()
+  }
+
+  it('shows the list first', () => {
+    const root = mounted()
+    expect(root.querySelector('#wld-list').hidden).toBe(false)
+    expect(root.querySelector('.wld-form')).toBeNull()
+  })
+
+  it('opens the create form and hides the list', () => {
+    const root = mounted()
+    root.querySelector('#wld-create').click()
+    expect(root.querySelector('.wld-form')).toBeTruthy()
+    expect(root.querySelector('#wld-list').hidden).toBe(true)
+  })
+
+  it('returns to the list on Save and Exit', () => {
+    const root = mounted()
+    root.querySelector('#wld-create').click()
+    root.querySelector('#wld-exit').click()
+    expect(root.querySelector('#wld-list').hidden).toBe(false)
+    expect(root.querySelector('.wld-form')).toBeNull()
+  })
+
+  it('runs into the progress view', () => {
+    const root = mounted()
+    fillAndRun(root)
+    expect(root.querySelector('.wld-progress')).toBeTruthy()
+    expect(root.querySelector('#wld-prog-title').textContent).toBe('NX Core → Airtel')
+  })
+
+  it('adds the profile to the list as soon as it runs', () => {
+    const root = mounted()
+    const before = root.querySelector('#wld-table').rows.length
+    fillAndRun(root)
+    expect(root.querySelector('#wld-table').rows).toHaveLength(before + 1)
+  })
+
+  it('moves from progress to the provision grid', () => {
+    const root = mounted()
+    fillAndRun(root)
+    root.querySelector('.wld-progress').advanceAll()
+    root.querySelector('#wld-prog-next').click()
+    expect(root.querySelector('.wld-provision')).toBeTruthy()
+    expect(root.querySelector('#wld-prov-table').rows).toHaveLength(1)
+  })
+
+  it('provisions the profile and freezes it', () => {
+    const root = mounted()
+    fillAndRun(root)
+    root.querySelector('.wld-progress').advanceAll()
+    root.querySelector('#wld-prog-next').click()
+    const grid = root.querySelector('.wld-provision')
+    grid.select(0)
+    root.querySelector('#wld-prov-add').click()
+    const row = root.querySelector('#wld-table').rows.find((r) => r.name === 'NX Core → Airtel')
+    expect(row.provisioned).toBe(true)
+    expect(row.discovered).toBe(1)
+  })
+
+  it('locks the monitor when opened with a monitor in the hash', () => {
+    window.location.hash = '#/settings/wan-link-discovery?monitor=m-nxos'
+    const root = mounted()
+    const monitor = root.querySelector('#wld-monitor')
+    expect(monitor.getAttribute('value')).toBe('m-nxos')
+    expect(monitor.hasAttribute('disabled')).toBe(true)
+    window.location.hash = ''
+  })
+})

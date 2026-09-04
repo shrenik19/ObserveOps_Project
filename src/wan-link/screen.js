@@ -35,6 +35,11 @@ const TEMPLATE = `
         <obs-button variant="neutral-lightest" squared aria-label="Export as spreadsheet">
           <obs-icon name="exportXlsx" size="14"></obs-icon>
         </obs-button>
+        <!-- The in-device Add WAN Link drawer is retired. This deep-links to the one form,
+             Create Discovery Profile -> WAN Link, with the Monitor pre-selected and locked.
+             See docs/superpowers/specs/2026-09-02-wan-link-discovery-design.md. -->
+        <obs-button id="wan-link-add" variant="primary"
+                    data-href="#/settings/wan-link-discovery?monitor=m-nxos">Add WAN Link</obs-button>
       </obs-toolbar>
       <obs-filters id="wan-link-filters" kind="bar"></obs-filters>
       <!-- page-size="0" turns obs-table's own pager off. The product puts pagination, page size,
@@ -145,6 +150,9 @@ export function mount(root) {
     if (!link || !overlay) return
     overlay.replaceChildren(renderDetailDrawer({ link, onClose: closeOverlay }))
   })
+
+  const add = root.querySelector('#wan-link-add')
+  add.addEventListener('click', () => { window.location.hash = add.getAttribute('data-href') })
 
   return function unmount() {
     closeOverlay()

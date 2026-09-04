@@ -83,3 +83,15 @@ describe('wan-link list', () => {
     overlay.remove()
   })
 })
+
+describe('wan-link deep link into discovery', () => {
+  it('offers Add WAN Link, which points at the discovery form for this monitor', () => {
+    const root = document.createElement('div')
+    mount(root)
+    const button = root.querySelector('#wan-link-add')
+    expect(button).toBeTruthy()
+    expect(button.textContent).toContain('Add WAN Link')
+    expect(button.getAttribute('data-href'))
+      .toBe('#/settings/wan-link-discovery?monitor=m-nxos')
+  })
+})

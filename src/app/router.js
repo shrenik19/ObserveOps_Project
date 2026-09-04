@@ -5,13 +5,19 @@
 // Pure by design — `resolve` takes the modules array rather than importing the registry, so the
 // rules can be tested against fixtures and the registry can grow without touching this file.
 
-/** '#/reports/categories' -> { module: 'reports', screen: 'categories' } */
+/**
+ * '#/reports/categories' -> { module: 'reports', screen: 'categories' }
+ *
+ * A screen segment may carry its own query string, e.g. a deep link's
+ * '#/settings/wan-link-discovery?monitor=m-nxos' — stripped here so it still resolves against the
+ * registry's bare screen key. The screen itself re-reads window.location.hash for the query value.
+ */
 export function parse(hash) {
   const [module = null, screen = null] = String(hash || '')
     .replace(/^#/, '')
     .split('/')
     .filter(Boolean)
-  return { module, screen }
+  return { module, screen: screen ? screen.split('?')[0] : screen }
 }
 
 /** href() -> '#/'  ·  href('reports') -> '#/reports'  ·  href('r', 'c') -> '#/r/c' */

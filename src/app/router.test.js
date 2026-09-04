@@ -37,6 +37,11 @@ describe('parse', () => {
   it('ignores segments beyond the second', () => {
     expect(parse('#/reports/categories/extra')).toEqual({ module: 'reports', screen: 'categories' })
   })
+
+  it('strips a query string off the screen segment, for a deep link', () => {
+    expect(parse('#/settings/wan-link-discovery?monitor=m-nxos'))
+      .toEqual({ module: 'settings', screen: 'wan-link-discovery' })
+  })
 })
 
 describe('href', () => {
