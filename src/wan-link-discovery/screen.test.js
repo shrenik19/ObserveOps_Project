@@ -1,5 +1,5 @@
 // src/wan-link-discovery/screen.test.js
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { modules, findScreen } from '../app/registry.js'
 import { resolve, parse } from '../app/router.js'
 import { meta, mount } from './screen.js'
@@ -149,5 +149,32 @@ describe('the four views', () => {
     expect(monitor.getAttribute('value')).toBe('m-nxos')
     expect(monitor.hasAttribute('disabled')).toBe(true)
     window.location.hash = ''
+  })
+
+  it('stops the live view timers when the screen unmounts mid-run', () => {
+    // Fake timers, not real ones: STEP_MS/STAGGER_MS in progressPanel.js would make a real-timer
+    // version of this test take seconds. Fake timers give the same proof — the run does not
+    // continue after unmount — without the wall-clock cost.
+    vi.useFakeTimers()
+    try {
+      const root = document.createElement('div')
+      const unmount = mount(root)
+      fillAndRun(root)
+      const panel = root.querySelector('.wld-progress')
+      const stopSpy = vi.spyOn(panel, 'stop')
+      const marksBefore = [...panel.querySelectorAll('.wld-card__mark')].map((m) => m.textContent)
+
+      unmount()
+
+      expect(stopSpy).toHaveBeenCalledOnce()
+      // The stronger, observable proof: advancing far past every staggered timer's due time must
+      // not settle a single stage. If `unmount` ever stopped calling `live.stop()`, this card would
+      // finish its run here and the marks would change.
+      vi.advanceTimersByTime(60_000)
+      const marksAfter = [...panel.querySelectorAll('.wld-card__mark')].map((m) => m.textContent)
+      expect(marksAfter).toEqual(marksBefore)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
