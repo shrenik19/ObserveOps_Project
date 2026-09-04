@@ -1,0 +1,16 @@
+/* src/wan-link-discovery/wanLinkDiscovery.css
+   Token-only. Resolve every value through the MCP `resolve_token` before adding it; there is not
+   one hex/rgb/hsl in this app's CSS and this file must not be the first. */
+
+#wld-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#wld-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}

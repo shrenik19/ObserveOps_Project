@@ -49,6 +49,15 @@ export const modules = [
           'driven by the chosen Trading API with per-counter aggregation, and repeating metadata fields.',
         load: () => import('../lama/screen.js'),
       },
+      {
+        key: 'wan-link-discovery',
+        label: 'WAN Link discovery',
+        description:
+          'WAN Link as a category in the Discovery Profile tree: pick an already-monitored router, ' +
+          'declare the link, push the IP SLA operation and provision what verified. Cisco IOS XE, ' +
+          'IOS XR and NX-OS, plus Juniper RPM.',
+        load: () => import('../wan-link-discovery/screen.js'),
+      },
     ],
   },
 ]
