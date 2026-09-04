@@ -13,9 +13,17 @@ import { PLATFORMS, osOptions, probeOptions, needsPort, slaTitle } from './platf
 import {
   findMonitor, monitorOptions, credentialOptions, interfaceOptions, prefillCredential,
 } from './monitors.js'
+import { CSV_COLUMNS, sampleCsv, parseCsv } from './csv.js'
 
 /** DS change events carry an array: detail is ['nx-os'], not 'nx-os'. */
 const detailValue = (event) => (Array.isArray(event.detail) ? event.detail[0] : event.detail)
+
+/**
+ * Single source of truth for the three fields that ship with a non-blank initial value. Used both
+ * when first rendering the field and when Reset restores it — Reset must return the form to its
+ * INITIAL state, not blank it, and Frequency/Operation Timeout are required by the validator.
+ */
+const RESET_DEFAULTS = { 'wld-freq': '60', 'wld-optimeout': '5000', 'wld-port': '5000' }
 
 /** obs-select has no `label` attribute — obs-input does, obs-select does not. */
 const selectField = (id, label, { required = false, hint = '' } = {}) => `
@@ -45,7 +53,10 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     <div class="wld-form__row">
       ${inputField('wld-name', 'Discovery Profile Name', { required: true })}
       <div></div>
-      <div class="wld-form__mode" id="wld-mode"></div>
+      <div class="wld-form__mode">
+        <obs-button id="wld-mode-single" variant="neutral-lightest" data-selected>Single</obs-button>
+        <obs-button id="wld-mode-csv" variant="neutral-lightest">CSV</obs-button>
+      </div>
     </div>
 
     <div class="wld-form__row">
@@ -89,9 +100,26 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
         </div>
       </div>
 
+      <div id="wld-csv-block" hidden>
+        <div class="wld-form__row">
+          <div class="wld-field">
+            <label class="wld-field__label" for="wld-csv-name">
+              CSV<span class="wld-field__req">*</span>
+            </label>
+            <div class="wld-form__upload">
+              <obs-input id="wld-csv-name" block readonly placeholder="Select File"></obs-input>
+              <obs-button id="wld-csv-upload" variant="primary">Upload CSV</obs-button>
+            </div>
+            <button type="button" class="wld-form__sample" id="wld-csv-sample">Sample CSV</button>
+          </div>
+          <div></div><div></div>
+        </div>
+        <p class="wld-form__gate" id="wld-csv-columns"></p>
+      </div>
+
       <div class="wld-form__row">
         ${inputField('wld-timeout', 'Timeout')}
-        ${inputField('wld-port', 'UDP Port', { required: true, value: '5000' })}
+        ${inputField('wld-port', 'UDP Port', { required: true, value: RESET_DEFAULTS['wld-port'] })}
         <div></div>
       </div>
 
@@ -102,8 +130,8 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
         <div></div>
       </div>
       <div class="wld-form__row">
-        ${inputField('wld-freq', 'Frequency', { required: true, value: '60' })}
-        ${inputField('wld-optimeout', 'Operation Timeout', { required: true, value: '5000' })}
+        ${inputField('wld-freq', 'Frequency', { required: true, value: RESET_DEFAULTS['wld-freq'] })}
+        ${inputField('wld-optimeout', 'Operation Timeout', { required: true, value: RESET_DEFAULTS['wld-optimeout'] })}
         <div></div>
       </div>
 
@@ -147,10 +175,64 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
 
   const monitor = () => findMonitor($('wld-monitor').getAttribute('value'))
 
+  // Declared here, immediately after `monitor`, and NOT after syncPort: syncPort reads `mode`, and
+  // syncMonitor() runs at the bottom of this factory, so a lower declaration would throw a TDZ
+  // ReferenceError at render time — a failure no static read of the file would show.
+  let mode = 'single'
+  let csv = null
+  // The most recent parse failure, if any — kept separate from the generic "missing field" list so
+  // Run doesn't clobber a specific "here's what's wrong with your file" message with a bare "CSV".
+  let csvError = null
+
   function syncPort() {
-    // UDP Port is the ONLY conditional field on the form, and it sits beside Timeout.
-    $('wld-port-field').hidden = !needsPort($('wld-probe').getAttribute('value'))
+    // UDP Port is the ONLY conditional field on the form, and it sits beside Timeout. In csv mode
+    // the port is a column in the file, never a field on the page.
+    $('wld-port-field').hidden = mode !== 'single' || !needsPort($('wld-probe').getAttribute('value'))
   }
+
+  function setMode(next) {
+    mode = next
+    csv = next === 'single' ? null : csv
+    csvError = next === 'single' ? null : csvError
+    $('wld-mode-single').toggleAttribute('data-selected', next === 'single')
+    $('wld-mode-csv').toggleAttribute('data-selected', next === 'csv')
+    $('wld-link-fields').hidden = next !== 'single'
+    $('wld-csv-block').hidden = next !== 'csv'
+    $('wld-error').hidden = true
+    syncPort()
+  }
+
+  /** Exposed so a test can supply file text without a real file input. */
+  el.loadCsvText = (text) => {
+    const { rows, errors } = parseCsv(text)
+    if (errors.length) {
+      csv = null
+      csvError = errors.join('  ')
+      $('wld-csv-name').setAttribute('value', '')
+      $('wld-error').textContent = csvError
+      $('wld-error').hidden = false
+      return
+    }
+    csv = rows
+    csvError = null
+    $('wld-csv-name').setAttribute('value', `wan-links.csv  ·  ${rows.length} rows parsed`)
+    $('wld-error').hidden = true
+  }
+
+  $('wld-mode-single').addEventListener('click', () => setMode('single'))
+  $('wld-mode-csv').addEventListener('click', () => setMode('csv'))
+  $('wld-csv-upload').addEventListener('click', () => {
+    const m = monitor()
+    if (m) el.loadCsvText(sampleCsv(m, $('wld-os').getAttribute('value')))
+  })
+  $('wld-csv-sample').addEventListener('click', () => {
+    const m = monitor()
+    if (m) el.loadCsvText(sampleCsv(m, $('wld-os').getAttribute('value')))
+  })
+
+  $('wld-csv-columns').textContent =
+    `One row per link. Columns: ${CSV_COLUMNS.join(' · ')} — exactly what the Single form asks ` +
+    'per link. Credential Profile, Timeout and the Operations Test Parameters below apply to every row.'
 
   function syncOs({ fromMonitor = false } = {}) {
     const m = monitor()
@@ -192,6 +274,7 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
 
     setOptions('wld-iface', interfaceOptions(m), '')
     syncOs({ fromMonitor: true })
+    setMode('single')
   }
 
   $('wld-monitor').addEventListener('change', (e) => {
@@ -235,9 +318,13 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
       'wld-isp', 'wld-src-loc', 'wld-dst-loc', 'wld-dip', 'wld-timeout', 'wld-port',
       'wld-payload', 'wld-tos', 'wld-freq', 'wld-optimeout', 'wld-notify',
     ].forEach((id) => {
-      $(id).value = ''
-      $(id).setAttribute('value', '')
+      const value = RESET_DEFAULTS[id] ?? ''
+      $(id).value = value
+      $(id).setAttribute('value', value)
     })
+    // The uploaded-file display is not in the list above — it has no RESET_DEFAULTS entry and
+    // starts blank, not with a placeholder-shaped default.
+    $('wld-csv-name').setAttribute('value', '')
 
     $('wld-error').hidden = true
     syncMonitor()
@@ -248,35 +335,46 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     if (!text('wld-name')) missing.push('Profile Name')
     if (!monitor()) missing.push('Monitor')
     if (!$('wld-cred').getAttribute('value')) missing.push('Credential Profile')
-    const probe = $('wld-probe').getAttribute('value')
-    if (!probe) missing.push('WAN Probe')
-    if (!text('wld-isp')) missing.push('ISP')
-    if (!text('wld-dip')) missing.push('Destination IP')
-    if (needsPort(probe) && !text('wld-port')) missing.push('UDP Port')
     if (!text('wld-freq')) missing.push('Frequency')
     if (!text('wld-optimeout')) missing.push('Operation Timeout')
 
+    const probe = $('wld-probe').getAttribute('value')
+    if (mode === 'csv') {
+      if (!csv) missing.push('CSV')
+    } else {
+      if (!probe) missing.push('WAN Probe')
+      if (!text('wld-isp')) missing.push('ISP')
+      if (!text('wld-dip')) missing.push('Destination IP')
+      if (needsPort(probe) && !text('wld-port')) missing.push('UDP Port')
+    }
+
     if (missing.length) {
-      $('wld-error').textContent = `Required: ${missing.join(' · ')}`
+      // A stored parse failure is more useful than a bare "CSV" — show it verbatim when it's the
+      // only thing wrong.
+      $('wld-error').textContent = mode === 'csv' && csvError && missing.length === 1 && missing[0] === 'CSV'
+        ? csvError
+        : `Required: ${missing.join(' · ')}`
       $('wld-error').hidden = false
       return
     }
     $('wld-error').hidden = true
 
+    const links = mode === 'csv' ? csv : [{
+      probe,
+      isp: text('wld-isp'),
+      iface: $('wld-iface').getAttribute('value') || '',
+      srcLocation: text('wld-src-loc'),
+      dip: text('wld-dip'),
+      dstLocation: text('wld-dst-loc'),
+      port: needsPort(probe) ? text('wld-port') : '',
+    }]
+
     onRun({
       name: text('wld-name'),
       monitor: monitor(),
       osKey: $('wld-os').getAttribute('value'),
-      mode: 'single',
-      links: [{
-        probe,
-        isp: text('wld-isp'),
-        iface: $('wld-iface').getAttribute('value') || '',
-        srcLocation: text('wld-src-loc'),
-        dip: text('wld-dip'),
-        dstLocation: text('wld-dst-loc'),
-        port: needsPort(probe) ? text('wld-port') : '',
-      }],
+      mode,
+      links,
     })
   })
 

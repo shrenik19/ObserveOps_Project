@@ -141,6 +141,42 @@ describe('create form — reset', () => {
     expect(el.querySelector('#wld-gated').hidden).toBe(true)
     expect(el.querySelector('#wld-gate-msg').hidden).toBe(false)
   })
+
+  it('restores Frequency, Operation Timeout and UDP Port to their initial defaults, not blank', () => {
+    const onRun = vi.fn()
+    const el = form({ onRun })
+    change(el.querySelector('#wld-monitor'), 'm-nxos')
+    el.querySelector('#wld-freq').value = '120'
+    el.querySelector('#wld-optimeout').value = '9999'
+
+    el.querySelector('#wld-reset').click()
+
+    el.querySelector('#wld-name').value = 'NX Core → Airtel'
+    change(el.querySelector('#wld-monitor'), 'm-nxos')
+    change(el.querySelector('#wld-probe'), 'ICMP Echo')
+    el.querySelector('#wld-isp').value = 'Airtel'
+    el.querySelector('#wld-dip').value = '8.8.8.8'
+    el.querySelector('#wld-run').click()
+
+    expect(onRun).toHaveBeenCalledOnce()
+    expect(el.querySelector('#wld-error').textContent).not.toContain('Frequency')
+    expect(el.querySelector('#wld-error').textContent).not.toContain('Operation Timeout')
+  })
+
+  it('keeps the monitor locked in after reset when opened from a device', () => {
+    const el = form({ monitorId: 'm-nxos', locked: true })
+    el.querySelector('#wld-isp').value = 'Airtel'
+    el.querySelector('#wld-dip').value = '8.8.8.8'
+
+    el.querySelector('#wld-reset').click()
+
+    const monitor = el.querySelector('#wld-monitor')
+    expect(monitor.getAttribute('value')).toBe('m-nxos')
+    expect(monitor.hasAttribute('disabled')).toBe(true)
+    expect(el.querySelector('#wld-isp').value).toBe('')
+    expect(el.querySelector('#wld-dip').value).toBe('')
+    expect(el.querySelector('#wld-gated').hidden).toBe(false)
+  })
 })
 
 describe('create form — locked entry from a device', () => {
@@ -229,5 +265,95 @@ describe('create form — validation', () => {
     expect(payload.mode).toBe('single')
     expect(payload.links).toHaveLength(1)
     expect(payload.links[0]).toMatchObject({ probe: 'ICMP Echo', isp: 'Airtel', dip: '8.8.8.8' })
+  })
+})
+
+describe('create form — csv mode', () => {
+  const change = (el, value) => {
+    el.setAttribute('value', value)
+    el.value = value
+    el.dispatchEvent(new CustomEvent('change', { detail: [value] }))
+  }
+  const form = (over = {}) =>
+    renderCreateForm({ monitorId: null, locked: false, onCancel: () => {}, onRun: () => {}, ...over })
+
+  const csvForm = (over = {}) => {
+    const el = form(over)
+    change(el.querySelector('#wld-monitor'), 'm-nxos')
+    el.querySelector('#wld-name').value = 'NX Core bulk'
+    el.querySelector('#wld-mode-csv').click()
+    return el
+  }
+
+  it('offers Single and CSV, Single first and selected', () => {
+    const el = form()
+    expect(el.querySelector('#wld-mode-single').textContent).toContain('Single')
+    expect(el.querySelector('#wld-mode-csv').textContent).toContain('CSV')
+    expect(el.querySelector('#wld-mode-single').hasAttribute('data-selected')).toBe(true)
+  })
+
+  it('swaps the per-link fields for the upload, keeping Timeout', () => {
+    const el = csvForm()
+    expect(el.querySelector('#wld-link-fields').hidden).toBe(true)
+    expect(el.querySelector('#wld-csv-block').hidden).toBe(false)
+    expect(el.querySelector('#wld-timeout-field').hidden).toBe(false)
+  })
+
+  it('never shows UDP Port in csv mode — it is a column there', () => {
+    const el = csvForm()
+    change(el.querySelector('#wld-probe'), 'UDP Jitter')
+    expect(el.querySelector('#wld-port-field').hidden).toBe(true)
+  })
+
+  it('keeps the operations block, which applies to every row', () => {
+    const el = csvForm()
+    expect(el.querySelector('#wld-sla-title').hidden).toBe(false)
+    expect(el.querySelector('#wld-freq-field').hidden).toBe(false)
+  })
+
+  it('requires a file', () => {
+    const onRun = vi.fn()
+    const el = csvForm({ onRun })
+    el.querySelector('#wld-run').click()
+    expect(onRun).not.toHaveBeenCalled()
+    expect(el.querySelector('#wld-error').textContent).toContain('CSV')
+  })
+
+  it('runs one link per parsed row', () => {
+    const onRun = vi.fn()
+    const el = csvForm({ onRun })
+    el.querySelector('#wld-csv-upload').click()
+    el.querySelector('#wld-run').click()
+    expect(onRun).toHaveBeenCalledOnce()
+    const payload = onRun.mock.calls[0][0]
+    expect(payload.mode).toBe('csv')
+    expect(payload.links).toHaveLength(3)
+    expect(payload.links.map((l) => l.isp)).toEqual(['Airtel', 'Jio', 'Tata'])
+  })
+
+  it('reports parse errors instead of running', () => {
+    const onRun = vi.fn()
+    const el = csvForm({ onRun })
+    el.loadCsvText('wan_probe,isp\nICMP Echo,Airtel')
+    el.querySelector('#wld-run').click()
+    expect(onRun).not.toHaveBeenCalled()
+    expect(el.querySelector('#wld-error').textContent).toContain('header')
+  })
+
+  it('returns to single mode with the link fields back', () => {
+    const el = csvForm()
+    el.querySelector('#wld-mode-single').click()
+    expect(el.querySelector('#wld-link-fields').hidden).toBe(false)
+    expect(el.querySelector('#wld-csv-block').hidden).toBe(true)
+  })
+
+  it('clears the uploaded-file display on reset', () => {
+    const el = csvForm()
+    el.querySelector('#wld-csv-upload').click()
+    expect(el.querySelector('#wld-csv-name').getAttribute('value')).toContain('rows parsed')
+
+    el.querySelector('#wld-reset').click()
+
+    expect(el.querySelector('#wld-csv-name').getAttribute('value')).toBe('')
   })
 })
