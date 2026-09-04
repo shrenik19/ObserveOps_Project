@@ -113,3 +113,173 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+
+/* ---------- Progress panel ----------
+   No <obs-progress> element exists in this DS — elements-api.json has 47 element entries and not
+   one tag matches /progress/i. The bar below is plain markup: a track filled by an inner <i>, width
+   driven from JS. Track is --progress-bg (theme-aware: #e3e8f2 light / #2b394f dark, both confirmed
+   emitted in dist/observeops-ds.css); fill is --primary-color (the DS's one non-brand accent blue,
+   #099dd9, defined once in :root so it applies unchanged in both themes — also confirmed emitted).
+   See docs/DS-GAPS.md G38. */
+
+.wld-progress {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.wld-progress__head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-block-end: 14px;
+}
+
+.wld-progress__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 260px;
+}
+
+.wld-progress__bar span {
+  color: var(--neutral-light);
+  white-space: nowrap;
+}
+
+.wld-progress__track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--progress-bg);
+  overflow: hidden;
+}
+
+.wld-progress__track i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 3px;
+  background: var(--primary-color);
+  transition: width 0.2s ease;
+}
+
+.wld-progress__tiles {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block-end: 14px;
+}
+
+.wld-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  min-width: 120px;
+}
+
+.wld-tile span {
+  color: var(--neutral-light);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.wld-tile b {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.wld-tile.is-selected {
+  border-color: var(--primary-color);
+}
+
+.wld-progress__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.wld-card {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.wld-card__head {
+  font-weight: 600;
+  margin-block-end: 6px;
+}
+
+.wld-card__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wld-card__steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--neutral-light);
+}
+
+.wld-card__steps li.is-done {
+  color: var(--page-text-color);
+}
+
+.wld-card__steps li.is-failed {
+  color: var(--secondary-red);
+}
+
+.wld-card__mark {
+  width: 16px;
+  text-align: center;
+}
+
+.wld-card__steps li.is-done .wld-card__mark {
+  color: var(--secondary-green);
+}
+
+.wld-card__steps li.is-failed .wld-card__mark {
+  color: var(--secondary-red);
+}
+
+.wld-progress__failnote {
+  color: var(--severity-warning);
+}
+
+/* ---------- Provision grid ---------- */
+
+.wld-provision {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.wld-provision #wld-prov-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.wld-provision__legend {
+  display: flex;
+  gap: 16px;
+  color: var(--neutral-light);
+}
+
+.wld-provision__legend b {
+  color: var(--page-text-color);
+  margin-inline-end: 4px;
+}

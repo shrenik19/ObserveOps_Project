@@ -29,6 +29,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G35** the 32 chart fixtures are documented but not published | 🆕 **OPEN** | `data-viz.json` says they ship under `charts/` with a `charts/manifest.json`; `package.json` `files` omits the directory and it is absent from the tarball. The one shippable path for a standalone consumer is documented and unreachable |
 | **G36** `obs-table` cannot pin its pager to the bottom of a taller container | 🆕 **OPEN** | The host stretches to 605px; the internal wrap stays at its 183px content height, so the pager sits mid-page. No attribute, no `part`, no custom property, and a definite host height changes nothing. The product's bottom-pinned footer has to be rebuilt by the consumer |
 | **G37** the conformance checker scores a **disabled** `obs-button` as off-reference | 🆕 **OPEN** | 4 disabled pager buttons drop the run 100 → 91 (component 69), and the failure line prints the SAME colour on both sides: "bg rgb(236, 241, 249) vs rgb(236, 241, 249)". Removing `disabled` restores 100/100 |
+| **G38** no determinate progress-bar element | 🆕 **OPEN** | `elements-api.json` — 0 of 47 element tags match `/progress/i`. WAN Link Discovery's run screen hand-rolls a track+fill `<div>` from `--progress-bg` / `--primary-color`, both confirmed emitted |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1413,5 +1414,36 @@ blocked. This is the same family as **G8**: the checker rejecting valid work.
 
 **Ask:** compare a disabled component against a disabled reference, and print the property that
 actually differs rather than one that matches.
+
+---
+
+### New finding — G38: no determinate progress-bar element
+
+The WAN Link Discovery run screen needs a determinate progress bar — Total/Discovered/Failed tiles
+above one bar that fills as each link's push settles, the same furniture device discovery already
+uses elsewhere in the product. Searching `elements-api.json` for `/progress/i` against all 47
+element tags returns **zero matches**. There is no `obs-progress`, and nothing else in the registry
+covers a determinate fill (`obs-severity` and the table's own loading state are the closest, and
+neither takes a numeric value).
+
+**Consumer workaround:** plain markup — a `<div>` track filled by an inner `<i>` whose `width` is
+set from JS on every settle — styled from two tokens that *are* real:
+
+- `--progress-bg` for the track: theme-aware (`#e3e8f2` light / `#2b394f` dark), confirmed emitted
+  in `dist/observeops-ds.css` in both theme blocks. (`--progress-bar-bg` is defined alongside it
+  with the identical value in both themes, so it is the same track colour under a second name, not
+  a separate fill token.)
+- `--primary-color` for the fill: the DS's one non-brand accent blue (`#099dd9`), defined once in
+  the global `:root` rather than per-theme, so it renders the same colour in both themes. Confirmed
+  emitted.
+
+Implemented in `src/wan-link-discovery/progressPanel.js` and styled in
+`wanLinkDiscovery.css` under "Progress panel".
+
+**Ask:** publish a determinate `obs-progress` (value/max, indeterminate flag) for exactly this
+shape — a discovery/import run narrating percent complete is a repeated pattern in the product, not
+specific to this screen.
+
+**Class: DS — capability.**
 
 **Class: DS — discoverability (tooling).**
