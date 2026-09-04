@@ -14,3 +14,93 @@
   min-height: 0;
   flex: 1;
 }
+
+/* ---------- Create form ----------
+   No --spacing-* custom property exists in this DS (checked elements-api.json and every tokens/*
+   file in @mtdt/observeops-ds-spec — only LESS build variables like @padding-md, never emitted as a
+   CSS custom property). wanLink.css and lama.css both hit the same gap and fall back to plain px for
+   layout; this file does the same. Only colour uses var(--token). */
+
+.wld-form__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+  align-items: end;
+  margin-block-end: 12px;
+}
+
+.wld-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Consumer-drawn labels for obs-select, which ships no `label` of its own — matched to obs-input's
+   own label so a select does not read as a different kind of field. */
+.wld-field__label {
+  display: block;
+  margin-block-end: 6px;
+  color: var(--neutral-light);
+}
+
+.wld-field__req {
+  color: var(--secondary-red);
+  margin-inline-start: 2px;
+}
+
+.wld-field__hint {
+  margin-inline-start: 6px;
+  color: var(--neutral-light);
+  font-weight: normal;
+}
+
+.wld-field--action {
+  align-self: end;
+}
+
+.wld-form__legend {
+  margin: 22px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--chart-border-color);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* wanLink.css uses --secondary-text-color for this same role, but that token is not actually
+     emitted by @mtdt/observeops-ds-css (checked dist/observeops-ds.css — absent in both themes), so
+     it resolves to nothing there. Using --neutral-light instead: confirmed present in both themes. */
+  color: var(--neutral-light);
+}
+
+.wld-form__gate {
+  color: var(--neutral-light);
+}
+
+.wld-form__gate[hidden],
+.wld-form__warning[hidden],
+.wld-form__error[hidden] {
+  display: none;
+}
+
+.wld-form__warning {
+  color: var(--severity-warning);
+}
+
+.wld-form__error {
+  color: var(--secondary-red);
+}
+
+.wld-form__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-block-start: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.wld-form__mandatory {
+  color: var(--neutral-light);
+}
+
+.wld-form__spacer {
+  flex: 1;
+}
