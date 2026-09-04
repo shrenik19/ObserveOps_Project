@@ -31,6 +31,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G37** the conformance checker scores a **disabled** `obs-button` as off-reference | 🆕 **OPEN** | 4 disabled pager buttons drop the run 100 → 91 (component 69), and the failure line prints the SAME colour on both sides: "bg rgb(236, 241, 249) vs rgb(236, 241, 249)". Removing `disabled` restores 100/100 |
 | **G38** no determinate progress-bar element | 🆕 **OPEN** | `elements-api.json` — 0 of 47 element tags match `/progress/i`. WAN Link Discovery's run screen hand-rolls a track+fill `<div>` from `--progress-bg` / `--primary-color`, both confirmed emitted |
 | **G39** `obs-table` cannot combine a badge with editable text in one cell | 🆕 **OPEN** | The provision grid's NAME cell needs an N/P/U status badge next to an inline-editable, pencil-driven name. `editable: true` (real, documented) gets the pencil; no column `type` composes a tag with it, and `slots` is `[]`. **Third instance of G1/G23** |
+| **G40** `obs-button` has no selected/active state for a segmented toggle | 🆕 **OPEN** | The Single/CSV mode switch is two `obs-button`s; `props` lists only `variant/size/rounded/outline/block/loading/shadow/shape/disabled` — nothing marks one as the current choice, and the documented `active` **state** is the transient pressed state, not a persistent one. The registry's own `related` list names the real component for this shape (`MRadioGroup as-button`, 255× — i.e. `obs-radio` with `as-button`), but that is a different element, not a mode of `obs-button` |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1492,3 +1493,57 @@ G1 closed four fixed cell shapes, G23 hit a fifth needing a live control, this h
 two things in one cell at once. A per-column render hook would close the whole class.
 
 **Class: DS — capability.**
+
+### New finding — G40: `obs-button` has no selected/active state for a segmented toggle
+
+WAN Link Discovery's create form switches between Single and CSV entry with two `obs-button`s side
+by side — a two-option segmented control. Nothing on the page distinguishes which one is current: an
+`obs-button` in that state is pixel-identical to the same button unselected.
+
+**Checked `obs-button` itself first, both specs.** `elements-api.json`'s `obs-button` entry lists
+nine attributes — `variant, size, disabled, loading, outline, square, block, shape, squared` — none
+of them a persistent selected/current flag.
+`components/registry/button.json`'s `states` block lists `default / hover / active / focus /
+disabled / loading`; `active` there is explicitly glossed `"pressed"` — the transient
+mouse-down/keyboard-activation state every button has, not a state that survives after the click
+the way a selected tab or a checked radio does. No `variant` reads as a selected treatment either —
+the closest is `primary` vs `neutral-lightest`, which is a weight distinction (main action vs quiet
+utility), not a selection one, and swapping variants on click would misuse the component's own
+`usageRules` (`neutral-lightest`: "quiet utility controls," not conditional on selection state).
+
+**The DS already knows the shape — it just isn't `obs-button`.** `button.json`'s own `related` list
+names `"MRadioGroup as-button (segmented control, 255x)"` — 255 real usages in the product. That
+maps to `obs-radio` in `elements-api.json`, which documents a real `as-button` boolean attribute
+("Boolean, default false") turning the radio group into exactly this kind of segmented control,
+with `value`/`change` driving which segment is current. That is a different element with a
+different call shape (one control bound to a value, not two independent buttons with click
+handlers), not an attribute `obs-button` could grow — so switching to it here would be a markup and
+event-wiring rewrite, not a styling fix, and is out of scope for what this finding asked for.
+
+**Consumer workaround:** kept the two `obs-button`s and the app-authored `data-selected` boolean
+attribute already on them (toggled via `el.toggleAttribute('data-selected', …)` — a plain host
+attribute the DS attaches no meaning to, not a documented `obs-button` prop), and drew the selected
+treatment from the host element in `wanLinkDiscovery.css`:
+
+```css
+.wld-form__mode obs-button[data-selected] {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+```
+
+`--primary-color` is a token this file already uses elsewhere (the progress-bar fill); no new token
+was introduced. The outline is drawn on the light-DOM host, the same technique G25 already uses for
+`obs-select[error]` — it needs no shadow-DOM access and no custom property the component doesn't
+expose.
+
+**Ask:** either a real selected/current state on `obs-button` (a boolean prop, e.g. `selected`, that
+renders a persistent treatment distinct from `active`'s transient press), or — since the DS
+apparently already considers this a solved shape via `MRadioGroup as-button` — a documented mapping
+from `obs-button` pairs/groups to `obs-radio as-button` for consumers building a segmented control
+who reach for the more familiar button element first, as this form's earlier task did.
+
+**Class: DS — capability + discoverability.** The real component for this shape exists and is
+well-used (255×) but is filed under a completely different element name than the one a consumer
+building a two-option toggle reaches for first.

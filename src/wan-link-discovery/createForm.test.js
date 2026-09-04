@@ -301,6 +301,17 @@ describe('create form — csv mode', () => {
     expect(el.querySelector('#wld-mode-single').hasAttribute('data-selected')).toBe(true)
   })
 
+  it('marks CSV, and only CSV, as selected after switching to it', () => {
+    const el = csvForm()
+    expect(el.querySelector('#wld-mode-csv').hasAttribute('data-selected')).toBe(true)
+    expect(el.querySelector('#wld-mode-single').hasAttribute('data-selected')).toBe(false)
+
+    el.querySelector('#wld-mode-single').click()
+
+    expect(el.querySelector('#wld-mode-single').hasAttribute('data-selected')).toBe(true)
+    expect(el.querySelector('#wld-mode-csv').hasAttribute('data-selected')).toBe(false)
+  })
+
   it('swaps the per-link fields for the upload, keeping Timeout', () => {
     const el = csvForm()
     expect(el.querySelector('#wld-link-fields').hidden).toBe(true)
