@@ -35,12 +35,28 @@ describe('provision grid', () => {
     expect(titles).not.toContain('OPERATION ID')
   })
 
-  it('defaults each name to ISP — destination', () => {
-    expect(grid().querySelector('#wld-prov-table').rows[0].name).toBe('Airtel — 8.8.8.8')
+  it('defaults each name to ISP — destination, badged New', () => {
+    expect(grid().querySelector('#wld-prov-table').rows[0].name).toBe('N · Airtel — 8.8.8.8')
   })
 
   it('marks every new row N', () => {
     expect(grid().querySelector('#wld-prov-table').rows.every((r) => r.badge === 'N')).toBe(true)
+  })
+
+  it('renders the export control and a search input', () => {
+    const el = grid()
+    expect(el.querySelector('#wld-prov-export')).toBeTruthy()
+    expect(el.querySelector('#wld-prov-search')).toBeTruthy()
+  })
+
+  it('surfaces the badge in the rendered NAME cell, not just in row state', () => {
+    const rows = grid().querySelector('#wld-prov-table').rows
+    expect(rows[0].name.startsWith('N · ')).toBe(true)
+  })
+
+  it('does not leak the internal `selected` flag onto the table rows', () => {
+    const rows = grid().querySelector('#wld-prov-table').rows
+    expect(rows.every((r) => !('selected' in r))).toBe(true)
   })
 
   it('legends all three badge states', () => {
@@ -90,10 +106,27 @@ describe('provision grid — selection', () => {
     expect(onAdd.mock.calls[0][0][0].name).toBe('Airtel primary')
   })
 
+  it('renames via a real pencil-driven edit, not just the headless method', () => {
+    const onAdd = vi.fn()
+    const el = grid({ onAdd })
+    const table = el.querySelector('#wld-prov-table')
+    // Simulates what the real obs-table emits on Save: {id, values}, wrapped the way this app's
+    // other DS event listeners already read it (see augmentAddableSelect.js, configDrawer.test.js).
+    table.dispatchEvent(new CustomEvent('save', {
+      detail: [{ id: 'v0', values: { name: 'N · Airtel primary' } }],
+    }))
+    expect(table.rows[0].name).toBe('N · Airtel primary')
+    el.select(0)
+    el.querySelector('#wld-prov-add').click()
+    expect(onAdd.mock.calls[0][0][0].name).toBe('Airtel primary')
+  })
+
   it('cancels without adding', () => {
     const onCancel = vi.fn()
-    const el = grid({ onCancel })
+    const onAdd = vi.fn()
+    const el = grid({ onCancel, onAdd })
     el.querySelector('#wld-prov-cancel').click()
     expect(onCancel).toHaveBeenCalledOnce()
+    expect(onAdd).not.toHaveBeenCalled()
   })
 })

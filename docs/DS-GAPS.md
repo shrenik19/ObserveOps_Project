@@ -30,6 +30,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G36** `obs-table` cannot pin its pager to the bottom of a taller container | 🆕 **OPEN** | The host stretches to 605px; the internal wrap stays at its 183px content height, so the pager sits mid-page. No attribute, no `part`, no custom property, and a definite host height changes nothing. The product's bottom-pinned footer has to be rebuilt by the consumer |
 | **G37** the conformance checker scores a **disabled** `obs-button` as off-reference | 🆕 **OPEN** | 4 disabled pager buttons drop the run 100 → 91 (component 69), and the failure line prints the SAME colour on both sides: "bg rgb(236, 241, 249) vs rgb(236, 241, 249)". Removing `disabled` restores 100/100 |
 | **G38** no determinate progress-bar element | 🆕 **OPEN** | `elements-api.json` — 0 of 47 element tags match `/progress/i`. WAN Link Discovery's run screen hand-rolls a track+fill `<div>` from `--progress-bg` / `--primary-color`, both confirmed emitted |
+| **G39** `obs-table` cannot combine a badge with editable text in one cell | 🆕 **OPEN** | The provision grid's NAME cell needs an N/P/U status badge next to an inline-editable, pencil-driven name. `editable: true` (real, documented) gets the pencil; no column `type` composes a tag with it, and `slots` is `[]`. **Third instance of G1/G23** |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1447,3 +1448,47 @@ specific to this screen.
 **Class: DS — capability.**
 
 **Class: DS — discoverability (tooling).**
+
+---
+
+### New finding — G39: `obs-table` cannot combine a badge with editable text in one cell
+
+The provision grid's NAME column needs to show a `N` / `P` / `U` status badge on the same row as an
+inline-editable, pencil-driven name — spec text: "inline-editable name with pencil" next to a badge
+column that is explicitly *not* a separate column (`NAME (badge + pencil)` is one entry in the spec's
+column list).
+
+**The pencil half is real.** `editable` (table) + `editable: true` (column) is documented in
+`elements-api.json` — "inline editing: a pencil per row; editable columns become obs-inputs +
+Save/Cancel" — and it checks out against the compiled component
+(`node_modules/@mtdt/observeops-ds-elements/dist/observeops-elements.js`): a trailing `edit-col`
+renders one pencil per row; clicking it puts every column flagged `editable: true` into an
+`obs-input` for that row only, with Save/Cancel links, and emits `save` as `{id, values}` /
+`canceledit`. This is the same real feature `provisionGrid.js` now uses.
+
+**The badge half has no home.** Checked before reaching for a workaround:
+
+- The compiled component's cell-rendering ternary (`dist/observeops-elements.js`) checks
+  `editable && <row is being edited> && column.editable` **first**, before any `type` check — so a
+  column renders either its `editable` obs-input, or one of its `type` cells, never both. The `type`
+  chain that follows covers `heat | bar | severity | dot | status | type | tags | sparkline |
+  switch | icon | link | button`; none of them composes with `editable: true`. `slots` is `[]` per
+  `elements-api.json` — no per-cell slot to drop a tag into either.
+- Two columns (badge, name) was considered and rejected: the spec's column list gives the badge no
+  column of its own — `NAME (badge + pencil)` is one entry — so a second column would be a
+  different layout than the one being implemented, not a workaround for this one.
+
+**Consumer workaround:** the badge is composed into the NAME cell's own text as an `N · ` prefix
+(`provisionGrid.js`'s `refresh()`). The pencil edit-box therefore starts from `"N · Airtel — 8.8.8.8"`
+rather than the bare name; the `save` listener strips the prefix back off before recording the raw
+name, so `el.rename()` and `onAdd` still see and produce the plain name. Visible, but a real user
+edits around three extra characters, and the pencil itself renders as a **trailing column** rather
+than immediately beside the name it edits — obs-table offers no way to place it inline within a
+specific column.
+
+**Ask:** either a `type: 'tag'` cell (or a `badge`/`prefix` note on any column) that composes with
+`editable: true`, or a per-cell slot. This is the third instance of the same limit as G1 and G23 —
+G1 closed four fixed cell shapes, G23 hit a fifth needing a live control, this hits a sixth needing
+two things in one cell at once. A per-column render hook would close the whole class.
+
+**Class: DS — capability.**

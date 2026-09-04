@@ -1,7 +1,9 @@
 // src/wan-link-discovery/provisionGrid.js
 // What the run produced, and which of it to keep. Same furniture as the device provision grid —
-// checkbox column, inline rename, N/P/U legend, Cancel / Add Selected Objects — with WAN-Link
-// columns, because a link has no host and no interface count.
+// title, export, search, checkbox column, inline rename with pencil, N/P/U legend,
+// Cancel / Add Selected Objects — with WAN-Link columns, because a link has no host and no
+// interface count. Export and Search are rendered inert (see the header markup below); they are
+// spec furniture, not implemented behaviour.
 //
 // The IP SLA operation id is deliberately NOT a column. It stays internal.
 //
@@ -11,6 +13,19 @@
 // the exported test seam — jsdom does not register the DS's custom elements, so in tests they are
 // the only thing driving selection; in the real page the `change` listener keeps the same internal
 // state in sync with clicks on the component's own checkboxes.
+//
+// The NAME cell's pencil is the real thing too: `editable` (table) + `editable: true` (column) is
+// a documented obs-table feature — "a pencil per row; editable columns become obs-inputs +
+// Save/Cancel" (elements-api.json) — verified against the compiled component: the trailing
+// edit-col renders a per-row pencil, and only columns flagged `editable: true` turn into an
+// `obs-input` while that row is being edited, emitting `save` as `{id, values}`.
+//
+// What obs-table does NOT offer is a way to put the N/P/U badge and that pencil in the same cell —
+// no column `type` composes a tag with editable text, and `slots` is `[]` (checked
+// elements-api.json). So the badge is composed into the NAME cell's own text as an `N · ` prefix,
+// per docs/DS-GAPS.md G39. `el.rename()` still takes and stores the raw name (the test seam is
+// unchanged); the `save` listener below strips the badge prefix back off an edited cell's text
+// before calling `el.rename()` with it, so a real pencil-driven edit lands the same raw name.
 
 const BADGES = [
   ['N', 'New', 'Created on the device and verified — not yet a monitored instance'],
@@ -24,11 +39,18 @@ export function renderProvisionGrid({ profileName, monitor, results, onCancel, o
   el.innerHTML = `
     <header class="wld-progress__head">
       <h2 id="wld-prov-title"></h2>
+      <!-- Export and Search are spec furniture, rendered inert — present and correctly placed,
+           doing nothing, the same treatment this app already gives unimplemented product chrome
+           (the Monitors category bar and its export buttons in src/wan-link/screen.js). -->
+      <obs-button id="wld-prov-export" variant="neutral-lightest" squared aria-label="Export as spreadsheet">
+        <obs-icon name="exportXlsx" size="14"></obs-icon>
+      </obs-button>
+      <obs-input id="wld-prov-search" type="search" placeholder="Search" class="content-toolbar__search"></obs-input>
       <span class="wld-form__spacer"></span>
       <span>Discovered Objects <b id="wld-prov-ok">0</b></span>
       <span>Failed Objects <b id="wld-prov-failed">0</b></span>
     </header>
-    <obs-table id="wld-prov-table" row-key="id" page-size="0" sticky-header max-height="100%" selectable></obs-table>
+    <obs-table id="wld-prov-table" row-key="id" page-size="0" sticky-header max-height="100%" selectable editable></obs-table>
     <footer class="wld-form__footer">
       <span id="wld-prov-legend" class="wld-provision__legend">
         ${BADGES.map(([k, label, hint]) =>
@@ -64,7 +86,12 @@ export function renderProvisionGrid({ profileName, monitor, results, onCancel, o
 
   const table = $('wld-prov-table')
   table.columns = [
-    { key: 'name', title: 'NAME' },
+    // `editable: true` is a real, documented per-column flag (elements-api.json's `editable` note
+    // on obs-table): with the table's own `editable` attribute set above, it turns this cell into
+    // an obs-input behind a per-row pencil, exactly the "inline-editable name with pencil" the
+    // spec calls for. The badge has nowhere else to render (see the file header and G39), so it is
+    // composed into the same cell's text as an `N · ` prefix.
+    { key: 'name', title: 'NAME', editable: true },
     { key: 'monitor', title: 'MONITOR', width: 210 },
     { key: 'probe', title: 'WAN PROBE', width: 150 },
     { key: 'iface', title: 'SOURCE INTERFACE', width: 170 },
@@ -72,8 +99,14 @@ export function renderProvisionGrid({ profileName, monitor, results, onCancel, o
     { key: 'isp', title: 'ISP', width: 120 },
   ]
 
+  // Matches a leading "<badge> · " so it can be stripped back off text that came out of the
+  // component's own edit box (which starts from the composed, badged cell value).
+  const BADGE_PREFIX = /^[NPU] · /
+
   const refresh = () => {
-    table.rows = state.map(({ link, ...row }) => row)
+    // `link` is composition-internal and `selected` is tracked separately via `table.selected` —
+    // neither belongs on the row object handed to obs-table.
+    table.rows = state.map(({ link, selected, name, ...row }) => ({ ...row, name: `${row.badge} · ${name}` }))
     // Keep the real component's own checkbox state in step with ours, by id.
     table.selected = state.filter((r) => r.selected).map((r) => r.id)
     $('wld-prov-add').toggleAttribute('disabled', !state.some((r) => r.selected))
@@ -91,6 +124,18 @@ export function renderProvisionGrid({ profileName, monitor, results, onCancel, o
     const ids = Array.isArray(table.selected) ? table.selected : []
     state.forEach((r) => { r.selected = ids.includes(r.id) })
     $('wld-prov-add').toggleAttribute('disabled', !state.some((r) => r.selected))
+  })
+
+  // A real pencil-driven edit: obs-table emits `save` as `{id, values}` (Vue custom-element
+  // wrapper convention wraps the single emitted arg in `detail`, so either `detail` or `detail[0]`
+  // — the same defensive read this app already uses elsewhere for these emits).
+  table.addEventListener('save', (event) => {
+    const detail = (event.detail && event.detail[0]) ?? event.detail
+    if (!detail) return
+    const index = state.findIndex((r) => r.id === detail.id)
+    if (index < 0) return
+    const edited = String((detail.values && detail.values.name) ?? '').replace(BADGE_PREFIX, '')
+    el.rename(index, edited)
   })
 
   $('wld-prov-cancel').addEventListener('click', () => onCancel())

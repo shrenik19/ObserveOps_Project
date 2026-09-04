@@ -38,6 +38,10 @@ describe('progress panel', () => {
     const first = panel().querySelector('.wld-card li')
     expect(first.textContent).toContain('over SSH')
   })
+
+  it('renders the Search furniture', () => {
+    expect(panel().querySelector('#wld-prog-search')).toBeTruthy()
+  })
 })
 
 describe('progress panel — outcomes', () => {

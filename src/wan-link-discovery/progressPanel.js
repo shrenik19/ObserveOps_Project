@@ -1,7 +1,11 @@
 // src/wan-link-discovery/progressPanel.js
 // The run view. Same furniture as device discovery — title, progress bar, Total/Discovered/Failed
-// tiles, Abort — but the card narrates FOUR stages rather than one line, because a WAN link push
-// fails differently at each one.
+// tiles, Search, Abort — but the card narrates FOUR stages rather than one line, because a WAN link
+// push fails differently at each one.
+//
+// Search is rendered as inert chrome: present and correctly placed, doing nothing, the same
+// treatment this app already gives product chrome it has not implemented (the Monitors category
+// bar and the unimplemented export buttons in src/wan-link/screen.js).
 //
 // No <obs-progress> element exists in this DS (checked elements-api.json — zero element tags match
 // /progress/i). The bar below is plain markup styled from --progress-bg (track) and --primary-color
@@ -36,6 +40,9 @@ export function renderProgressPanel({
       <div class="wld-tile"><span>Discovered Objects</span><b id="wld-prog-ok">0</b></div>
       <div class="wld-tile"><span>Failed Objects</span><b id="wld-prog-failed">0</b></div>
       <span class="wld-form__spacer"></span>
+      <!-- Spec furniture, present but inert — same treatment as the Monitors category bar and its
+           unimplemented export buttons in src/wan-link/screen.js. No filtering is wired here. -->
+      <obs-input id="wld-prog-search" type="search" placeholder="Search" class="content-toolbar__search"></obs-input>
       <obs-button id="wld-prog-abort" variant="neutral-lightest">Abort</obs-button>
     </div>
     <div class="wld-progress__cards" id="wld-prog-cards"></div>
