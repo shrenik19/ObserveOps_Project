@@ -53,10 +53,11 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     <div class="wld-form__row">
       ${inputField('wld-name', 'Discovery Profile Name', { required: true })}
       <div></div>
-      <div class="wld-form__mode">
-        <obs-button id="wld-mode-single" variant="neutral-lightest" data-selected>Single</obs-button>
-        <obs-button id="wld-mode-csv" variant="neutral-lightest">CSV</obs-button>
-      </div>
+      <!-- A segmented control IS obs-radio with as-button — there is no separate DS component for
+           it (see components/registry/radio.json: variant "segmented", 255x usage, and its own
+           decision tree: "small compact set (2-5)? -> plain segmented (as-button)"). It renders its
+           own selected treatment; no wrapper, host CSS, or invented attribute needed. -->
+      <obs-radio id="wld-mode" as-button></obs-radio>
     </div>
 
     <div class="wld-form__row">
@@ -184,6 +185,11 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
   // Run doesn't clobber a specific "here's what's wrong with your file" message with a bare "CSV".
   let csvError = null
 
+  setOptions('wld-mode', [
+    { value: 'single', text: 'Single' },
+    { value: 'csv', text: 'CSV' },
+  ], 'single')
+
   function syncPort() {
     // UDP Port is the ONLY conditional field on the form, and it sits beside Timeout. In csv mode
     // the port is a column in the file, never a field on the page.
@@ -199,8 +205,8 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
       csvError = null
       $('wld-csv-name').setAttribute('value', '')
     }
-    $('wld-mode-single').toggleAttribute('data-selected', next === 'single')
-    $('wld-mode-csv').toggleAttribute('data-selected', next === 'csv')
+    $('wld-mode').setAttribute('value', next)
+    $('wld-mode').value = next
     $('wld-link-fields').hidden = next !== 'single'
     $('wld-csv-block').hidden = next !== 'csv'
     $('wld-error').hidden = true
@@ -224,8 +230,10 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     $('wld-error').hidden = true
   }
 
-  $('wld-mode-single').addEventListener('click', () => setMode('single'))
-  $('wld-mode-csv').addEventListener('click', () => setMode('csv'))
+  $('wld-mode').addEventListener('change', (e) => {
+    const next = detailValue(e)
+    if (next === 'single' || next === 'csv') setMode(next)
+  })
   $('wld-csv-upload').addEventListener('click', () => {
     const m = monitor()
     if (m) el.loadCsvText(sampleCsv(m, $('wld-os').getAttribute('value')))

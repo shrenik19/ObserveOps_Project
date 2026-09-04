@@ -290,26 +290,26 @@ describe('create form — csv mode', () => {
     const el = form(over)
     change(el.querySelector('#wld-monitor'), 'm-nxos')
     el.querySelector('#wld-name').value = 'NX Core bulk'
-    el.querySelector('#wld-mode-csv').click()
+    change(el.querySelector('#wld-mode'), 'csv')
     return el
   }
 
   it('offers Single and CSV, Single first and selected', () => {
     const el = form()
-    expect(el.querySelector('#wld-mode-single').textContent).toContain('Single')
-    expect(el.querySelector('#wld-mode-csv').textContent).toContain('CSV')
-    expect(el.querySelector('#wld-mode-single').hasAttribute('data-selected')).toBe(true)
+    const toggle = el.querySelector('#wld-mode')
+    expect(toggle.options.map((o) => o.value)).toEqual(['single', 'csv'])
+    expect(toggle.options.map((o) => o.text)).toEqual(['Single', 'CSV'])
+    expect(toggle.getAttribute('value')).toBe('single')
   })
 
   it('marks CSV, and only CSV, as selected after switching to it', () => {
     const el = csvForm()
-    expect(el.querySelector('#wld-mode-csv').hasAttribute('data-selected')).toBe(true)
-    expect(el.querySelector('#wld-mode-single').hasAttribute('data-selected')).toBe(false)
+    const toggle = el.querySelector('#wld-mode')
+    expect(toggle.getAttribute('value')).toBe('csv')
 
-    el.querySelector('#wld-mode-single').click()
+    change(toggle, 'single')
 
-    expect(el.querySelector('#wld-mode-single').hasAttribute('data-selected')).toBe(true)
-    expect(el.querySelector('#wld-mode-csv').hasAttribute('data-selected')).toBe(false)
+    expect(toggle.getAttribute('value')).toBe('single')
   })
 
   it('swaps the per-link fields for the upload, keeping Timeout', () => {
@@ -362,7 +362,7 @@ describe('create form — csv mode', () => {
 
   it('returns to single mode with the link fields back', () => {
     const el = csvForm()
-    el.querySelector('#wld-mode-single').click()
+    change(el.querySelector('#wld-mode'), 'single')
     expect(el.querySelector('#wld-link-fields').hidden).toBe(false)
     expect(el.querySelector('#wld-csv-block').hidden).toBe(true)
   })
@@ -383,8 +383,8 @@ describe('create form — csv mode', () => {
     el.querySelector('#wld-csv-upload').click()
     expect(el.querySelector('#wld-csv-name').getAttribute('value')).toContain('rows parsed')
 
-    el.querySelector('#wld-mode-single').click()
-    el.querySelector('#wld-mode-csv').click()
+    change(el.querySelector('#wld-mode'), 'single')
+    change(el.querySelector('#wld-mode'), 'csv')
 
     expect(el.querySelector('#wld-csv-name').getAttribute('value')).toBe('')
     el.querySelector('#wld-run').click()

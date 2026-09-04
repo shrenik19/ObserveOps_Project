@@ -58,24 +58,8 @@
   align-self: end;
 }
 
-/* Single | CSV. Sits in the third column of the name row, beside the two obs-buttons — the grid
-   cell already puts it on the right, so the flex here only needs to keep the pair on one line. */
-.wld-form__mode {
-  display: flex;
-  gap: 8px;
-}
-
-/* obs-button has no selected/active state to mark which mode is current (checked elements-api.json
-   and components/registry/button.json — its "active" state is the transient pressed state; the
-   real segmented-control component is a different element, obs-radio as-button). data-selected is
-   an app-authored flag, drawn from the light-DOM host — no shadow-DOM access, no invented prop.
-   --primary-color is the same token this file already uses for the progress-bar fill below.
-   See docs/DS-GAPS.md G40. */
-.wld-form__mode obs-button[data-selected] {
-  outline: 2px solid var(--primary-color);
-  outline-offset: -2px;
-  border-radius: 4px;
-}
+/* Single | CSV. obs-radio as-button (a segmented control) renders its own selected treatment — no
+   host CSS needed here at all; see the comment on the element itself in createForm.js. */
 
 /* The CSV upload row: a readonly obs-input (showing the file name / parse result) beside the Upload
    button. obs-input's `block` attribute renders it 100% width, so without this flex it pushes the
