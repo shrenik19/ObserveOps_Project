@@ -110,6 +110,12 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
       <h4 class="wld-form__legend">Notifications</h4>
       <div class="wld-form__row">
         ${inputField('wld-notify', 'Notify')}
+        <div class="wld-field wld-field--action">
+          <!-- Inert chrome: the product's Bcc affordance on this row, unwired — same treatment the
+               Monitors category bar gets in src/wan-link/screen.js. -->
+          <obs-button id="wld-bcc" variant="neutral-lightest">+ Bcc</obs-button>
+        </div>
+        <div></div>
       </div>
     </div>
 
@@ -203,11 +209,37 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
   $('wld-iface').addEventListener('change', (e) => {
     $('wld-iface').setAttribute('value', detailValue(e) ?? '')
   })
+  $('wld-cred').addEventListener('change', (e) => {
+    $('wld-cred').setAttribute('value', detailValue(e) ?? '')
+  })
 
   $('wld-exit').addEventListener('click', () => onCancel())
   $('wld-reset').addEventListener('click', () => {
-    setOptions('wld-monitor', monitorOptions(), '')
+    const keepMonitor = locked && !!monitorId
+    if (!keepMonitor) {
+      setOptions('wld-monitor', monitorOptions(), '')
+      setOptions('wld-vendor', [], '')
+      $('wld-vendor').removeAttribute('disabled')
+      setOptions('wld-os', [], '')
+    }
+    // Cred/probe/iface are always monitor-derived — clear them here too, then let syncMonitor()
+    // (called below) recompute them fresh, whether or not the monitor itself was kept.
+    setOptions('wld-cred', [], '')
+    $('wld-cred-hint').textContent = ''
+    setOptions('wld-probe', [], '')
+    setOptions('wld-iface', [], '')
+    $('wld-os-warning').hidden = true
+
     $('wld-name').value = ''
+    ;[
+      'wld-isp', 'wld-src-loc', 'wld-dst-loc', 'wld-dip', 'wld-timeout', 'wld-port',
+      'wld-payload', 'wld-tos', 'wld-freq', 'wld-optimeout', 'wld-notify',
+    ].forEach((id) => {
+      $(id).value = ''
+      $(id).setAttribute('value', '')
+    })
+
+    $('wld-error').hidden = true
     syncMonitor()
   })
 
@@ -221,6 +253,8 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     if (!text('wld-isp')) missing.push('ISP')
     if (!text('wld-dip')) missing.push('Destination IP')
     if (needsPort(probe) && !text('wld-port')) missing.push('UDP Port')
+    if (!text('wld-freq')) missing.push('Frequency')
+    if (!text('wld-optimeout')) missing.push('Operation Timeout')
 
     if (missing.length) {
       $('wld-error').textContent = `Required: ${missing.join(' · ')}`

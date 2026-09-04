@@ -117,10 +117,10 @@
 /* ---------- Progress panel ----------
    No <obs-progress> element exists in this DS — elements-api.json has 47 element entries and not
    one tag matches /progress/i. The bar below is plain markup: a track filled by an inner <i>, width
-   driven from JS. Track is --progress-bg (theme-aware: #e3e8f2 light / #2b394f dark, both confirmed
-   emitted in dist/observeops-ds.css); fill is --primary-color (the DS's one non-brand accent blue,
-   #099dd9, defined once in :root so it applies unchanged in both themes — also confirmed emitted).
-   See docs/DS-GAPS.md G38. */
+   driven from JS. Track is --progress-bg (theme-aware — a pale neutral-blue track in the light
+   theme, a dark slate track in the dark theme, both confirmed emitted in dist/observeops-ds.css);
+   fill is --primary-color (the DS's one non-brand accent blue, defined once in :root so it applies
+   unchanged in both themes — also confirmed emitted). See docs/DS-GAPS.md G38. */
 
 .wld-progress {
   display: flex;

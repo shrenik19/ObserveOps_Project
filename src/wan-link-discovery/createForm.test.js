@@ -45,6 +45,14 @@ describe('create form — the monitor drives everything', () => {
     change(el.querySelector('#wld-monitor'), 'm-nxos')
     expect(el.querySelector('#wld-method')).toBeNull()
     expect(el.textContent).not.toContain('Monitors WAN link performance by collecting key metrics')
+    // The redesign's central claim is that method is derived, never asked — guard the claim
+    // itself, not just the one id/sentence a differently-worded control (a "Protocol" dropdown, an
+    // SNMP/SSH toggle) would sail past. Exclude #wld-cred-hint: it legitimately names the protocol
+    // (e.g. "SSH — prefilled from the monitor") to explain a credential prefill — that is an
+    // explanation of a derived fact, not a method-selection control asking the user anything.
+    const hint = el.querySelector('#wld-cred-hint').textContent
+    const bodyWithoutHint = el.textContent.replace(hint, '')
+    expect(bodyWithoutHint).not.toMatch(/method|SNMP|SSH/i)
   })
 
   it('prefills the credential when the protocol matches', () => {
@@ -112,6 +120,29 @@ describe('create form — reactive rules', () => {
   })
 })
 
+describe('create form — notifications', () => {
+  it('renders a Bcc affordance next to Notify', () => {
+    const el = form()
+    expect(el.querySelector('#wld-bcc')).not.toBeNull()
+  })
+})
+
+describe('create form — reset', () => {
+  it('clears stale text and re-gates the form', () => {
+    const el = form()
+    change(el.querySelector('#wld-monitor'), 'm-nxos')
+    el.querySelector('#wld-isp').value = 'Airtel'
+    el.querySelector('#wld-dip').value = '8.8.8.8'
+
+    el.querySelector('#wld-reset').click()
+
+    expect(el.querySelector('#wld-isp').value).toBe('')
+    expect(el.querySelector('#wld-dip').value).toBe('')
+    expect(el.querySelector('#wld-gated').hidden).toBe(true)
+    expect(el.querySelector('#wld-gate-msg').hidden).toBe(false)
+  })
+})
+
 describe('create form — locked entry from a device', () => {
   it('pre-selects the monitor and disables the field', () => {
     const el = form({ monitorId: 'm-nxos', locked: true })
@@ -151,6 +182,38 @@ describe('create form — validation', () => {
     el.querySelector('#wld-run').click()
     expect(onRun).not.toHaveBeenCalled()
     expect(el.querySelector('#wld-error').textContent).toContain('UDP Port')
+  })
+
+  it('requires Frequency and Operation Timeout', () => {
+    const onRun = vi.fn()
+    const el = form({ onRun })
+    fill(el)
+    el.querySelector('#wld-freq').value = ''
+    el.querySelector('#wld-optimeout').value = ''
+    el.querySelector('#wld-run').click()
+    expect(onRun).not.toHaveBeenCalled()
+    const err = el.querySelector('#wld-error').textContent
+    expect(err).toContain('Frequency')
+    expect(err).toContain('Operation Timeout')
+  })
+
+  it('lets a credential be chosen and run when it does not prefill (m-juniper)', () => {
+    const onRun = vi.fn()
+    const el = form({ onRun })
+    change(el.querySelector('#wld-monitor'), 'm-juniper')
+    // Sanity: m-juniper's own credential does not match RPM's SNMP method, so it must not prefill —
+    // this is exactly the case the missing `change` listener on #wld-cred made impossible to clear.
+    expect(el.querySelector('#wld-cred').getAttribute('value')).toBe('')
+
+    el.querySelector('#wld-name').value = 'Juniper Branch Link'
+    change(el.querySelector('#wld-cred'), 'Core-SNMP-v2c')
+    change(el.querySelector('#wld-probe'), 'ICMP Ping')
+    el.querySelector('#wld-isp').value = 'Airtel'
+    el.querySelector('#wld-dip').value = '8.8.8.8'
+
+    el.querySelector('#wld-run').click()
+    expect(el.querySelector('#wld-error').hidden).toBe(true)
+    expect(onRun).toHaveBeenCalledOnce()
   })
 
   it('runs with one link once the form is complete', () => {
