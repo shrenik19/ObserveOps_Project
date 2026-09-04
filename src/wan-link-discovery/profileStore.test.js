@@ -4,7 +4,7 @@ import { createStore } from './profileStore.js'
 
 const draft = (over = {}) => ({
   name: 'NX Core → Airtel', monitorId: 'm-nxos', osKey: 'nx-os', mode: 'single',
-  links: [{ probe: 'ICMP Echo', isp: 'Airtel', iface: 'Ethernet1/48', dip: '8.8.8.8', port: '' }],
+  links: [{ probe: 'ICMP Echo', isp: 'Airtel', iface: 'Ethernet1/48', srcLocation: '', dip: '8.8.8.8', dstLocation: '', port: '' }],
   ...over,
 })
 

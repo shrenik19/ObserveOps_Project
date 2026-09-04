@@ -12,21 +12,23 @@ import { findMonitor } from './monitors.js'
 const SEED = [
   {
     id: 'p-seed-1', name: 'NX Core → Airtel', monitorId: 'm-nxos', osKey: 'nx-os', mode: 'single',
-    links: [{ probe: 'ICMP Echo', isp: 'Airtel', iface: 'Ethernet1/48', dip: '8.8.8.8', port: '' }],
+    links: [{ probe: 'ICMP Echo', isp: 'Airtel', iface: 'Ethernet1/48', srcLocation: '', dip: '8.8.8.8', dstLocation: '', port: '' }],
     discovered: 1, failed: 0, ranAt: '2026-09-02 11:04:12', provisioned: true,
   },
   {
     id: 'p-seed-2', name: 'XR Edge → Jio', monitorId: 'm-xr', osKey: 'ios-xr', mode: 'single',
-    links: [{ probe: 'UDP Echo', isp: 'Jio', iface: 'TenGigE0/0/0/0', dip: '1.1.1.1', port: '5000' }],
+    links: [{ probe: 'UDP Echo', isp: 'Jio', iface: 'TenGigE0/0/0/0', srcLocation: '', dip: '1.1.1.1', dstLocation: '', port: '5000' }],
     discovered: 0, failed: 1, ranAt: '2026-09-01 18:22:40', provisioned: false,
   },
 ]
 
-let seq = 0
-const nextId = () => `p-${++seq}`
-
 export function createStore(seed = SEED) {
   const profiles = seed.map((p) => ({ ...p }))
+
+  // Scoped to this store, not the module: the screen recreates its store on remount, and a shared
+  // counter would carry ids across instances that are otherwise independent.
+  let seq = 0
+  const nextId = () => `p-${++seq}`
 
   const byId = (id) => profiles.find((p) => p.id === id)
 

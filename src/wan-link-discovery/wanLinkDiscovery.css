@@ -104,3 +104,12 @@
 .wld-form__spacer {
   flex: 1;
 }
+
+/* ---------- Table ----------
+   Same precedent as wanLink.css: `page-size="0"` and `max-height="100%"` only work once the table
+   has a bounded flex basis to resolve that percentage against — otherwise sticky-header is inert
+   and the table grows the page instead of scrolling inside its own box. */
+#wld-list #wld-table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
