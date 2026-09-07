@@ -55,10 +55,48 @@ over a period:   Achieved %   = |{ t : satisfied(t) }| / |{ t }|
 Because Strict is defined as *zero groups*, there is no separate Strict code path and **no existing
 SLO changes behaviour**. Note this is reasoning, not evidence — see OQ6.
 
-## 2. Settings — the Evaluation Logic card
+## 2. Settings — Evaluation Logic
 
-Keeps the sketch's frame: the card, the `Strict | Redundant` segmented control, the mode hint, and
-the reactive Help Card. What changes is the body when **Redundant** is selected:
+### The control — two mode rows *(2026-09-07, supersedes the segmented card)*
+
+The mode is asked as a **two-row radio group**, not a segmented control and not an ordinary
+field. It sits full width between `Start Date` and `Tags` on the shipped Create SLO Profile
+form, and it is the only thing that form gains.
+
+```
+Evaluation Logic *
+Decides how the 3 monitors you added under Source combine into a single SLO
+result — whether every one of them has to stay up, or whether they can cover
+for each other.
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ ○  Strict                                       tolerates 0 failures │
+└──────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│ ●  Redundant                                 🛡 tolerates 1 failure  │
+│    Members back each other up. Only a drop below your threshold      │
+│    degrades the SLO.                                                 │
+│    [ at least │ 2 │ of 3 must stay up │ − │ + ]                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+- **The consequence reads on both rows.** The selected row carries a shield and its slack,
+  with the full sentence on hover. The row you are *not* on still states what it would cost:
+  `Strict` reads `tolerates 0 failures` from inside `Redundant`, and `Redundant` advertises
+  its ceiling — `tolerates up to M-1 failures` — from inside `Strict`. **This standing
+  comparison is the reason for the pattern**; a toggle can only describe the state you are in.
+- **Only the selected row expands**, to its rule and — under `Redundant` — the quorum stepper.
+- **`N` runs `1..M-1`.** `N = M` is not expressible: asking for all of them is what `Strict`
+  is for, and the row above it says so. See D9.
+- **Switching modes keeps the quorum**, so changing your mind destroys no work.
+- Rows are keyboard-operable (`Tab` to a row, `Enter` to choose) and carry `role="radio"`.
+
+Reference design: `D:\Claude design\OptionG-html.zip` (§12). Values were replicated in the
+wireframe's own tokens rather than copied, so the block sits inside the deck's house style.
+
+### The group builder
+
+Keeps the sketch's frame: the card, the mode hint, and the reactive Help Card. What changes is the body when **Redundant** is selected:
 
 ```
 ┌ Redundancy Groups ─────────────────────────────────────────────────┐
@@ -102,12 +140,12 @@ noise floor. It must not be demoted to a tooltip or hidden behind the collapsed 
 |---|---|
 | A group needs **≥ 2 members** | A group of one is identical to leaving the monitor ungrouped, so the builder refuses it rather than pretending. |
 | Selecting **Redundant** requires **≥ 1 group** | Otherwise the list would show a `Redundant` chip on an SLO with no redundancy — the exact mislabelling §4 exists to prevent. |
-| `N = M` is allowed, but warns | *"Requires all members up — same as leaving them ungrouped."* |
+| `N = M` is **unrepresentable** | The stepper stops at `M-1`. Superseded the 2026-09-03 warning *"Requires all members up — same as leaving them ungrouped."* — an invalid state removed rather than explained. See D9. |
 | A monitor belongs to **at most one** group | Enforced in the picker by annotation, not by a post-hoc error. |
 
 There is **no** "every monitor must be assigned" rule. See Decision D4.
 
-### Why the Strict/Redundant toggle survives
+### Why the explicit Strict / Redundant choice survives
 
 The model no longer needs it — zero groups already means strict. It is kept because it is:
 
@@ -225,6 +263,8 @@ above. **6 h 05 m of member downtime cost the SLO nothing; 47 minutes of it cost
 | D5 | **Ungrouped monitors are always strict, not configurable.** | A remainder quorum, or a "tolerate K ungrouped failures" field. Rejected 2026-09-03 for simplicity; the escape hatch stays *"make a group for them"*. **Re-confirmed with the risk in OQ1 accepted.** |
 | D6 | **Keep the Strict / Redundant toggle** despite the model not needing it. | Deriving the mode from group count — loses the explicit opt-in, the list chip and the Help Card's two-state story. |
 | D7 | **5 artboards, no alerting screen.** | A 6th artboard for the alert moment. Reopened 2026-09-03 and declined; the alert story stays a claim in this spec until phase 2. |
+| D8 | **Evaluation Logic is two mode rows, not a segmented card or a form field.** *(2026-09-07)* | Carrying the Card and Compact layouts side by side for comparison — resolved in favour of the `OptionG` reference, whose per-row consequence shows the cost of the mode you did **not** pick. Both earlier layouts are kept in `redundancy-slo/archive/`. |
+| D9 | **`N = M` is unrepresentable — the quorum stepper stops at `M-1`.** *(2026-09-07)* | Allowing `N = M` with a *"same as Strict"* warning. Rejected: the two rows sit inches apart, so the invalid state can be removed instead of explained. |
 
 ### D4 in full — the 50-device problem
 
@@ -316,14 +356,17 @@ renders it.**
 
 The canvas is done when all of these hold, each **verified by rendering**.
 
-> **Status 2026-09-03:** criteria 1–6 are met by `redundancy-slo/wireframe.html` and asserted by
-> `redundancy-slo/verify.mjs` — **97 checks, all passing in real Chrome**. Criterion 7 is
+> **Status 2026-09-07:** criteria 1–6 are met by `redundancy-slo/wireframe.html` and asserted by
+> `redundancy-slo/verify.mjs` — **147 checks, all passing in real Chrome**. Criterion 7 is
 > outstanding and is the only thing standing between this and sign-off.
 
-1. Five artboards exist and read as one scenario, not five screens.
+1. Six artboards exist and read as one scenario, not six screens.
 2. Artboard 4 shows a monitor reading **Breached** whose impact reads **Absorbed by redundancy**, on
    an SLO whose status reads **Ok**. (The core tension, made visible.)
-3. Artboard 2 shows the ungrouped-monitors warning firing with a real count, not a placeholder.
+3. ~~Artboard 2 shows the ungrouped-monitors warning firing with a real count.~~
+   **Superseded 2026-09-03** by the one-group decision: an SLO profile's group *is* its member
+   set, so artboard 2 has no remainder to warn about. The noise floor it was protecting is
+   still real — it lives in OQ1, and on artboards 3–5.
 4. Artboard 5 attributes the breach to a named group on the trend lane **and** in History, with a
    duration.
 5. The `Strict would be N%` ghost marker appears on artboards 3 and 5, flagged in-spec as
@@ -338,6 +381,11 @@ The canvas is done when all of these hold, each **verified by rendering**.
   markup is JSON inside `<script type="__bundler/template">` — `JSON.parse` that tag's text content
   for ~200 KB of readable HTML. The logic is a `class Component extends DCLogic` in a
   `<script type="text/x-dc">` block.
+- **The Evaluation Logic reference** *(added 2026-09-07)* — `D:\Claude design\OptionG-html.zip`,
+  an appifact design-canvas export: `OptionG.dc.html` is an `<x-dc>` template plus a `DCLogic`
+  class, and the values to replicate live in its inline `style="…"` attributes. It is a
+  **reference mockup, not production code** — its own README says to replicate the values in
+  the consuming styling system rather than copy them wholesale, which is what artboard 2 does.
 - **The shipped screens:** `D:\Claude design\Screenshots\SLO\` — `SLO_1` list, `SLO_2` detail
   Overview, `SLO_3` monitor drawer, `SLO_4` SLO History, `SLO_5` historical instance.
 - **The shipped SLO settings** *(added 2026-09-03)* — `SLO_setup_1` is
