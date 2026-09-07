@@ -59,6 +59,13 @@ describe('csv parsing', () => {
     expect(errors[0]).toContain('header')
   })
 
+  it('rejects a header-only file — a valid header with zero data rows', () => {
+    const { rows, errors } = parseCsv(HEADER)
+    expect(rows).toEqual([])
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain('no data rows')
+  })
+
   it('reports the row number when a UDP row has no port', () => {
     const { errors } = parseCsv(`${HEADER}\nUDP Jitter,Tata,Eth1/1,,9.9.9.9,,`)
     expect(errors).toHaveLength(1)

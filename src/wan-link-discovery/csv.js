@@ -46,6 +46,7 @@ export function parseCsv(text) {
   if (header.join(',') !== CSV_COLUMNS.join(',')) {
     return { rows: [], errors: [`Unexpected header. Expected: ${CSV_COLUMNS.join(', ')}`] }
   }
+  if (lines.length === 1) return { rows: [], errors: ['The file has a header row but no data rows.'] }
 
   const rows = []
   const errors = []

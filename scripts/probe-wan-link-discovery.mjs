@@ -70,6 +70,17 @@ const TOGGLED = [
   'wld-list', 'wld-port-field', 'wld-link-fields', 'wld-csv-block', 'wld-gated',
   'wld-gate-msg', 'wld-os-warning', 'wld-error', 'wld-prog-abort', 'wld-prog-failnote',
 ]
+// screen.js's `show()` swaps the Create form and the progress panel in and out of #wld-view with
+// replaceChildren — they are mutually exclusive subtrees, never mounted together. So a single audit
+// never sees all ten ids: it sees #wld-list (which persists throughout, hidden) plus whichever
+// subtree is currently mounted. These are the two subsets a `hiddenAudit()` call can legitimately
+// return; anything short of the right one for the state under test means an id was renamed or
+// removed, not merely "the other screen isn't up".
+const FORM_IDS = [
+  'wld-list', 'wld-port-field', 'wld-link-fields', 'wld-csv-block', 'wld-gated',
+  'wld-gate-msg', 'wld-os-warning', 'wld-error',
+]
+const PROGRESS_IDS = ['wld-list', 'wld-prog-abort', 'wld-prog-failnote']
 const hiddenAudit = () => page.evaluate((ids) => {
   const out = {}
   for (const id of ids) {
@@ -88,6 +99,15 @@ const hiddenAudit = () => page.evaluate((ids) => {
 // A hidden element that still paints is the defect. Returns the offenders.
 const paintedWhileHidden = (audit) =>
   Object.entries(audit).filter(([, v]) => v.hiddenProp && v.painted).map(([k]) => k)
+// `if (!el) continue` above means a renamed or removed id silently drops out of the audit instead
+// of failing loudly — an audit that came back empty (or short) would otherwise still print PASS on
+// paintedWhileHidden's empty-array check. Assert the audited id set is EXACTLY the one this state
+// owns, so a missing id fails here by name instead of vanishing.
+const auditCoversExactly = (audit, expectedIds) => {
+  const got = Object.keys(audit).sort()
+  const want = [...expectedIds].sort()
+  return got.length === want.length && got.every((k, i) => k === want[i])
+}
 
 // ═══════════════ A · the profile list ═══════════════
 section('A · profile list')
@@ -121,6 +141,8 @@ await page.waitForTimeout(400)
 
 const auditFormOpen = await hiddenAudit()
 console.log('  hidden audit (form open):', JSON.stringify(auditFormOpen))
+check('hidden · audit found exactly the Create form\'s toggled ids (form open)',
+  auditCoversExactly(auditFormOpen, FORM_IDS), Object.keys(auditFormOpen))
 check('hidden · #wld-list is not painted while the form is open',
   auditFormOpen['wld-list'].hiddenProp && !auditFormOpen['wld-list'].painted,
   auditFormOpen['wld-list'])
@@ -202,6 +224,8 @@ check('form · Save and Run can be scrolled to, inside the content region', reac
 await pick('wld-probe', 'ICMP Echo')
 const auditIcmp = await hiddenAudit()
 console.log('  hidden audit (ICMP probe):', JSON.stringify(auditIcmp['wld-port-field']))
+check('hidden · audit found exactly the Create form\'s toggled ids (ICMP state)',
+  auditCoversExactly(auditIcmp, FORM_IDS), Object.keys(auditIcmp))
 check('hidden · #wld-port-field is not painted for a non-UDP probe',
   auditIcmp['wld-port-field'].hiddenProp && !auditIcmp['wld-port-field'].painted,
   auditIcmp['wld-port-field'])
@@ -421,6 +445,8 @@ console.log(`  run settled in ${elapsed}ms:`, JSON.stringify(run))
 await shot('wld-progress-done')
 const auditDone = await hiddenAudit()
 console.log('  hidden audit (run complete):', JSON.stringify(auditDone))
+check('hidden · audit found exactly the progress panel\'s toggled ids (run complete)',
+  auditCoversExactly(auditDone, PROGRESS_IDS), Object.keys(auditDone))
 check('run · the bar reaches 100% on the timer alone', run.pct === '100%' && run.ariaNow === '100', run.pct)
 check('run · the bar is PAINTED full, not just labelled 100%', run.fillPct >= 99, `${run.fillPct}%`)
 check('run · Discovered + Failed sums to the number of links',

@@ -234,14 +234,15 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     const next = detailValue(e)
     if (next === 'single' || next === 'csv') setMode(next)
   })
-  $('wld-csv-upload').addEventListener('click', () => {
+  // "Upload CSV" is a deliberate stub, not a wired file picker: this demo has no backend to receive
+  // an uploaded file, so both it and "Sample CSV" load the same generated sample text through
+  // el.loadCsvText — the real parse/validate path, just fed a canned file instead of a chosen one.
+  const loadSampleCsv = () => {
     const m = monitor()
     if (m) el.loadCsvText(sampleCsv(m, $('wld-os').getAttribute('value')))
-  })
-  $('wld-csv-sample').addEventListener('click', () => {
-    const m = monitor()
-    if (m) el.loadCsvText(sampleCsv(m, $('wld-os').getAttribute('value')))
-  })
+  }
+  $('wld-csv-upload').addEventListener('click', loadSampleCsv)
+  $('wld-csv-sample').addEventListener('click', loadSampleCsv)
 
   $('wld-csv-columns').textContent =
     `One row per link. Columns: ${CSV_COLUMNS.join(' · ')} — exactly what the Single form asks ` +
@@ -353,7 +354,7 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
 
     const probe = $('wld-probe').getAttribute('value')
     if (mode === 'csv') {
-      if (!csv) missing.push('CSV')
+      if (!csv?.length) missing.push('CSV')
     } else {
       if (!probe) missing.push('WAN Probe')
       if (!text('wld-isp')) missing.push('ISP')

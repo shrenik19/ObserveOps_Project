@@ -151,3 +151,14 @@ body {
   flex: 1 1 auto;
   min-height: 0;
 }
+
+/* The toolbar search box used by any screen's content-toolbar (obs-toolbar's `start` slot). Lives
+   here, not in a per-screen stylesheet: screens load their CSS by dynamic import, one screen at a
+   time, so a rule sitting only in (say) reportCategories.css would size this box only after the
+   user had visited Reports first in the same session — every other consumer (wan-link,
+   wan-link-discovery's screen, progress panel and provision grid) would get the DS default width
+   instead. shell.css loads once, for every screen, so this is the one place a cross-screen class
+   can live safely. */
+.content-toolbar__search {
+  flex: 0 0 320px;
+}

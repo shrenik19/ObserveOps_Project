@@ -312,15 +312,34 @@ The original search looked for `--space*` / `--spacing*` / "gap" / "gutter" and 
 because the DS names the scale after *padding*, not *space*. Grepping for the name you expect is
 reading, not verifying — the same failure mode as the withdrawn G40 at the end of this file.
 
-**What survives, and it is small.** `tokens/purpose-map.json` presents the scale only as LESS
-`@padding-*` build vars, under a `$note` telling consumers to *"emit them via `<style lang="less"
-scoped>` … or Tailwind utilities"* and never mentioning that the same values also ship as
-`--padding-*` custom properties. So a plain-CSS consumer is told there is no route when there is
-one. And the scale is four steps of padding only — still no gutter or vertical-rhythm unit, which is
-why the observations below about components disagreeing on spacing values remain accurate.
+**What survives, and it is worse than "undocumented."** `tokens/purpose-map.json` (the `structural`
+block, around line 229) presents the scale only as LESS `@padding-*` build vars, under a `$note` that
+does not merely omit the CSS-custom-property form — it asserts the scale isn't available that way:
 
-**Ask (reduced):** document `--padding-xs/sm/md/lg` in `purpose-map.json` as the CSS-custom-property
-form of the LESS scale, so a plain-CSS consumer can find it.
+> "LESS @vars (structural.json) — compile-time, not themed. **These are NOT CSS custom properties**:
+> emit them via `<style lang="less" scoped>` (e.g. `@padding-md`) or Tailwind utilities (`p-4`,
+> `gap-2`, `text-sm`). **NEVER inline the raw px/rem value in a plain `<style>` block** (a comment
+> naming the token is not enough)."
+
+— quoted verbatim from the installed package, `$note` on `structural`. But the compiled
+`dist/observeops-ds.css` emits exactly those values as `--padding-xs/sm/md/lg` custom properties at
+`:root` (proved above, by rendering). A plain-CSS consumer who reads this note and follows it — as
+written, in good faith — is told to reach for LESS or Tailwind, tooling this project doesn't use,
+when the value they want is already one `var()` away in a custom property. The note isn't silent
+about the CSS-custom-property route; it tells the reader the route doesn't exist. And the scale is
+still four steps of padding only — no gutter or vertical-rhythm unit — which is why the observations
+below about components disagreeing on spacing values remain accurate.
+
+**Ask (sharpened):** correct the `$note` on `structural` in `purpose-map.json` — this is not a gap in
+documentation, it is documentation that is wrong. Add the `--padding-xs/sm/md/lg` custom-property
+names alongside the `@padding-*` LESS vars, and remove or amend the "NOT CSS custom properties" /
+"NEVER inline" language so it stops steering a plain-CSS consumer away from a route that already
+ships.
+
+**Class: DS — documentation (incorrect, not merely missing). Severity: minor** — the values are
+reachable by grepping the compiled CSS, as this task did; the cost is time, and the risk of a
+consumer following the note's advice and reinventing a LESS/Tailwind build for four numbers that were
+already in scope.
 
 ---
 

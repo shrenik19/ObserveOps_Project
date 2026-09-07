@@ -74,11 +74,14 @@ export function renderProgressPanel({
     const card = document.createElement('article')
     card.className = 'wld-card'
     card.innerHTML = `
-      <div class="wld-card__head">${link.isp} → ${link.dip}</div>
+      <div class="wld-card__head"></div>
       <ol class="wld-card__steps">
         ${plan.stages.map((s) => `<li><span class="wld-card__mark">○</span><span>${s}</span></li>`).join('')}
       </ol>
     `
+    // link.isp / link.dip are user-typed (Single form) or come straight from a CSV file — never
+    // interpolated into innerHTML. Same treatment as $('wld-prog-title').textContent above.
+    card.querySelector('.wld-card__head').textContent = `${link.isp} → ${link.dip}`
     cards.appendChild(card)
     const items = [...card.querySelectorAll('li')]
 

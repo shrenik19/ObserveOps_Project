@@ -30,6 +30,14 @@ describe('progress panel', () => {
     expect(cards[0].querySelector('.wld-card__head').textContent).toContain('8.8.8.8')
   })
 
+  it('never interpolates isp/dip into innerHTML — markup in the value renders as literal text', () => {
+    const links = [{ probe: 'ICMP Echo', isp: '<img src=x onerror=alert(1)>', iface: '', dip: '<b>8.8.8.8</b>', port: '' }]
+    const head = panel({ links }).querySelector('.wld-card__head')
+    expect(head.querySelector('img')).toBeNull()
+    expect(head.querySelector('b')).toBeNull()
+    expect(head.textContent).toBe('<img src=x onerror=alert(1)> → <b>8.8.8.8</b>')
+  })
+
   it('narrates four stages per card, not one', () => {
     expect(panel().querySelectorAll('.wld-card')[0].querySelectorAll('li')).toHaveLength(4)
   })

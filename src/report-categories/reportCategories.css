@@ -18,9 +18,9 @@
   min-width: 0;
 }
 
-.content-toolbar__search {
-  flex: 0 0 320px;
-}
+/* .content-toolbar__search (the toolbar's search box width) moved to src/app/shell.css: it is now
+   used by every screen's content-toolbar, not just this one, and shell.css is the one stylesheet
+   every screen loads regardless of which screen the user visited first. */
 
 
 /* obs-side-menu is width:100% and fills its container — the registry says to set the WIDTH per
