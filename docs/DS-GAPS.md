@@ -3,7 +3,15 @@
 > **New here?** Read [`PROJECT-CONTEXT.md`](./PROJECT-CONTEXT.md) first — it explains what was built,
 > which DS components it uses, and how discovery was done. This file assumes that context.
 
+> **Two entries in this file are withdrawn** — **G21** (a spacing scale does exist, under
+> `--padding-*`) and **G40** (`obs-radio as-button` is the segmented control). Both are kept in
+> place, with the rendered evidence that disproved them, because how a false entry got here is
+> worth more to the reader than a tidy list. Everything else stands.
+
 ## Status — re-verified against elements 0.1.159 / css 0.1.4 / spec 0.1.197
+
+**Later additions (G32–G44) were found against elements 0.1.167 / css 0.1.6 / spec 0.1.210**, the
+versions this repo currently installs; the fix-status table below has not been re-run against them.
 
 The DS team shipped fixes across three releases (0.1.143, 0.1.144, 0.1.146). Re-tested by upgrading and rebuilding the same screen
 each time. **Thirteen of the eighteen are now closed, and every one of them let the consumer delete a
@@ -271,7 +279,53 @@ arbitrary 400px, then at 360px, before 480 was found by grepping the markdown.
 as the detail/form default. More generally: the markdown spec and the machine-readable registry
 should not disagree — machine consumers only read the latter.
 
-### New finding — G21: there is no spacing scale (the root cause behind several other gaps)
+### G21 — ❌ WITHDRAWN (Task 12): the spacing scale exists, under a name we never searched for
+
+**This entry was wrong, and the error propagated.** It was repeated in the comment headers of
+`src/wan-link-discovery/wanLinkDiscovery.css` and `progressPanel.js`, and it is the premise behind
+the "every consumer gap is an invented number" claim below. All of that is now corrected.
+
+A spacing scale **is** emitted as CSS custom properties, at `:root`, in the compiled
+`dist/observeops-ds.css` — in a block the file itself labels *"structural scale (spacing / sizing /
+radius / type)"*:
+
+```css
+:root {
+  /* ---- structural scale (spacing / sizing / radius / type) ---- */
+  --padding-lg: 24px;
+  --padding-md: 16px;
+  --padding-sm: 12px;
+  --padding-xs: 8px;
+  …
+}
+```
+
+Proved by rendering, in Chrome, in **both** themes (Task 12):
+
+```js
+// a probe div with  padding: var(--padding-md);  margin-top: var(--spacing-md, 999px)
+getComputedStyle(probe).paddingTop   // "16px"    -> the scale resolves
+getComputedStyle(probe).marginTop    // "999px"   -> only the NAME "--spacing-*" is absent
+```
+
+The original search looked for `--space*` / `--spacing*` / "gap" / "gutter" and found nothing,
+because the DS names the scale after *padding*, not *space*. Grepping for the name you expect is
+reading, not verifying — the same failure mode as the withdrawn G40 at the end of this file.
+
+**What survives, and it is small.** `tokens/purpose-map.json` presents the scale only as LESS
+`@padding-*` build vars, under a `$note` telling consumers to *"emit them via `<style lang="less"
+scoped>` … or Tailwind utilities"* and never mentioning that the same values also ship as
+`--padding-*` custom properties. So a plain-CSS consumer is told there is no route when there is
+one. And the scale is four steps of padding only — still no gutter or vertical-rhythm unit, which is
+why the observations below about components disagreeing on spacing values remain accurate.
+
+**Ask (reduced):** document `--padding-xs/sm/md/lg` in `purpose-map.json` as the CSS-custom-property
+form of the LESS scale, so a plain-CSS consumer can find it.
+
+---
+
+<details>
+<summary>Original finding, preserved — G21: there is no spacing scale</summary>
 
 The DS publishes tokens for colour, typography and radius, but **nothing for spacing**. Searching
 `observeops-ds.css` for a spacing/gap/gutter scale returns two hits, and neither is one:
@@ -300,6 +354,8 @@ padding and hand-match it, which is what this project did repeatedly.
 every component's internal padding in terms of it, and document which step each region uses. Then a
 consumer's `gap` and a component's inset can agree by construction instead of by measurement. If a
 scale already exists internally, exporting it as tokens would be enough.
+
+</details>
 
 ### New finding — G22: the app-header avatar claims to be a button when nothing is wired
 
@@ -1218,7 +1274,19 @@ every tool that pierces shadow roots, which is exactly the tooling this project'
 **Consumer workaround:** never select the grid by bare id — always qualify by tag,
 `obs-table#wan-link-table`.
 
-**Ask:** give the internal wrapper its own name (a `part`, or an id derived from the host's, or no
+**Second instance, confirmed in Task 12: `obs-button` does it too.** It is not one component's slip;
+it is the pattern.
+
+```
+locator('#wld-prov-export') resolved to 2 elements:
+  1) <obs-button id="wld-prov-export" variant="neutral-lightest" squared …>   the host, ours
+  2) <button id="wld-prov-export" class="btn v-neutral-lightest s-default squared">…  its internal button
+```
+
+Same strict-mode throw, same workaround (`obs-button#wld-prov-export`). Worth checking every element
+that renders a single internal control, not just these two.
+
+**Ask:** give the internal element its own name (a `part`, or an id derived from the host's, or no
 id at all). Consumers should be able to address their own element by the id they set.
 
 **Class: DS — capability (minor, but it breaks tooling).**
@@ -1445,9 +1513,11 @@ Implemented in `src/wan-link-discovery/progressPanel.js` and styled in
 shape — a discovery/import run narrating percent complete is a repeated pattern in the product, not
 specific to this screen.
 
-**Class: DS — capability.**
+**Rendered confirmation (Task 12):** the hand-built bar reaches a painted 100% fill on the real
+timer — `--primary-color` fill measured at 100% of the `--progress-bg` track's width, with
+`aria-valuenow="100"`. Screenshot: `docs/shots/wld-progress-done.png`.
 
-**Class: DS — discoverability (tooling).**
+**Class: DS — capability.**
 
 ---
 
@@ -1492,3 +1562,189 @@ G1 closed four fixed cell shapes, G23 hit a fifth needing a live control, this h
 two things in one cell at once. A per-column render hook would close the whole class.
 
 **Class: DS — capability.**
+
+---
+
+### G40 — WITHDRAWN (filed in error): "`obs-button` has no selected state"
+
+Recorded here rather than deleted, because a withdrawn entry is itself evidence about how to use
+this document. G40 was filed during the WAN Link Discovery build claiming the DS had no way to
+render a Single | CSV segmented control's selected segment, and that the consumer had to style one
+by hand.
+
+**It was wrong.** The DS ships exactly the right component: `obs-radio` with `as-button`.
+`components/registry/radio.json` documents it as variant "segmented", records 255 usages, and its
+own decision tree says *"small compact set (2-5)? -> plain segmented (as-button)"*. The same
+codebase was already using it two screens over. The entry was withdrawn and
+`src/wan-link-discovery/createForm.js` now uses the real component (commit `c7cb5f7`).
+
+Rendered confirmation that it needs no host CSS at all (Task 12 probe, section D): the two segments
+measure edge-to-edge with a **0px gap** inside one 1px-bordered, 4px-radius group, and the selected
+segment renders `background rgb(17, 28, 44)` / `color rgb(255, 255, 255)` against the other's
+`rgb(255, 255, 255)` / `rgb(113, 134, 168)` — all from the component's own shadow CSS
+(`.rg.seg .opt.on`), no consumer rule involved. Screenshots: `docs/shots/wld-mode-single.png` and
+`docs/shots/wld-mode-csv.png`.
+
+**The lesson, and why the number is burned rather than reused:** the search that produced G40 looked
+for a component *named* like the thing wanted. The component existed under the name of a different
+primitive. Before filing anything here, search `components/registry/*.json` **and**
+`elements-api.json`, including components you did not think to look at.
+
+**Class: not a gap — consumer error.**
+
+---
+
+### New finding — G41: `obs-table`'s `change` payload is undocumented, and `selected` reads back as a JSON *string*
+
+`elements-api.json` types the prop:
+
+```json
+{ "prop": "selected", "attribute": "selected", "type": "[String,Array]",
+  "default": "''", "note": "selected id array; reflects to el.selected (JSON)" }
+```
+
+and lists the events as bare names with **no payloads at all**:
+
+```json
+"events": ["change","sort","rowaction","pagechange","rowclick","edit","save","canceledit","cellaction"]
+```
+
+"selected id array; reflects to el.selected (JSON)" reads as *"assign an array, read an array back."*
+That is not what happens. **Assign an array and you get a JSON string back** the moment the
+component reflects a user's own checkbox click.
+
+**Repro** — the provision grid, `selectable` + `selected`, one click on a row checkbox in Chrome
+(`scripts/probe-wan-link-discovery.mjs`, section G):
+
+```js
+table.selected = ['v0', 'v1']          // what the consumer assigns  -> Array
+// user clicks one row's checkbox
+event.detail                            // [["v0"]]   — the array, wrapped once
+typeof table.selected                   // "string"
+table.selected                          // '["v0"]'   — JSON, not an array
+Array.isArray(table.selected)           // false
+```
+
+**What it cost.** `provisionGrid.js` guarded the read with `Array.isArray(table.selected)`, the
+obvious defensive read for a prop typed `[String,Array]`. It evaluated `false` on every real click,
+so every selection was silently dropped and **"Add Selected Objects" could never be enabled with the
+mouse** — the single action the whole screen exists to reach. The component looked right the entire
+time: its checkbox ticked, its row highlighted, and its own "1 items selected" tag appeared. Only
+the consumer's button stayed dead.
+
+**Nothing short of a browser could have caught this.** jsdom does not register the DS's custom
+elements, so the unit tests drove an exported `el.select()` seam and never touched the reflected
+property. The screen's tests were green throughout. It was found by rendering, in Task 12.
+
+**Consumer workaround** (`provisionGrid.js`, `selectedIds()`): read the event's own `detail[0]`
+first, fall back to the property, and accept an array, a JSON string, or a comma list. Regression
+tests now reproduce the string shape directly.
+
+**Ask:** two things, and the second matters more than the first.
+
+1. Say what `selected` reads back as, and keep it stable — reflect to the *attribute* as JSON by all
+   means, but let the *property* stay an array in both directions. A prop that changes JS type
+   depending on who last wrote it is a trap that the type signature `[String,Array]` does not warn
+   about.
+2. **Document every event's `detail`.** This is the same root cause as G32: nine event names, zero
+   payloads. Each one is currently discovered by dispatching it in a browser and printing `detail`,
+   which is exactly the reverse-engineering the registry exists to prevent.
+
+**Class: DS — discoverability.**
+
+---
+
+### New finding — G42: the conformance checker scores a page 100/100 on tokens while eight of its colour declarations are dead
+
+`conformance/ds-conformance.mjs` measures **computed** colours and matches each against the palette.
+An unresolved `var()` never appears as a colour at all: `color: var(--does-not-exist)` with no
+fallback makes the declaration invalid at computed-value time, so the element simply inherits — and
+what it inherits is a perfectly good DS token. The checker sees a valid palette colour and scores it
+correct.
+
+**Repro**, on this repo's already-shipped WAN Link screen:
+
+```
+node node_modules/@mtdt/observeops-ds-spec/conformance/ds-conformance.mjs \
+  http://localhost:5173/#/monitors/wan-link
+
+  OVERALL: 91/100   ·  token 100  component 69  philosophy 100  layout 100
+  measured: 65 colours · 16 spacings · 9 DS components · 0 raw controls · …
+```
+
+`token 100`. Meanwhile `src/wan-link/wanLink.css` uses `var(--secondary-text-color)` in **eight**
+declarations, and that token does not exist:
+
+```js
+// in Chrome, both themes
+getComputedStyle(document.documentElement).getPropertyValue('--secondary-text-color')  // ""
+// a probe div with  color: var(--secondary-text-color, rgb(1,2,3))
+getComputedStyle(probe).color   // "rgb(1, 2, 3)"  -> the fallback won: the token is dead
+```
+
+and the effect on the rendered page is that every element meant to be *de-emphasised* renders at
+full strength:
+
+```
+.wl-tile__caption   color rgb(29,42,62)  === parent  -> intended muted, renders as body text
+.wl-drawer__probe   color rgb(29,42,62)  === parent  -> same
+```
+
+`#1d2a3e` (page text) where a secondary label should be `#7186a8`. Eight dead declarations, a
+visible flattening of the type hierarchy, and a perfect token score.
+
+**Which half is whose.** The dead name is **ours** — `--secondary-text-color` was never a DS token;
+the DS's real one is `--text-color-common-secondary` (`tokens/purpose-map.json`, "form-field label
+(secondary)", `#7186a8`, confirmed resolving in both themes). That is a consumer bug in
+`src/wan-link/wanLink.css`, filed as G44 below. **The DS half is that its own verification tool
+cannot see it** — and this project's method leans on that tool.
+
+**Ask:** have the checker collect *declared* values as well as computed ones, and fail any
+`var(--x)` that resolves to nothing. It can test one cheaply: set the property on a probe element
+with a sentinel fallback and see whether the sentinel wins. A dead token is the single
+highest-value thing a conformance run could catch, because CSS fails silently and nothing else will.
+
+**Class: DS — discoverability (tooling).**
+
+---
+
+### New finding — G43: the table's selection tag is not pluralised — "1 items selected"
+
+With `selectable` set and one row ticked, `obs-table` renders its own selection-info tag reading
+**"1 items selected"**. Visible in `docs/shots/wld-provision-renamed.png`, above the grid on the
+left.
+
+The string is entirely the component's. `hideSelectionInfo` can only turn the tag **off**
+(`elements-api.json`: `hide the "N items selected" tag`) — there is no prop, slot or token that lets
+a consumer supply the label, so the choice is a grammatical error or no count at all.
+
+**Consumer workaround:** none taken. The tag is left as-is; hiding it would cost the user the count.
+
+**Ask:** pluralise it (`1 item selected` / `2 items selected`), or expose the label so a consumer
+can. Minor, but it is on screen in every selectable grid in the product.
+
+**Class: DS — capability (minor).**
+
+---
+
+### New finding — G44 (consumer, not the DS): `wanLink.css` uses a token that does not exist
+
+Filed here rather than only in a commit message, because it is a **live defect in already-shipped
+code on this branch**, found while gathering evidence for G42, and because half of why it survived
+is a DS-tooling gap.
+
+`src/wan-link/wanLink.css` references `var(--secondary-text-color)` eight times, with no fallback.
+The token does not exist in `@mtdt/observeops-ds-css` in either theme, nor anywhere under
+`node_modules/@mtdt/` — the name was invented. The DS's actual token for the role is
+`--text-color-common-secondary` (`#7186a8`). All eight declarations are therefore inert and the
+element inherits `--page-text-color` instead. See G42 for the rendered measurements.
+
+**Fix:** swap all eight to `var(--text-color-common-secondary)`, then re-verify with
+`node scripts/verify-wan-link.mjs`. Deliberately **not** done in Task 12's commit — that commit is a
+verification-and-documentation pass, and a change to a different, already-reviewed screen's rendered
+appearance belongs in its own change with its own visual review.
+
+`src/wan-link-discovery/wanLinkDiscovery.css` is not affected: it hit the same missing token, spotted
+it, and uses `--neutral-light` instead.
+
+**Class: consumer.**

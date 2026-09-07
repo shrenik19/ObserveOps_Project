@@ -7,7 +7,8 @@
 .reassign-dialog {
   display: flex;
   flex-direction: column;
-  /* A chosen number: the DS publishes no spacing scale to derive it from (gap G21). */
+  /* A chosen number. It used to cite G21 ("no spacing scale"); G21 is WITHDRAWN — Task 12 proved
+     --padding-sm is emitted and resolves to this exact 12px. Could be var(--padding-sm). */
   gap: 12px;
   color: var(--page-text-color);
 }

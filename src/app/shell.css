@@ -63,8 +63,9 @@ body {
   flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
-  /* Stack rhythm for toolbar → filter bar → table. A chosen number: the DS publishes no spacing
-     scale to derive it from (gap G21), and 8px matches obs-toolbar's own internal gap. */
+  /* Stack rhythm for toolbar → filter bar → table. 8px matches obs-toolbar's own internal gap —
+     and, as Task 12 established, it is also --padding-xs. G21 ("no spacing scale") is WITHDRAWN:
+     the DS does emit --padding-xs/sm/md/lg. This could be var(--padding-xs); left as a follow-up. */
   gap: 8px;
   padding: 12px;
   overflow: auto;

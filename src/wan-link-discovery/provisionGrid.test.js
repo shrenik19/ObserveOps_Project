@@ -121,6 +121,32 @@ describe('provision grid — selection', () => {
     expect(onAdd.mock.calls[0][0][0].name).toBe('Airtel primary')
   })
 
+  // The browser's own shape, reproduced. obs-table reflects `selected` back as a JSON STRING once
+  // a user ticks a checkbox — not as the array this file assigns — which used to fail an
+  // `Array.isArray` guard and left Add Selected Objects permanently disabled with the mouse.
+  // Caught by scripts/probe-wan-link-discovery.mjs; see docs/DS-GAPS.md G41.
+  it('folds a component-driven selection back in, even reflected as a JSON string', () => {
+    const onAdd = vi.fn()
+    const el = grid({ onAdd })
+    const table = el.querySelector('#wld-prov-table')
+    table.selected = '["v0"]'
+    table.dispatchEvent(new CustomEvent('change', { detail: [['v0']] }))
+    expect(el.querySelector('#wld-prov-add').hasAttribute('disabled')).toBe(false)
+    el.querySelector('#wld-prov-add').click()
+    expect(onAdd.mock.calls[0][0].map((r) => r.link.isp)).toEqual(['Airtel'])
+  })
+
+  it('reads the reflected JSON string when the change event carries no detail', () => {
+    const el = grid()
+    const table = el.querySelector('#wld-prov-table')
+    table.selected = '["v0","v1"]'
+    table.dispatchEvent(new CustomEvent('change'))
+    expect(el.querySelector('#wld-prov-add').hasAttribute('disabled')).toBe(false)
+    table.selected = '[]'
+    table.dispatchEvent(new CustomEvent('change'))
+    expect(el.querySelector('#wld-prov-add').hasAttribute('disabled')).toBe(true)
+  })
+
   it('cancels without adding', () => {
     const onCancel = vi.fn()
     const onAdd = vi.fn()

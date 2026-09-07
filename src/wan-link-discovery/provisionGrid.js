@@ -117,11 +117,37 @@ export function renderProvisionGrid({ profileName, monitor, results, onCancel, o
   el.selectAll = (on) => { state.forEach((r) => { r.selected = on }); refresh() }
   el.rename = (index, name) => { state[index].name = name; refresh() }
 
-  // The component's own checkbox column drives selection in the real page; `selected` reflects
-  // back onto the element per elements-api.json, so a plain `change` listener is enough to fold a
-  // user's click back into the state that `refresh()` already renders from.
-  table.addEventListener('change', () => {
-    const ids = Array.isArray(table.selected) ? table.selected : []
+  /**
+   * What `selected` actually hands back. elements-api.json types it `[String,Array]` and notes
+   * "selected id array; reflects to el.selected (JSON)" — which reads as "you get your array back".
+   * In the real browser you do not: the array this file assigns comes back as the JSON STRING
+   * `'["v0"]'` the moment obs-table reflects a user's own checkbox click.
+   *
+   * Found by rendering (scripts/probe-wan-link-discovery.mjs, section G), not by reading: one click
+   * fired `change` with detail `[["v0"]]` while `table.selected` read the string `'["v0"]'`, so the
+   * `Array.isArray(table.selected)` guard that used to be here evaluated false, every click was
+   * silently dropped, and **Add Selected Objects could never be enabled with the mouse** — the one
+   * action this whole screen exists to reach. jsdom saw none of it: it does not register the DS's
+   * custom elements, so the tests drive the `el.select()` seam and never touch this path.
+   * See docs/DS-GAPS.md G41.
+   */
+  const selectedIds = (value) => {
+    if (Array.isArray(value)) return value.map(String)
+    if (typeof value !== 'string' || !value.trim()) return []
+    try {
+      const parsed = JSON.parse(value)
+      return (Array.isArray(parsed) ? parsed : [parsed]).map(String)
+    } catch {
+      return value.split(',').map((s) => s.trim()).filter(Boolean)
+    }
+  }
+
+  // The component's own checkbox column drives selection in the real page. Read the event's own
+  // payload first — the reflected property has not necessarily landed by the time `change` fires —
+  // and fall back to the property for a `change` that carries no detail.
+  table.addEventListener('change', (event) => {
+    const payload = Array.isArray(event.detail) ? event.detail[0] : event.detail
+    const ids = selectedIds(payload ?? table.selected)
     state.forEach((r) => { r.selected = ids.includes(r.id) })
     $('wld-prov-add').toggleAttribute('disabled', !state.some((r) => r.selected))
   })

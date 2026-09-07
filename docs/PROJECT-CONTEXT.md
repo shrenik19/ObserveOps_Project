@@ -233,15 +233,96 @@ Useful when judging whether a gap is real or just an unlucky consumer:
 
 ---
 
-## 10. Where to look
+## 10. A second feature on the same foundation: WAN Link Discovery
+
+Everything above describes the Report / Category RBAC screen, which this document was originally
+written for. The repo has since grown into one routed app holding several screens
+(§ "Structure" in `CLAUDE.md`). The most involved of them is **WAN Link Discovery**
+(`#/settings/wan-link-discovery`), and it is worth its own section because two of its design
+decisions look arbitrary until you know why.
+
+### What it is
+
+WAN Link as a category in the Discovery Profile tree. A user picks an already-monitored router,
+declares a link on it, pushes the resulting IP SLA operation (or Juniper RPM probe) to the device,
+watches it verify, and provisions what came back. Cisco IOS XE, IOS XR and NX-OS, plus Juniper RPM.
+
+Four views live in one screen, swapped in place rather than routed:
+
+| View | What it does |
+|---|---|
+| Profile list | the saved discovery profiles, their last run, and what each discovered |
+| Create form | **Single** (one link, typed) and **CSV** (many links, uploaded) modes |
+| Progress panel | one card per link, narrating four stages, on a real timer |
+| Provision grid | what verified — select, rename, and add as monitored WAN links |
+
+### Why the monitor comes first
+
+Every other Discovery Profile category starts from an IP or host you **type**. WAN Link starts from
+a monitor you **pick**, and the whole form is built around that inversion.
+
+The reason is that the device is *already monitored*. Its vendor, OS, collector, interfaces and
+credential are known to the system before the form asks anything. So Vendor, Device OS, Credential
+Profiles, Source Interface, the available probe list and even the Operations section's title all
+**resolve from the monitor** rather than being asked for. Picking `CORE-NX-01.test.com` fills in
+Cisco Systems / NX-OS / NXOS-SSH-Ops and narrows the probe list to the three NX-OS actually
+supports, in one step.
+
+That is also why the form is **gated**: until a monitor is chosen there is nothing to configure, and
+the screen says so ("Select a **Monitor** to configure the link — the available probes depend on its
+Device OS") instead of showing a form whose options it cannot yet know.
+
+Two consequences fall out of the same idea:
+
+- **There is no method field.** Every Device OS has exactly one method — NX-OS and IOS XR speak SSH,
+  IOS XE and Juniper RPM speak SNMP — so asking would be a question with one possible answer.
+- **The device deep link.** The old in-device "Add WAN Link" drawer is retired. The WAN Link screen's
+  `Add WAN Link` button links to `#/settings/wan-link-discovery?monitor=m-nxos`: the same one form,
+  entered with the Monitor already decided and **locked** (disabled, hinted "· locked — opened from
+  this device"), because the user has already answered that question by being on that device's page.
+  Reset clears the form but not the lock.
+
+### Why a provisioned profile is frozen
+
+Pressing **Add Selected Objects** in the provision grid is the point of no return, and afterwards
+the profile can no longer be edited or re-run.
+
+That is not a UI convenience — it is what the button *did*. Up to that moment the run has created an
+IP SLA operation on a router and confirmed it returns data, but nothing in the product is watching
+it. Add Selected Objects turns each verified link into a **monitored instance**: from then on, the
+profile does not describe an intention, it describes configuration that exists on a physical device
+and is being polled.
+
+Editing it afterwards would change the description without changing the device, and re-running it
+would push a second operation for a link that already has one — orphaning the first, which would
+keep running on the router with nothing pointing at it. So `profileStore.js` makes provisioning
+terminal: a provisioned profile is read-only, and a new link means a new profile. A profile that
+discovered nothing, by contrast, provisioned nothing, so it stays editable and re-runnable — the
+progress panel says exactly that when a run comes back empty.
+
+### What building it cost the DS report
+
+Six entries: **G37** (conformance flags a disabled `obs-button` as off-reference), **G38** (no
+determinate progress bar), **G39** (`obs-table` cannot put a badge and editable text in one cell),
+**G41** (`obs-table`'s `change` payload is undocumented, and `selected` reads back as a JSON
+string), **G42** (the conformance checker cannot see a dead `var()`) and **G43** ("1 items
+selected"). It also **withdrew two**: G40, and — while verifying this screen — G21.
+
+The screen is verified by `scripts/probe-wan-link-discovery.mjs`, which drives all four views in
+real Chrome. Three of the findings above were invisible to a green 591-test jsdom suite.
+
+---
+
+## 11. Where to look
 
 | File | What it is |
 |---|---|
-| [`DS-GAPS.md`](./DS-GAPS.md) | **The gap report — 22 findings (G0–G24), start here** |
+| [`DS-GAPS.md`](./DS-GAPS.md) | **The gap report — G0–G44, start here.** G21 and G40 are withdrawn, kept in place with the evidence that disproved them |
 | `superpowers/specs/2026-08-06-report-category-rbac-design.md` | The original design spec |
 | `superpowers/plans/2026-08-06-report-category-rbac.md` | The 8-task implementation plan |
 | `superpowers/plans/2026-08-06-ds-component-reference.md` | Full API reference gathered during the build — every tag, event, option shape and token used, with the corrections found along the way |
 | `src/report-categories/augmentSideMenu.js` | Everything the consumer had to add because the DS stops short |
+| `scripts/probe-wan-link-discovery.mjs` · `scripts/verify-wan-link.mjs` | The rendering probes. Conformance is not the verification; these are |
 
 The reference doc is the most useful of the three plan files for DS work: it is a consumer's-eye
 record of what each component's API *actually* is, versus what the registry says.

@@ -15,11 +15,41 @@
   flex: 1;
 }
 
+/* The UA's `[hidden] { display: none }` is the weakest rule in the cascade: cascade ORIGIN is
+   settled before specificity, so ANY author rule setting `display` on the element beats it — a bare
+   type selector as much as an id. The element then stays PAINTED while `el.hidden` reads true.
+   jsdom reads the property, so a unit test sees "hidden" and passes while the browser shows the
+   element. Found by rendering, not by reading: with the Create form open, #wld-list still measured
+   1351x506 and the profile table sat above the form, the progress panel and the provision grid.
+   Both display-setting elements this screen toggles need the override — #wld-list (screen.js's
+   show/showList) and .wld-field (createForm.js's syncPort, which hides UDP Port for a non-UDP
+   probe). The three .wld-form__* selectors further down already carry the same override for the
+   same reason; these two were missed.
+
+   Task 12 then measured the PAINTED BOX of all ten elements this screen toggles, in every state
+   that toggles them, and every one is correctly unpainted when hidden;
+   scripts/probe-wan-link-discovery.mjs asserts it on every run. The obs-* elements among them
+   (#wld-prog-abort) need no override — DS components ship
+   `:host([hidden]){display:none!important}` in their own shadow CSS.
+   If you add a rule that sets `display` on anything this screen toggles, add the override with it. */
+#wld-list[hidden],
+.wld-field[hidden] {
+  display: none;
+}
+
 /* ---------- Create form ----------
-   No --spacing-* custom property exists in this DS (checked elements-api.json and every tokens/*
-   file in @mtdt/observeops-ds-spec — only LESS build variables like @padding-md, never emitted as a
-   CSS custom property). wanLink.css and lama.css both hit the same gap and fall back to plain px for
-   layout; this file does the same. Only colour uses var(--token). */
+   CORRECTION (Task 12, verified by rendering). An earlier version of this comment said no spacing
+   custom property exists in this DS. That is WRONG — and the same claim had spread to
+   docs/DS-GAPS.md G21, src/app/shell.css, src/lama/lama.css and
+   src/report-categories/reassignReportsDialog.css, all now corrected. The name `--spacing-*` does
+   not exist, but a spacing scale IS emitted at :root under a different name:
+   `--padding-xs/sm/md/lg` (8/12/16/24px), in the "structural scale" block of the compiled
+   dist/observeops-ds.css. Proved in Chrome, in both themes: `padding: var(--padding-md)` computes
+   to 16px, while `var(--spacing-md, 999px)` falls back to 999px. See DS-GAPS G21 (withdrawn).
+   The plain px below therefore stays only because most of these values (6, 10, 14, 22) are off that
+   four-step scale. The ones that do match (8, 12, 16, 24) should move to var(--padding-*); left as
+   a follow-up rather than folded into a verification commit, since it changes rendered layout.
+   Only colour uses var(--token). */
 
 .wld-form__row {
   display: grid;

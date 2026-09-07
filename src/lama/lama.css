@@ -1,6 +1,7 @@
 /* Colours are var(--token) — no hex/rgb/hsl anywhere, per the project's standing constraint.
-   The DS publishes no spacing scale (gap G21), so the gaps here are chosen numbers aligned to the
-   8px rhythm obs-toolbar uses internally. */
+   The gaps here are chosen numbers aligned to the 8px rhythm obs-toolbar uses internally. (This
+   comment used to say the DS publishes no spacing scale, citing G21. G21 is WITHDRAWN — Task 12
+   proved --padding-xs/sm/md/lg are emitted and resolve. The matching values could use them.) */
 
 /* ---------- LAMA list page ---------- */
 
