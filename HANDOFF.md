@@ -77,8 +77,8 @@ Every ruling is in the ledger with its cost-if-wrong. The ones that changed the 
   filed G40 claiming `obs-button` has no selected state. The DS spec's own decision tree names
   `as-button` for exactly this shape (a 2–5 option segmented control, 255× usage), and **this
   codebase already used it** in `report-categories/categorySettingsPanel.js`. `DS-GAPS.md` is handed
-  to the DS team as a deliverable; one false entry costs more than the rewrite did. G40 was deleted
-  outright, not marked resolved.
+  to the DS team as a deliverable; one false entry costs more than the rewrite did. G40 is kept as a
+  WITHDRAWN (filed in error) record with the evidence that disproved it, so nobody re-files it.
 - **Kept Frequency and Operation Timeout required in CSV mode**, against the brief's own code
   snippet. They are per-profile parameters, not CSV columns — the brief's tests contradicted its
   snippet, and the tests won.
