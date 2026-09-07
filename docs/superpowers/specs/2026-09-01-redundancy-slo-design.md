@@ -166,11 +166,10 @@ The sketch's live explainer survives intact. Two changes:
 
 ## 4. SLO list differentiation (screen `SLO_1`)
 
-On the card, a third labelled slot beside Type and Frequency — and the **Business Service** beside
-the SLO name, which the shipped tile does not carry at all:
+On the card, a third labelled slot beside Type and Frequency:
 
 ```
- Checkout Availability   💼 E-commerce Platform            [ Ok ]
+ Checkout Availability                                    [ Ok ]
 
  Type            Frequency        Evaluation
  Availability    Daily            🛡 Redundant · 2 of 3
@@ -187,20 +186,27 @@ sort — **not a badge that only sometimes appears**.
 
 ### The Business Service view *(2026-09-07)*
 
-The list follows APM’s business-service flow (`BS_1`–`BS_3`), which is where the product already
-teaches this gesture:
+The briefcase sits top right, immediately left of the list-view toggle — where APM puts it, and
+where the product already teaches the gesture (`BS_1`):
 
 | | State | What the list shows |
 |---|---|---|
-| **off** | SLOs | the shipped tiles, each naming its business service |
-| **on** | Business Services | one tile per service — an SLO count, the **worst status of its SLOs**, and their names |
-| **opened** | One service | that service’s SLOs only, behind a `‹` breadcrumb |
+| **off** | SLOs | the shipped tiles (`SLO_1`), plus the Evaluation slot |
+| **on** | Business Services | a heading per service — name, SLO count, **severest status** — with that service’s SLOs as full tiles beneath |
 
-The briefcase sits top right, immediately left of the list-view toggle, exactly where APM puts it.
+**The tile does not name its business service.** It was added there on 2026-09-07 and removed the
+same day: the grouped view names each service once, as a heading over its SLOs, which is where the
+question *“what is linked to this service?”* is actually answered. Repeating it on every tile only
+restates the heading.
 
-**A service tile counts and names its SLOs; it does not roll their percentages up.** Two SLOs with
-different Targets have no honest average, and inventing one would repeat the *112 Breached* mistake
-§5 exists to correct. The count and the worst-of status are the two claims that survive scrutiny.
+**A service takes the severest status among its SLOs**, by `Breached > Warning > Ok` — never the
+first, and never an average. `E-commerce Platform` carries three SLOs, two of them `Ok`, and its
+heading reads **Breached**; a heading that could be read as *"first"* or *"most common"* would be a
+different and wrong claim.
+
+**No drilldown.** An intermediate screen listing a service’s SLO *names* was built and cut on
+2026-09-07: once every service and every SLO is on one screen, opening one to “see only its SLOs”
+reveals nothing that was not already visible.
 
 This also satisfies the 2026-09-03 requirement that **a drilldown shows only its own SLO’s data**.
 
@@ -290,7 +296,7 @@ above. **6 h 05 m of member downtime cost the SLO nothing; 47 minutes of it cost
 | D7 | **5 artboards, no alerting screen.** | A 6th artboard for the alert moment. Reopened 2026-09-03 and declined; the alert story stays a claim in this spec until phase 2. |
 | D8 | **Evaluation Logic is two mode rows, not a segmented card or a form field.** *(2026-09-07)* | Carrying the Card and Compact layouts side by side for comparison — resolved in favour of the `OptionG` reference, whose per-row consequence shows the cost of the mode you did **not** pick. Both earlier layouts are kept in `redundancy-slo/archive/`. |
 | D9 | **`N = M` is unrepresentable — the quorum stepper stops at `M-1`.** *(2026-09-07)* | Allowing `N = M` with a *"same as Strict"* warning. Rejected: the two rows sit inches apart, so the invalid state can be removed instead of explained. |
-| D10 | **The SLO list gains APM's business-service view, and the tile names its service.** *(2026-09-07)* | A Business Service filter or column. Rejected: APM already teaches the briefcase gesture, and reusing it costs the user nothing to learn. A service tile counts and names its SLOs rather than averaging their percentages. |
+| D10 | **The SLO list gains APM’s business-service view: services as headings, their SLOs as tiles beneath.** *(2026-09-07)* | (a) a Business Service filter or column — APM already teaches the briefcase, so reuse costs nothing to learn; (b) naming the service on every tile — the heading says it once; (c) an intermediate screen listing SLO names per service, and (d) rolling member percentages up into a service average — two SLOs with different Targets have no honest average, so a service claims only its SLO count and its severest status. |
 
 ### D4 in full — the 50-device problem
 
@@ -383,7 +389,7 @@ renders it.**
 The canvas is done when all of these hold, each **verified by rendering**.
 
 > **Status 2026-09-07:** criteria 1–6 are met by `redundancy-slo/wireframe.html` and asserted by
-> `redundancy-slo/verify.mjs` — **169 checks, all passing in real Chrome**. Criterion 7 is
+> `redundancy-slo/verify.mjs` — **167 checks, all passing in real Chrome**. Criterion 7 is
 > outstanding and is the only thing standing between this and sign-off.
 
 1. Six artboards exist and read as one scenario, not six screens.
