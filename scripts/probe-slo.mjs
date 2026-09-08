@@ -104,6 +104,19 @@ check('N = M is unreachable',
   (await page.$eval('#ev-quorum', (e) => e.getAttribute('value'))) === '2')
 check('the business service picker is a select, not a text field',
   await page.$eval('#slo-bs', (e) => e.tagName.toLowerCase() === 'obs-select'))
+{
+  // obs-select and obs-tags ship no `label` attribute of their own — a defect that unit tests and a
+  // DOM-attribute check both missed, and only a screenshot caught: the four obs-selects rendered
+  // with no visible label at all. This checks the rendered PAINTED BOX of each label, not merely
+  // that a `label` element or attribute exists in the DOM.
+  const labelBoxes = await page.$$eval('.slo-form__grid label',
+    (els) => els.map((e) => e.getBoundingClientRect().height))
+  check('every field label painted with real height',
+    labelBoxes.length > 0 && labelBoxes.every((h) => h > 0), labelBoxes)
+  const labelTexts = await texts('.slo-form__grid label')
+  check('Business Service Name has a visible label',
+    labelTexts.some((t) => t.replace(/\s*\*$/, '') === 'Business Service Name'), labelTexts)
+}
 await shot('slo-create')
 
 section('Deck')

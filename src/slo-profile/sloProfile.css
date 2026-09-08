@@ -77,6 +77,23 @@
 
 .slo-form__span { grid-column: 1 / -1; }
 
+.slo-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Consumer-drawn labels for obs-select and obs-tags, neither of which ships a `label` of its own —
+   matched to obs-input's own label so every field on the grid reads as the same kind of field. See
+   src/wan-link-discovery/wanLinkDiscovery.css .wld-field__label for the same treatment there. */
+.slo-field__label {
+  display: block;
+  margin-block-end: 6px;
+  color: var(--input-placeholder-color);
+}
+
+.slo-field__req { color: var(--secondary-red); margin-inline-start: 2px; }
+
 .slo-form__actions {
   display: flex;
   align-items: center;

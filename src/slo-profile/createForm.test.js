@@ -5,8 +5,8 @@ describe('create slo profile form', () => {
   let host
   beforeEach(() => { host = document.createElement('div'); renderCreateForm(host, { onCancel() {} }) })
 
-  it('carries the shipped fields', () => {
-    const labels = [...host.querySelectorAll('obs-input, obs-select')].map((e) => e.getAttribute('label'))
+  it('labels every field with text a user can actually see', () => {
+    const labels = [...host.querySelectorAll('.slo-form__grid label')].map((l) => l.textContent.trim().replace(/\s*\*$/, ''))
     for (const field of ['SLO Name', 'SLO Description', 'Business Service Name', 'SLO For',
       'Source Filter', 'Source', 'Frequency', 'Target', 'Warning', 'Start Date']) {
       expect(labels).toContain(field)
