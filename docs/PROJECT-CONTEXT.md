@@ -313,16 +313,92 @@ real Chrome. Three of the findings above were invisible to a green 591-test jsdo
 
 ---
 
-## 11. Where to look
+## 11. A third feature: the SLO estate and SLO Profile
+
+Two more screens, ported from a **phase-1 canvas** (`docs/superpowers/specs/2026-09-01-redundancy-slo-design.md`,
+which owns the model and the copy) into this app's DS-only shell
+(`docs/superpowers/specs/2026-09-08-slo-ds-port-design.md`, which owns the port itself).
+
+### What it is
+
+**Redundancy SLO** lets an Availability SLO treat a group of monitors as backing each other up, so
+one node flapping no longer breaches the SLO by itself — the group only fails once fewer than a
+**quorum** of its members are up. The one sentence the whole feature exists to keep true: *a monitor
+is down* is not the same fact as *the SLO is hurt*.
+
+| Screen | Route | What it shows |
+|---|---|---|
+| **SLO** | `#/slo/list` | The SLO estate as a tile grid — flat, or regrouped under each Business Service, where the service tile takes the **severest status of its own SLOs** (one Breached SLO among three makes the service read Breached, even if the other two are Ok). |
+| **SLO Profile** | `#/settings/slo-profile` | Settings → Service Level Objective → SLO Profile: the shipped profile table (Evaluation Logic sits beside Frequency) and, behind its Create button, the Create SLO Profile form. |
+
+### The one invented component, and why
+
+Every other control in this app is a published `obs-*` element, used as documented. **One is not.**
+`src/slo-profile/evaluationLogic.js` renders the Create form's Strict/Redundant choice — two rows,
+each stating what it tolerates, the selected one expanding to a quorum stepper (`obs-input` with
+addons) reading "at least **N** of **M** must stay up."
+
+That shape — a radio option that carries its own consequence text, an expandable body, and an
+embedded live control — cannot be built from `obs-radio`. Rendered and inspected live, `obs-radio`'s
+shadow root has **zero `<slot>` elements**: a light-DOM child placed inside it is real DOM (it is
+never rejected) and paints at 0×0, invisible. So this control exists because there is no DS
+equivalent to reach for, not by choice — it is filed as **G45**, and shipped as a working reference
+implementation rather than only a description, on the theory that a control the DS team can read and
+adapt is worth more than a paragraph about one they can't.
+
+Everything *inside* that control stays DS: the quorum field is `obs-input type="number"` with
+documented `addon-before`/`addon-after`, and the full explanatory sentence renders into an
+`obs-tooltip` via `textContent` (see the G10 addendum in `DS-GAPS.md` — `obs-tooltip` has two real
+slots, `trigger` and a default, that the manifest does not document at all).
+
+### What building it cost the DS report
+
+Five new gap entries, **G45–G49** — `obs-radio` cannot carry per-option content (G45, above); no
+shield/protection glyph (G46); no card/tile component, the second time this app has hit that wall
+(G47, after G31); `obs-button` has no pressed/toggled state, so the SLO list's flat/grouped view
+toggle co-opts `variant` instead (G48); and `obs-select`/`obs-tags` have no `label` attribute while
+`obs-input` does (G49) — which shipped a real bug: four Create-form fields rendered with **no visible
+label at all**, past a 661-test suite and a 19-check render probe, caught only by reading a
+screenshot. `src/wan-link-discovery/createForm.js:28` had already recorded the same gap once before
+this build repeated it.
+
+Two corrections to the record, not new gaps: **OQ5** in the companion spec guessed `obs-table` had no
+collapsible group-header rows — it does (`group-by`, `group-collapsible`, plus `sticky-header`,
+`max-height`, `sort` and `sortable`); and `obs-tooltip` was confirmed to carry two real slots the
+manifest omits, more evidence for the standing **G10** finding.
+
+### Verified by rendering
+
+`scripts/probe-slo.mjs` drives both screens end to end in real Chrome — the flat and grouped SLO
+list, the profile table, and the Create form's Evaluation Logic control, including the *N = M is
+unreachable* clamp and that every field label actually paints (not merely that the attribute is
+present in markup, which is exactly what let G49 through once already).
+
+**DS conformance:**
+
+| Route | Score | Measured | Why |
+|---|---|---|---|
+| `#/slo/list` | **68/100** (token 83 · component 12 · philosophy 100 · layout 100) | 181 colours · 44 spacings · 3 DS components · 0 raw controls · 12 variant checks (2 invalid) · 7 style-match (6 off-ref) | **Expected, not a defect.** Per G47 the DS has no card, so the whole tile grid — five SLO tiles, three grouped service headers — is app markup (`src/slo-list/sloList.css`, following `src/app/cardList.js`'s existing precedent). The few real components on the page (`obs-toolbar`, `obs-input`, two `obs-button`s, two `obs-icon`s, one `obs-severity` per tile) are a small fraction of the screen's DOM, so the component-fidelity dimension cannot score high no matter how correctly those components are used. Two more contributors, both consistent with gaps already on file rather than new defects: the `slo-list-view` button is `disabled` (list view isn't built, only the flat/grouped toggle is), the same shape the checker mishandles per **G37**; and both icon-only toggle buttons carry a `title` but no `aria-label`. |
+| `#/settings/slo-profile` | **100/100** (token 100 · component 100 · philosophy 100 · layout 100) | 34 colours · 4 spacings · 2 DS components · 0 raw controls · 3 variant checks (0 invalid) | This route's first (and only-scored) view is the profile table — `obs-toolbar` + `obs-input` + `obs-button` + `obs-table`, all used as documented — confirmed actually mounted (not a sampling artifact) by `docs/shots/slo-profile-table.png`, which shows the real 5-row grid. The Create form behind the "Create SLO Profile" button, where the one invented control and the label-fix live, is a second view and conformance never scores it — the same trap noted in `CLAUDE.md`'s "Adding a screen" section. |
+
+Both routes were confirmed to have actually mounted before trusting either number, per the standing
+trap that dynamic `import()` lets Chromium sample an almost-empty page and still score it highly.
+
+---
+
+## 12. Where to look
 
 | File | What it is |
 |---|---|
-| [`DS-GAPS.md`](./DS-GAPS.md) | **The gap report — G0–G44, start here.** G21 and G40 are withdrawn, kept in place with the evidence that disproved them |
-| `superpowers/specs/2026-08-06-report-category-rbac-design.md` | The original design spec |
-| `superpowers/plans/2026-08-06-report-category-rbac.md` | The 8-task implementation plan |
+| [`DS-GAPS.md`](./DS-GAPS.md) | **The gap report — G0–G49, start here.** G21 and G40 are withdrawn, kept in place with the evidence that disproved them; OQ5 (a companion-spec guess) is corrected the same way |
+| `superpowers/specs/2026-08-06-report-category-rbac-design.md` | The original Report / Category RBAC design spec |
+| `superpowers/plans/2026-08-06-report-category-rbac.md` | The 8-task Report / Category RBAC implementation plan |
 | `superpowers/plans/2026-08-06-ds-component-reference.md` | Full API reference gathered during the build — every tag, event, option shape and token used, with the corrections found along the way |
+| `superpowers/specs/2026-09-01-redundancy-slo-design.md` | The phase-1 Redundancy SLO canvas spec — owns the evaluation model and copy |
+| `superpowers/specs/2026-09-08-slo-ds-port-design.md` · `superpowers/plans/2026-09-08-slo-ds-port.md` | The DS-only port of that canvas into this app, and its 10-task implementation plan |
 | `src/report-categories/augmentSideMenu.js` | Everything the consumer had to add because the DS stops short |
-| `scripts/probe-wan-link-discovery.mjs` · `scripts/verify-wan-link.mjs` | The rendering probes. Conformance is not the verification; these are |
+| `scripts/probe-wan-link-discovery.mjs` · `scripts/verify-wan-link.mjs` | The rendering probes for WAN Link / WAN Link Discovery. Conformance is not the verification; these are |
+| `scripts/probe-slo.mjs` | The rendering probe for the SLO estate and SLO Profile screens |
 
 The reference doc is the most useful of the three plan files for DS work: it is a consumer's-eye
 record of what each component's API *actually* is, versus what the registry says.

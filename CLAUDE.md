@@ -14,6 +14,8 @@ A reference implementation of several ObserveOps screens, built entirely from th
 | **LAMA** | The LAMA list and its Create LAMA Profile drawer. |
 | **WAN Link** | Cisco NX-OS WAN Link monitoring — ICMP Echo, UDP Echo and UDP Jitter probes, each with a detail drawer. |
 | **WAN Link Discovery** | WAN Link as a category in the Discovery Profile tree: pick an already-monitored router, declare the link, push the IP SLA operation and provision what verified. Cisco IOS XE, IOS XR and NX-OS, plus Juniper RPM. Four views in one screen — profile list, Create form (Single and CSV modes), progress panel, provision grid. |
+| **SLO** | The SLO estate as tiles — flat, or regrouped under each Business Service, whose tile carries the severest status of its own SLOs. |
+| **SLO Profile** | Settings → SLO Profile: the shipped profile table (Evaluation Logic beside Frequency) and its Create SLO Profile form — Strict vs. Redundant evaluation logic with a quorum stepper. |
 
 It serves two purposes at once:
 
@@ -77,6 +79,17 @@ src/wan-link-discovery/                                              131 tests
   progressPanel.js              the four-stage run, with a deterministic seam   (12 tests)
   provisionGrid.js              select / rename / provision the discovered links (18 tests)
   wanLinkDiscovery.css          token-only styling — no hex/rgb/hsl anywhere
+src/slo-list/
+  screen.js                     flat + Business Service grouped views          (14 tests)
+  sloStore.js                   the SLO estate — no DOM, no DS                  (5 tests)
+  sloList.css                   token-only styling — no hex/rgb/hsl anywhere
+src/slo-profile/
+  screen.js                     the profile table / Create form toggle          (8 tests)
+  profiles.js                   the shipped profile rows — no DOM, no DS        (5 tests)
+  createForm.js                 the Create SLO Profile form                     (6 tests)
+  evaluation.js                 Strict/Redundant + quorum — no DOM, no DS      (14 tests)
+  evaluationLogic.js            the one invented control — see G45 in DS-GAPS.md (12 tests)
+  sloProfile.css                token-only styling — no hex/rgb/hsl anywhere
 vite.config.js                  index.html + the two redirect stubs
 .mcp.json                       registers the observeops-ds MCP server
 .claude/settings.json           pre-approves the npm commands
@@ -135,6 +148,7 @@ the dev server, `SHOTS` the screenshot directory (default `docs/shots/`).
 ```bash
 node scripts/verify-wan-link.mjs              # the WAN Link list and its probe drawers
 node scripts/probe-wan-link-discovery.mjs     # WAN Link Discovery, all four views end to end
+node scripts/probe-slo.mjs                    # the SLO estate and SLO Profile, incl. Create form
 ```
 
 `probe-wan-link-discovery.mjs` walks the whole screen — list → Create form (Single and CSV) →

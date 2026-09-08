@@ -6,11 +6,14 @@
 > **Two entries in this file are withdrawn** — **G21** (a spacing scale does exist, under
 > `--padding-*`) and **G40** (`obs-radio as-button` is the segmented control). Both are kept in
 > place, with the rendered evidence that disproved them, because how a false entry got here is
-> worth more to the reader than a tidy list. Everything else stands.
+> worth more to the reader than a tidy list. Everything else stands. **One correction to a companion
+> document** is recorded the same way, immediately after G40: OQ5 in
+> `docs/superpowers/specs/2026-09-01-redundancy-slo-design.md` guessed `obs-table` had no group-header
+> support; it does.
 
 ## Status — re-verified against elements 0.1.159 / css 0.1.4 / spec 0.1.197
 
-**Later additions (G32–G44) were found against elements 0.1.167 / css 0.1.6 / spec 0.1.210**, the
+**Later additions (G32–G49) were found against elements 0.1.167 / css 0.1.6 / spec 0.1.210**, the
 versions this repo currently installs; the fix-status table below has not been re-run against them.
 
 The DS team shipped fixes across three releases (0.1.143, 0.1.144, 0.1.146). Re-tested by upgrading and rebuilding the same screen
@@ -39,6 +42,11 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G37** the conformance checker scores a **disabled** `obs-button` as off-reference | 🆕 **OPEN** | 4 disabled pager buttons drop the run 100 → 91 (component 69), and the failure line prints the SAME colour on both sides: "bg rgb(236, 241, 249) vs rgb(236, 241, 249)". Removing `disabled` restores 100/100 |
 | **G38** no determinate progress-bar element | 🆕 **OPEN** | `elements-api.json` — 0 of 47 element tags match `/progress/i`. WAN Link Discovery's run screen hand-rolls a track+fill `<div>` from `--progress-bg` / `--primary-color`, both confirmed emitted |
 | **G39** `obs-table` cannot combine a badge with editable text in one cell | 🆕 **OPEN** | The provision grid's NAME cell needs an N/P/U status badge next to an inline-editable, pencil-driven name. `editable: true` (real, documented) gets the pencil; no column `type` composes a tag with it, and `slots` is `[]`. **Third instance of G1/G23** |
+| **G45** `obs-radio` cannot carry per-option content | 🆕 **OPEN** | Shadow root has 0 `<slot>` elements; a light-DOM child renders present-in-DOM but 0×0. Shipped as app markup instead — `src/slo-profile/evaluationLogic.js` — the one deliberately invented component in this build |
+| **G46** no shield / protection glyph | 🆕 **OPEN** | `shield`, `shieldAlt`, `security`, `protect` do not paint; `businessService`, `link`, `search`, `plus`, `minus`, `check` do. Same shape as **G3** |
+| **G47** no card / tile component | 🆕 **OPEN** | 0 of 47 elements match `card\|tile`. `src/slo-list/sloList.css` hand-rolls its tile grid, following the precedent `src/app/cardList.js` already set. **Second instance of G31** |
+| **G48** `obs-button` has no pressed/toggled state | 🆕 **OPEN** | Its 9 attributes are exactly `variant, size, disabled, loading, outline, square, block, shape, squared` — nothing for "currently engaged". The SLO list view toggle co-opts `variant` (`primary` = engaged) instead |
+| **G49** `obs-select`/`obs-tags` have no `label`; `obs-input` does | 🆕 **OPEN** | Shipped a real bug: 4 fields rendered with no visible label, past a 661-test suite and a 19-check probe, because the test asserted the ignored attribute was present. External `<label for>` doesn't associate with a custom element either. Second time this exact gap has bitten this project |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -856,6 +864,14 @@ bundle:
 | `obs-drawer` | `actions` (pinned footer) | Footer buttons were put in the body and floated mid-panel |
 | `obs-sidebar` | `logo`, `default`, `tabs-action`, `search-action` | Rail rendered the "?" placeholder |
 | `obs-app-header` | `brand`, `user`, `title`, `breadcrumb`, `back`, `before` | No brand mark or wordmark |
+| `obs-tooltip` | `trigger`, and a default slot | **Confirmed in Task 10** — probed live, in real Chrome, with the DS bundle + CSS loaded: `shadowRoot.querySelectorAll('slot')` returns two, `trigger` and an unnamed default. Content assigned via `textContent` renders in the default slot's assigned text; `elements-api.json` lists neither |
+
+**Fourth instance, found while verifying a different component (Task 7/10).** `obs-tooltip` was
+never a defect here — the sentence it carries was passed to `.textContent`, which happens to work —
+but the same manifest gap that hid three defects above also hides that `obs-tooltip` has slots at
+all. A consumer trying to compose a richer tooltip body (an icon plus text, say) would have no way to
+discover the `trigger` slot from the published API and would reach for `textContent` by trial, which
+is exactly what happened here.
 
 The same file also omits **enum values for string props**. `obs-drawer`'s `footer` preset is
 documented only as a source comment:
@@ -1613,6 +1629,26 @@ primitive. Before filing anything here, search `components/registry/*.json` **an
 
 ---
 
+### OQ5 (companion spec) — CORRECTED: `obs-table` does support collapsible group header rows
+
+Recorded here for the same reason G21 and G40 are kept as withdrawn rather than deleted: a gap
+report that keeps disproved claims is worth less than one that retires them.
+
+`docs/superpowers/specs/2026-09-01-redundancy-slo-design.md`'s OQ5 said:
+
+> The grouped `Configured Entities` table needs **collapsible group header rows**. `obs-table`
+> already cannot host a dropdown (**G23**...), and there is no evidence it supports group headers at
+> all. Expect at least one new DS gap.
+
+**That guessed wrong, in the DS's favour.** `obs-table`'s attribute list has `group-by` and
+`group-collapsible` (confirmed against `elements-api.json`, elements 0.1.167), alongside
+`sticky-header`, `max-height`, `sort` and `sortable` — a materially more capable grid than the guess
+assumed. No new DS gap results from this: the capability OQ5 worried about already ships.
+
+**Class: correction — not a gap.**
+
+---
+
 ### New finding — G41: `obs-table`'s `change` payload is undocumented, and `selected` reads back as a JSON *string*
 
 `elements-api.json` types the prop:
@@ -1767,3 +1803,161 @@ appearance belongs in its own change with its own visual review.
 it, and uses `--neutral-light` instead.
 
 **Class: consumer.**
+
+---
+
+### New finding — G45: `obs-radio` cannot carry per-option content
+
+**Class: DS — capability.**
+
+The SLO Create form's Evaluation Logic control needs each option (Strict / Redundant) to show a
+consequence line, an expandable body, and — for Redundant — an embedded quorum stepper. `obs-radio`'s
+attribute list is exactly `options, value, as-button, severity, size, disabled, vertical, block`
+(`elements-api.json`, elements 0.1.167) — a flat `{value, text}` array, no per-option slot, and no
+`description`/`label` field on the option shape either.
+
+**Repro**, rendered live against the running app:
+
+```js
+const radio = document.createElement('obs-radio')
+radio.setAttribute('options', JSON.stringify([{ value: 'a', text: 'A' }, { value: 'b', text: 'B' }]))
+const child = document.createElement('div')
+child.textContent = 'consequence text should not paint'
+radio.appendChild(child)
+```
+
+```json
+{ "hasShadowRoot": true, "slotCount": 0, "childPresentInDom": true, "childRect": { "w": 0, "h": 0 } }
+```
+
+The child is real DOM (`document.body.contains(child)` is true) and occupies zero pixels, because the
+shadow root has no `<slot>` at all. A light-DOM child placed inside `obs-radio` is present and
+invisible, not rejected — a silent failure a consumer discovers only by measuring, not by reading an
+error.
+
+**Consumer workaround, shipped as a working reference implementation.** This build renders the
+control as app markup — `src/slo-profile/evaluationLogic.js` — called out in its own header comment
+as the one deliberately invented component in this application, built specifically because
+`obs-radio` cannot host per-option content. It renders two `role="radio"` rows with click/keyboard
+selection (Enter/Space), an expandable body gated by `[hidden]`, and an `obs-input` quorum stepper
+inside the expanded row, reading all copy from a plain JS evaluation model rather than duplicating it.
+So the gap comes with a concrete artifact the DS team can lift, not merely a description of what's
+missing.
+
+**Ask:** a per-option slot (e.g. `<div slot="option-a">…</div>` keyed to the option's `value`), or an
+option shape carrying `description`/`suffix` fields the component renders beneath the label.
+
+---
+
+### New finding — G46: no shield or protection glyph
+
+**Class: DS — capability.** Same shape as **G3** (no open-lock glyph).
+
+Rendered live, checking each candidate's shadow root for a real `<svg>`:
+
+```json
+{ "shield": false, "shieldAlt": false, "security": false, "protect": false,
+  "businessService": true, "service": true, "link": true, "search": true,
+  "plus": true, "minus": true, "check": true }
+```
+
+None of the four plausible names for a protection/consequence glyph exist. The six control names
+probed alongside them all painted, which rules out a probe-method error and confirms the negative
+result — the same "fails silently, not with an error" behaviour G24 already documented for icons.
+
+**Consumer workaround:** the Evaluation Logic control's consequence readout (`.ev-row__meta`,
+`.ev-row__rule` in `src/slo-profile/evaluationLogic.js`) carries its tone through a colour token
+(`--secondary-red` for the failure count, `--page-text-color` otherwise) instead of an icon — no
+glyph was reached for at all, rather than shipping a wrong one.
+
+**Ask:** a shield/protection glyph, named `shield` or `security` to match the vocabulary a consumer
+would try first — both names currently render nothing.
+
+---
+
+### New finding — G47: no card / tile component (second instance of G31)
+
+**Class: DS — capability.**
+
+`elements-api.json` still ships exactly 47 elements and none of them is a card:
+`Object.keys(elements).filter(t => /card|tile/i.test(t))` returns `[]`.
+
+The SLO list screen is a tile grid — five SLO cards today, more as SLOs are added, each carrying a
+type/frequency/evaluation summary and a status pill — and it hand-rolls the grid exactly the way
+G31's Overview screen did, for the same reason: there is nothing to reach for.
+
+- `src/slo-list/sloList.css` styles `.slo-tile` as a bordered, token-only surface (border, radius,
+  padding, hover — all through `var(--token)`), the same shape as `src/app/cardList.js`'s existing
+  `.card` rules.
+- `src/app/cardList.js` is the precedent this screen followed rather than reinventing its own
+  approach to a tile.
+
+**Ask:** unchanged from G31 — ship `obs-card` (or an `as-card`/`block` variant of `obs-link`) with
+slots for media/title/body/action. Every list-of-things screen built against this DS so far has
+hand-rolled the identical tile from scratch.
+
+---
+
+### New finding — G48: `obs-button` has no pressed or toggled state
+
+**Class: DS — capability.**
+
+`obs-button`'s attribute list is exactly `variant, size, disabled, loading, outline, square, block,
+shape, squared` — confirmed against `elements-api.json` (elements 0.1.167). No `pressed`, `active`,
+`toggled` attribute, and no `aria-pressed` reflection anywhere in the list.
+
+The SLO list's flat-vs-grouped-by-service view toggle needs to show which view is currently engaged.
+The plan for this screen initially reached for `toggleAttribute('active', …)`, which the component
+silently ignores — `active` isn't one of the nine attributes above, so the button rendered with no
+visible change at all when toggled.
+
+**Consumer workaround** (`src/slo-list/screen.js`): co-opt `variant`, flipping it to `primary` when a
+view button is engaged and back to `default` when idle. It reads as *emphasis*, not *selection* — the
+closest documented signal available — and is the same shape of workaround G40 warned against
+overusing (styling a state onto a property that means something else), kept here only because no
+better documented lever exists.
+
+**Ask:** a `pressed`/`active` boolean attribute that reflects `aria-pressed` and applies a genuine
+selected treatment, visually distinct from `variant`'s prominence scale.
+
+---
+
+### New finding — G49: `obs-input` has a `label` attribute; `obs-select` and `obs-tags` do not
+
+**Class: DS — capability.** The strongest entry in this batch — it shipped a real, user-visible bug.
+
+`elements-api.json` attribute lists, confirmed live (elements 0.1.167):
+
+- `obs-input`: `type, value, label, help, placeholder, disabled, readonly, required, error,
+  error-message, allow-clear, material, no-border, block, prefix-icon, suffix-icon, prefix, suffix,
+  addon-before, addon-after` — has `label`.
+- `obs-select`: 25 attributes, `options` through `reset-label` — **no `label`**.
+- `obs-tags`: `type, value, options, suggestions, placeholder, disabled, loading, block, lowercase`
+  — **no `label`**.
+
+**What it cost.** The SLO Create form's brief put `label="…"` on `obs-select` and `obs-tags` fields
+(Business Service Name, SLO For, Source Filter, Frequency, Tags). The attribute is accepted onto the
+host and silently ignored, so **four fields rendered with no visible label at all** — and this
+survived two independent verification passes before a screenshot caught it:
+
+- a 661-test unit suite, because the test asserted the `label` **attribute** was present in the
+  markup — it was; the component simply never reads it;
+- a 19-check render probe (`scripts/probe-slo.mjs`), because nothing in it checked that a label was
+  actually *painted*, only that the screen assembled without error.
+
+Only reading a rendered screenshot found it. Fixed by drawing an external
+`<label class="slo-field__label" for="…">` per field, matching the pattern
+`src/wan-link-discovery/createForm.js` already uses for exactly this reason — that file's line 28
+carries the comment `/** obs-select has no `label` attribute — obs-input does, obs-select does not.
+*/`, meaning this exact gap has now cost two separate builds in this repo, one of which explicitly
+warned the other and was still followed by a plan that reintroduced it.
+
+**The workaround is not actually equivalent, and there is no complete one.** An external
+`<label for="...">` does not functionally associate with a custom element: those controls end up with
+no computed accessible name, and clicking the label text does not focus its control. A sighted mouse
+user sees a fixed cosmetic bug; a screen-reader user or a keyboard user clicking a label gets no
+functional fix at all.
+
+**Ask:** a `label` attribute on `obs-select` and `obs-tags` matching `obs-input`'s exactly, or —
+failing that — documented `ElementInternals`/`attachInternals().labels` support so an external
+`<label for>` actually associates with the control.
