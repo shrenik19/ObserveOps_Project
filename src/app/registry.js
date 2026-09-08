@@ -71,6 +71,14 @@ export const modules = [
           'IOS XR and NX-OS, plus Juniper RPM.',
         load: () => import('../wan-link-discovery/screen.js'),
       },
+      {
+        key: 'slo-profile',
+        label: 'SLO Profile',
+        description:
+          'Settings -> Service Level Objective -> SLO Profile: the shipped profile table with ' +
+          'Evaluation Logic beside Frequency, and the Create SLO Profile form behind it.',
+        load: () => import('../slo-profile/screen.js'),
+      },
     ],
   },
 ]

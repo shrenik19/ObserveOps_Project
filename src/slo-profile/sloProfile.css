@@ -1,0 +1,21 @@
+/* src/slo-profile/sloProfile.css
+   Token-only. Resolve every value through the MCP `resolve_token` before adding it. */
+
+#slo-profile-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#slo-profile-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+/* The UA's `[hidden] { display: none }` is the weakest rule in the cascade — any author rule
+   setting `display` beats it, leaving the element painted while `el.hidden` reads true. jsdom
+   reads the property and passes; Chrome shows both views stacked. See wanLinkDiscovery.css. */
+#slo-profile-list[hidden],
+#slo-profile-form[hidden] { display: none; }
