@@ -68,3 +68,20 @@
 .ev-row__body[hidden] { display: none; }
 .ev-row__body { margin-top: 8px; padding-left: 27px; }
 .ev-row__rule { margin: 0 0 12px; color: var(--input-placeholder-color); line-height: 1.55; }
+
+.slo-form__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--common-padd-space);
+}
+
+.slo-form__span { grid-column: 1 / -1; }
+
+.slo-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.slo-form__note { margin-right: auto; color: var(--input-placeholder-color); }

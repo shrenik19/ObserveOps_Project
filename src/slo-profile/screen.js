@@ -4,6 +4,7 @@
 
 import { pageHeaderHTML } from '../app/pageHeader.js'
 import { createProfileStore } from './profiles.js'
+import { renderCreateForm } from './createForm.js'
 import './sloProfile.css'
 
 export const meta = { pageHeader: { heading: 'Settings', icon: 'settings' } }
@@ -43,5 +44,20 @@ export function mount(root) {
   ]
   table.rows = store.rows()
 
-  return function unmount() {}
+  const list = root.querySelector('#slo-profile-list')
+  const form = root.querySelector('#slo-profile-form')
+
+  const showList = () => { form.hidden = true; list.hidden = false; form.innerHTML = '' }
+  const showForm = () => {
+    list.hidden = true
+    form.hidden = false
+    renderCreateForm(form, { onCancel: showList })
+  }
+
+  const onCreate = () => showForm()
+  root.querySelector('#slo-profile-create').addEventListener('click', onCreate)
+
+  return function unmount() {
+    root.querySelector('#slo-profile-create')?.removeEventListener('click', onCreate)
+  }
 }

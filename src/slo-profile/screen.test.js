@@ -32,3 +32,29 @@ describe('slo profile screen', () => {
     expect(root.querySelector('#slo-profile-create')).not.toBeNull()
   })
 })
+
+describe('the two views', () => {
+  let root
+  beforeEach(() => { root = document.createElement('div'); document.body.append(root); mount(root) })
+
+  it('starts on the table', () => {
+    expect(root.querySelector('#slo-profile-list').hidden).toBe(false)
+    expect(root.querySelector('#slo-profile-form').hidden).toBe(true)
+  })
+
+  it('opens the Create form without changing route', () => {
+    const before = window.location.hash
+    root.querySelector('#slo-profile-create').click()
+    expect(root.querySelector('#slo-profile-form').hidden).toBe(false)
+    expect(root.querySelector('#slo-profile-list').hidden).toBe(true)
+    expect(root.querySelectorAll('.ev-row')).toHaveLength(2)
+    expect(window.location.hash).toBe(before)
+  })
+
+  it('comes back to the table', () => {
+    root.querySelector('#slo-profile-create').click()
+    root.querySelector('#slo-form-reset').click()
+    expect(root.querySelector('#slo-profile-list').hidden).toBe(false)
+    expect(root.querySelector('#slo-profile-form').innerHTML).toBe('')
+  })
+})
