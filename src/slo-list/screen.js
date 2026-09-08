@@ -43,6 +43,9 @@ const TEMPLATE = `
     <main class="app-shell__content" id="slo-content">
       <obs-toolbar data-role="content-toolbar">
         <obs-input slot="start" type="search" placeholder="Search" class="content-toolbar__search"></obs-input>
+        <obs-button id="slo-bs-toggle" variant="default" title="Group by Business Service">
+          <obs-icon name="businessService" size="16" label="Group by Business Service"></obs-icon>
+        </obs-button>
         <!-- Drawn because SLO_1 has it; inert because the table alternative is out of scope. -->
         <obs-button id="slo-list-view" variant="default" title="List view" disabled>
           <obs-icon name="list" size="16" label="List view"></obs-icon>
@@ -53,14 +56,41 @@ const TEMPLATE = `
   </div>
 `
 
+// A service heading names the service once for every SLO beneath it, which is why the tile itself
+// does not repeat it. Its status is the SEVEREST among its SLOs — see sloStore.js.
+export const groupHTML = (group) => `
+  <section class="slo-group">
+    <header class="slo-group__head">
+      <obs-icon name="businessService" size="16"></obs-icon>
+      <span class="slo-group__name">${group.service}</span>
+      <span class="slo-group__count">${group.count} ${group.count === 1 ? 'SLO' : 'SLOs'}</span>
+      ${severityHTML(group.status)}
+    </header>
+    <div class="slo-grid">${group.slos.map(tileHTML).join('')}</div>
+  </section>
+`
+
 export function mount(root) {
   root.innerHTML = TEMPLATE
   const store = createStore()
 
   // Tiles do not navigate: artboards 3-5 are not in this build, so a click would lead nowhere.
   // Spec P3.
-  root.querySelector('#slo-cards').innerHTML =
-    `<div class="slo-grid">${store.list().map(tileHTML).join('')}</div>`
+  const cards = root.querySelector('#slo-cards')
+  const toggle = root.querySelector('#slo-bs-toggle')
+  let grouped = false
 
-  return function unmount() {}
+  const render = () => {
+    cards.innerHTML = grouped
+      ? store.groups().map(groupHTML).join('')
+      : `<div class="slo-grid">${store.list().map(tileHTML).join('')}</div>`
+  }
+
+  const onToggle = () => { grouped = !grouped; toggle.setAttribute('variant', grouped ? 'primary' : 'default'); render() }
+  toggle.addEventListener('click', onToggle)
+  render()
+
+  return function unmount() {
+    toggle.removeEventListener('click', onToggle)
+  }
 }

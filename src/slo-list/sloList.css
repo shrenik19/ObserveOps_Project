@@ -50,3 +50,25 @@
 
 .slo-tile__num b { display: block; font-size: 19px; font-weight: 600; }
 .slo-tile__eval { white-space: nowrap; }
+
+.slo-group + .slo-group { margin-top: 18px; }
+
+.slo-group__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+  color: var(--page-text-color);
+}
+
+.slo-group__name { font-weight: 600; }
+
+.slo-group__count {
+  font-size: 11px;
+  background: var(--default-tag-bg);
+  color: var(--default-tag-text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}

@@ -44,3 +44,56 @@ describe('slo list screen', () => {
     expect(root.querySelector('.slo-tile').getAttribute('href')).toBeNull()
   })
 })
+
+describe('the business service view', () => {
+  let root
+  const toggle = () => root.querySelector('#slo-bs-toggle').click()
+  beforeEach(() => { root = document.createElement('div'); document.body.append(root); mount(root) })
+
+  it('offers a briefcase toggle, off by default', () => {
+    const btn = root.querySelector('#slo-bs-toggle')
+    expect(btn.querySelector('obs-icon').getAttribute('name')).toBe('businessService')
+    expect(root.querySelectorAll('.slo-group')).toHaveLength(0)
+  })
+
+  it('regroups the estate under its services', () => {
+    toggle()
+    const heads = [...root.querySelectorAll('.slo-group__name')].map((e) => e.textContent.trim())
+    expect(heads).toEqual(['E-commerce Platform', 'Network Core', 'Branch Connectivity'])
+  })
+
+  it('counts each service, singular and plural', () => {
+    toggle()
+    const counts = [...root.querySelectorAll('.slo-group__count')].map((e) => e.textContent.trim())
+    expect(counts).toEqual(['3 SLOs', '1 SLO', '1 SLO'])
+  })
+
+  it('shows every SLO exactly once, as a full tile', () => {
+    toggle()
+    expect(root.querySelectorAll('.slo-group .slo-tile')).toHaveLength(5)
+    expect(root.querySelectorAll('.slo-group .slo-tile__nums')).toHaveLength(5)
+  })
+
+  // The reason this view exists.
+  it('gives a heading the severest status, not the first', () => {
+    toggle()
+    const ecom = root.querySelector('.slo-group')
+    expect(ecom.querySelector('.slo-group__head obs-severity').getAttribute('value')).toBe('Breached')
+    const tiles = [...ecom.querySelectorAll('.slo-tile obs-severity')].map((s) => s.getAttribute('value'))
+    expect(tiles).toEqual(['Ok', 'Ok', 'Breached'])
+  })
+
+  it('toggles back to the flat list', () => {
+    toggle(); toggle()
+    expect(root.querySelectorAll('.slo-group')).toHaveLength(0)
+    expect(root.querySelectorAll('.slo-tile')).toHaveLength(5)
+  })
+
+  it('shows the briefcase as engaged while grouped', () => {
+    expect(root.querySelector('#slo-bs-toggle').getAttribute('variant')).toBe('default')
+    toggle()
+    expect(root.querySelector('#slo-bs-toggle').getAttribute('variant')).toBe('primary')
+    toggle()
+    expect(root.querySelector('#slo-bs-toggle').getAttribute('variant')).toBe('default')
+  })
+})
