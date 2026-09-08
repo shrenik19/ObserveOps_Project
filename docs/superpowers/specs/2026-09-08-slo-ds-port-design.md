@@ -82,50 +82,64 @@ a component or an icon in a cell — re-found twice since, as **G23** and **G39*
 **Business Service Name is an entity picker, not free text** — `obs-select` with `searchable` and
 `can-user-add-options` + `add-label`, which is the search box and the inline `+` from `BS_Setup`.
 
-## 5. Evaluation Logic on the DS
+## 5. Evaluation Logic — Option G, built as designed
 
-This is the one place the DS cannot express the approved design, and the whole shape of this phase
-turns on it.
+Phase 1 §2 approved two selectable rows, each carrying its consequence on the right —
+`tolerates N failures`, with the full sentence on hover — the selected row expanding to its rule
+and, under `Redundant`, a quorum stepper.
 
-**What phase 1 approved** (its §2): two selectable rows, each carrying its consequence on the right
-— a shield and `tolerates N failures`, with the full sentence on hover — the selected row expanding
-to its rule and, under `Redundant`, a quorum stepper.
+**The DS cannot express it.** `obs-radio` renders the choice and nothing else: its shadow root
+contains **zero `<slot>` elements**, and a light-DOM child placed inside it is present in the DOM
+and paints nothing. No per-option content, no expansion, nowhere to host the stepper.
 
-**What the DS can do.** `obs-radio` renders the choice and nothing else. Its shadow root contains
-**zero `<slot>` elements**; a light-DOM child placed inside it is present in the DOM and paints
-nothing. It has no per-option content, no expansion, and no way to host the stepper.
-
-**Approach taken — the DS component decides, the app composes the explanation.**
+**Decision, 2026-09-08 — build Option G as designed; the DS absorbs it later.** The control is
+composed at the app level rather than reduced to what `obs-radio` can currently show. The design
+leads and the component follows it, not the other way round.
 
 ```
 Evaluation Logic *
 Decides how the 3 monitors you added under Source combine into a single SLO result — whether
 every one of them has to stay up, or whether they can cover for each other.
 
-   ○  Strict
-   ●  Redundant                                    obs-radio vertical
-
-   [ at least │ 2 │ of 3 must stay up ]            obs-input type=number,
-                                                   addon-before / addon-after,
-                                                   rendered only under Redundant
-
-   Redundant tolerates 1 failure — Strict would tolerate 0.        the consequence readout
+┌────────────────────────────────────────────────────────────────────┐
+│ ○  Strict                                     tolerates 0 failures │
+└────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────┐
+│ ●  Redundant                                   tolerates 1 failure │
+│    Members back each other up. Only a drop below your threshold    │
+│    degrades the SLO.                                               │
+│    [ at least │ 2 │ of 3 must stay up ]                            │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
-- **The consequence names both modes, always.** Option G was chosen because you can see what the
-  mode you did *not* pick would cost you. That survives here; what is lost is its position — the
-  cost no longer sits right-aligned on the row it belongs to. This is the design debt of the port
-  and it is the ask in **G45**.
-- `obs-tooltip` carries the full sentence, as the row's hover did.
-- **`N` runs `1..M-1`.** `N = M` remains unrepresentable — phase 1 **D9** holds unchanged, enforced
-  in `evaluation.js`, not in the input.
-- **No shield.** The icon library has no `shield`, `security` or `protect` glyph. The readout is
-  text; tone comes from a token, not a glyph. **G46.**
+What that means in practice:
 
-**Rejected: building the rows in app markup.** It would be fully faithful, and it would break this
-project's standing rule — *no hardcoded colours, no invented components* — which is the rule the
-app exists to test the DS against. A reference app that reimplements the component it is missing
-reports nothing. Building the closest honest composition and filing the gap reports everything.
+- **The row is app markup, and its semantics are ours to provide.** `role="radiogroup"` /
+  `role="radio"`, `aria-checked`, and Enter/Space activation — everything `obs-radio` would have
+  given us for free. It is tested because it is no longer someone else's guarantee.
+- **Anything inside the row that the DS already has, comes from the DS.** `obs-input
+  type="number"` with `addon-before` / `addon-after` for the quorum — which renders the
+  `at least │ 2 │ of 3 must stay up` group almost exactly as drawn — and `obs-tooltip` for the
+  full sentence.
+- **Colour stays tokens only.** The *no hardcoded colours* rule is not relaxed. Only *no invented
+  components* is, deliberately, in this one place, and it is recorded here rather than assumed.
+- **The consequence sits on both rows**, as phase 1 requires: the mode you are not on still states
+  what it would cost, and `Redundant` advertises its ceiling from inside `Strict`.
+- **`N` runs `1..M-1`.** `N = M` remains unrepresentable — phase 1 **D9**, enforced in
+  `evaluation.js`, not in the input.
+- **No shield glyph exists** (**G46**), so the consequence carries its tone through a token rather
+  than an icon.
+
+**Why this rather than composing around `obs-radio`.** A reference app that quietly downgrades a
+design to fit the DS reports nothing except its own compromise. Building the control as designed
+leaves **G45 holding a working proposal instead of a description** — the DS team gets markup,
+behaviour and tests to lift, not a paragraph about what was wanted. That is the stronger version
+of the gap, and this project exists as much for the gap report as for the screens.
+
+**The cost, named.** Conformance counts only light-DOM DS elements, so this screen will score
+lower than a component-heavy one (**PQ1**); the radio semantics and their accessibility are ours
+to keep correct; and **when the DS ships the component this is the first thing to delete** — the
+precedent is the four shadow-DOM patches already retired that way.
 
 **Rejected: the segmented control.** `obs-radio as-button block` is natively supported and is the
 Card layout retired on 2026-09-07 for the reason that produced Option G.
@@ -139,7 +153,7 @@ Card layout retired on 2026-09-07 for the reason that produced Option G.
 | Business Service affordance | `obs-icon name="businessService"` — it is a briefcase | **rendered** |
 | Search | `obs-input prefix-icon="search"` | manifest |
 | Quorum stepper | `obs-input type="number" addon-before addon-after` | **rendered** |
-| Strict / Redundant | `obs-radio vertical` | **rendered** |
+| Strict / Redundant | app markup — `role="radio"` rows (§5). `obs-radio` was rendered and rejected: no per-option content | **rendered** |
 | Profile table | `obs-table` | manifest |
 | Business Service picker | `obs-select searchable can-user-add-options add-label` | manifest |
 | Settings tree | `obs-side-menu` | manifest |
@@ -196,8 +210,8 @@ both invisible to it.
 | P1 | **Artboards 1, 2 and 6 only.** | Porting all six. 3–5 are the visualisation story and are settled as wireframe; a prototype adds nothing to a design already verified. |
 | P2 | **A new `slo` module for the list; `SLO Profile` under Settings.** | One module holding all three — it would put a monitoring view inside Settings, which is neither where the product puts it nor where artboard 6 does. |
 | P3 | **SLO tiles do not navigate.** | A stub detail screen, or a cut-down artboard 3. A dead route explains nothing; a half-built detail screen is scope that was explicitly declined. |
-| P4 | **`obs-radio` decides; the app composes the explanation beneath it.** | Hand-building the rows (breaks *no invented components*, and a reference app that reimplements a missing component reports nothing); the segmented control (reverses a decision taken on the merits). |
-| P5 | **The consequence readout names both modes at once.** | Naming only the selected mode. The standing comparison is the reason Option G was chosen over a toggle; position can be sacrificed, the comparison cannot. |
+| P4 | **Option G is built as designed, at the app level; the DS absorbs it afterwards.** *(2026-09-08)* | Composing around `obs-radio` — it downgrades the design to fit the tool and reports only the compromise. The segmented control — reverses a decision taken on the merits. *No invented components* is suspended here knowingly, and only here. |
+| P5 | **The consequence sits on both rows**, the unselected one included. | Naming only the selected mode. The standing comparison — seeing what the mode you did not pick would cost — is the reason Option G was chosen over a toggle. |
 | P6 | **The Evaluation Logic table cell is plain text.** | An icon or a severity chip in the cell — **G1**: `obs-table` cannot host one. |
 | P7 | **Tiles are app markup on tokens.** | Waiting for a DS card. There is none among the 47 elements, and `src/app/cardList.js` already sets the precedent. |
 
@@ -205,7 +219,7 @@ both invisible to it.
 
 | | Class | Finding |
 |---|---|---|
-| **G45** | DS — capability | **`obs-radio` cannot carry per-option content.** No `<slot>` in its shadow root; a light-DOM child is present and unpainted. A radio whose options each carry a consequence, an expandable body and an embedded control cannot be built. Workaround: the composition in §5. Ask: a per-option slot, or an option `description` / `suffix`. |
+| **G45** | DS — capability | **`obs-radio` cannot carry per-option content.** No `<slot>` in its shadow root; a light-DOM child is present and unpainted. A radio whose options each carry a consequence, an expandable body and an embedded control cannot be built. **This build ships that control as app markup, so the gap comes with a working reference implementation** — markup, behaviour and tests — rather than a description. Ask: a per-option slot, or an option `description` / `suffix`. |
 | **G46** | DS — capability | **No shield or protection glyph.** `shield`, `shieldAlt`, `security`, `protect` do not paint; `businessService`, `service`, `link`, `search`, `plus`, `minus`, `check` do. Same shape as **G3**'s open-lock finding. |
 | **G47** | DS — capability | **No card component.** 47 elements, none of them a card, so any tile-based screen hand-rolls its grid. |
 | — | — | **OQ5 is partly answered, in the DS's favour:** `obs-table` does have `group-by` and `group-collapsible`, along with `sticky-header`, `max-height`, `sort` and `sortable`. Phase 1 §8 guessed it had no collapsible group rows. Record the correction rather than the guess. |
@@ -248,9 +262,10 @@ Each verified by rendering, in real Chrome.
 3. `#/settings/slo-profile` renders the shipped column set plus `EVALUATION LOGIC` beside
    `FREQUENCY`, with `—` on a Performance SLO.
 4. Its `Create SLO Profile` opens artboard 2 without changing route.
-5. Evaluation Logic offers exactly two modes; choosing `Redundant` reveals the quorum control;
-   `N = M` cannot be reached.
-6. The consequence readout names the cost of **both** modes at once.
+5. Evaluation Logic renders as two rows: the selected one expands to its rule and, under
+   `Redundant`, its quorum control; `N = M` cannot be reached.
+6. **Both** rows state what they tolerate — the unselected one included — and the rows are
+   operable by keyboard alone.
 7. Business Service Name is a searchable picker that can add a value inline — not a text field.
 8. No hardcoded colour anywhere in the new CSS.
 9. Every gap in §10 is either filed with rendered evidence or withdrawn with the evidence that
