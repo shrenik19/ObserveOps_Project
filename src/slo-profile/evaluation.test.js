@@ -72,4 +72,28 @@ describe('evaluation', () => {
     expect(e.rule('redundant')).toBe(
       'Members back each other up. Only a drop below your threshold degrades the SLO.')
   })
+
+  it('refuses a member count that has no legal quorum', () => {
+    expect(() => createEvaluation({ members: 1 })).toThrow(RangeError)
+    expect(() => createEvaluation({ members: 0 })).toThrow(RangeError)
+    expect(() => createEvaluation({ members: undefined })).toThrow(RangeError)
+  })
+
+  it('holds the invariant at the smallest legal estate', () => {
+    const e = createEvaluation({ members: 2 })
+    expect(e.maxQuorum()).toBe(1)
+    expect(e.quorum).toBe(1)          // the default of 2 is clamped down
+    e.bump(1)
+    expect(e.quorum).toBe(1)          // and cannot reach M
+    expect(e.meta('redundant')).toBe('tolerates 1 failure')
+  })
+
+  it('never lets the quorum equal the member count', () => {
+    for (const members of [2, 3, 4, 9]) {
+      const e = createEvaluation({ members })
+      e.bump(100)
+      expect(e.quorum).toBeLessThan(members)
+      expect(e.quorum).toBeGreaterThanOrEqual(1)
+    }
+  })
 })

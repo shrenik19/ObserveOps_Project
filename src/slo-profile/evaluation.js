@@ -3,10 +3,20 @@
 //
 // The quorum runs 1..M-1. Asking for all M of them is what Strict is for, and the row above says
 // so — which is why there is no invalid state here to warn about. See phase 1 D9.
+//
+// Redundancy needs at least two members: one monitor cannot back itself up, and at M = 1 the
+// quorum range 1..M-1 is empty. Callers must offer Strict instead. This factory throws RangeError
+// if members < 2.
 
 const fails = (k) => `${k} ${k === 1 ? 'failure' : 'failures'}`
 
 export function createEvaluation({ members, mode = 'redundant', quorum = 2 }) {
+  // Redundancy needs at least two members: one monitor cannot back itself up, and at M = 1
+  // the quorum range 1..M-1 is empty. Callers must offer Strict instead.
+  if (!(members >= 2)) {
+    throw new RangeError(`createEvaluation needs at least 2 members, got ${members}`)
+  }
+
   const api = {
     mode,
     quorum,
