@@ -53,7 +53,7 @@ describe('the two views', () => {
 
   it('comes back to the table', () => {
     root.querySelector('#slo-profile-create').click()
-    root.querySelector('#slo-form-reset').click()
+    root.querySelector('#slo-form-create').click()
     expect(root.querySelector('#slo-profile-list').hidden).toBe(false)
     expect(root.querySelector('#slo-profile-form').innerHTML).toBe('')
   })

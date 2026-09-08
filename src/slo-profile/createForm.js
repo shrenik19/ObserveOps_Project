@@ -42,7 +42,7 @@ export function renderCreateForm(host, { onCancel }) {
   // Source says "3 monitors selected", so M is 3 and `of M` is derived, never typed.
   const { evaluation } = renderEvaluationLogic(host.querySelector('#slo-evaluation'), { members: 3 })
 
-  host.querySelector('#slo-form-reset').addEventListener('click', onCancel)
+  host.querySelector('#slo-form-reset').addEventListener('click', () => renderCreateForm(host, { onCancel }))
   host.querySelector('#slo-form-create').addEventListener('click', onCancel)
 
   return { evaluation }

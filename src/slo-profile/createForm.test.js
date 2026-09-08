@@ -36,4 +36,15 @@ describe('create slo profile form', () => {
     expect(host.querySelector('#slo-form-create').textContent).toContain('Create SLO Profile')
     expect(host.querySelector('#slo-form-reset')).not.toBeNull()
   })
+
+  it('Reset restores the form without leaving it', () => {
+    const input = host.querySelector('#ev-quorum')
+    input.value = '1'
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+    expect(host.querySelector('#ev-quorum').getAttribute('value')).toBe('1')
+
+    host.querySelector('#slo-form-reset').click()
+    expect(host.querySelector('#ev-quorum').getAttribute('value')).toBe('2')
+    expect(host.querySelector('.ev-row')).not.toBeNull()   // still on the form
+  })
 })
