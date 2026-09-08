@@ -83,4 +83,29 @@ describe('the evaluation logic control', () => {
     expect(host.textContent).not.toMatch(/same as Strict/i)
     expect(host.textContent).not.toMatch(/3 of 3/)
   })
+
+  it('does not re-pick the row when the quorum input is clicked', () => {
+    const input = host.querySelector('#ev-quorum')
+    input.value = '1'
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+    expect(host.querySelector('#ev-quorum').getAttribute('value')).toBe('1')
+
+    // Clicking into the field must not re-render the row out from under the user.
+    input.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(selected().dataset.mode).toBe('redundant')
+    expect(host.querySelector('#ev-quorum').getAttribute('value')).toBe('1')
+  })
+
+  // The guard above is untestable by clicking the input while Redundant (its own row) is already
+  // selected — re-picking an already-active row is a no-op either way, so that scenario alone
+  // cannot distinguish the guard's presence. Selecting Strict first makes the effect observable:
+  // without the guard, clicking the quorum input (still live inside the Redundant row's markup)
+  // bubbles into that row's own listener and silently switches back to Redundant.
+  it('does not switch back to Redundant when its input is clicked while Strict is selected', () => {
+    host.querySelector('[data-mode="strict"]').click()
+    expect(selected().dataset.mode).toBe('strict')
+    const input = host.querySelector('#ev-quorum')
+    input.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(selected().dataset.mode).toBe('strict')
+  })
 })

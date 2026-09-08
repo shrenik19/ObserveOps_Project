@@ -24,7 +24,12 @@ export function createEvaluation({ members, mode = 'redundant', quorum = 2 }) {
 
     setMode(next) { api.mode = next },
 
-    setQuorum(n) { api.quorum = Math.max(1, Math.min(api.maxQuorum(), n)) },
+    setQuorum(n) {
+      // A non-finite n (NaN from a cleared or non-numeric field) would propagate through both
+      // Math.min and Math.max and surface as "tolerates NaN failures". Keep the last good value.
+      if (!Number.isFinite(n)) return
+      api.quorum = Math.max(1, Math.min(api.maxQuorum(), n))
+    },
 
     bump(delta) { api.setQuorum(api.quorum + delta) },
 

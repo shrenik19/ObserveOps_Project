@@ -96,4 +96,13 @@ describe('evaluation', () => {
       expect(e.quorum).toBeGreaterThanOrEqual(1)
     }
   })
+
+  it('ignores a quorum that is not a finite number', () => {
+    const e = createEvaluation({ members: 3 })
+    e.setQuorum(NaN)
+    expect(e.quorum).toBe(2)
+    e.setQuorum(Infinity)
+    expect(e.quorum).toBe(2)
+    expect(e.meta('redundant')).toBe('tolerates 1 failure')
+  })
 })
