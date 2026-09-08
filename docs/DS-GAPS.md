@@ -43,7 +43,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G38** no determinate progress-bar element | 🆕 **OPEN** | `elements-api.json` — 0 of 47 element tags match `/progress/i`. WAN Link Discovery's run screen hand-rolls a track+fill `<div>` from `--progress-bg` / `--primary-color`, both confirmed emitted |
 | **G39** `obs-table` cannot combine a badge with editable text in one cell | 🆕 **OPEN** | The provision grid's NAME cell needs an N/P/U status badge next to an inline-editable, pencil-driven name. `editable: true` (real, documented) gets the pencil; no column `type` composes a tag with it, and `slots` is `[]`. **Third instance of G1/G23** |
 | **G45** `obs-radio` cannot carry per-option content | 🆕 **OPEN** | Shadow root has 0 `<slot>` elements; a light-DOM child renders present-in-DOM but 0×0. Shipped as app markup instead — `src/slo-profile/evaluationLogic.js` — the one deliberately invented component in this build |
-| **G46** no shield / protection glyph | 🆕 **OPEN** | `shield`, `shieldAlt`, `security`, `protect` do not paint; `businessService`, `link`, `search`, `plus`, `minus`, `check` do. Same shape as **G3** |
+| **G46** a shield glyph exists — filed as capability, corrected to discoverability | 🔧 **CORRECTED** | Original probe tried only 4 names and never the real one; `shield-check`, `secure`, `protected-resource` all paint (635-entry icon registry). Same problem as **G14** |
 | **G47** no card / tile component | 🆕 **OPEN** | 0 of 47 elements match `card\|tile`. `src/slo-list/sloList.css` hand-rolls its tile grid, following the precedent `src/app/cardList.js` already set. **Second instance of G31** |
 | **G48** `obs-button` has no pressed/toggled state | 🆕 **OPEN** | Its 9 attributes are exactly `variant, size, disabled, loading, outline, square, block, shape, squared` — nothing for "currently engaged". The SLO list view toggle co-opts `variant` (`primary` = engaged) instead |
 | **G49** `obs-select`/`obs-tags` have no `label`; `obs-input` does | 🆕 **OPEN** | Shipped a real bug: 4 fields rendered with no visible label, past a 661-test suite and a 19-check probe, because the test asserted the ignored attribute was present. External `<label for>` doesn't associate with a custom element either. Second time this exact gap has bitten this project |
@@ -864,14 +864,22 @@ bundle:
 | `obs-drawer` | `actions` (pinned footer) | Footer buttons were put in the body and floated mid-panel |
 | `obs-sidebar` | `logo`, `default`, `tabs-action`, `search-action` | Rail rendered the "?" placeholder |
 | `obs-app-header` | `brand`, `user`, `title`, `breadcrumb`, `back`, `before` | No brand mark or wordmark |
-| `obs-tooltip` | `trigger`, and a default slot | **Confirmed in Task 10** — probed live, in real Chrome, with the DS bundle + CSS loaded: `shadowRoot.querySelectorAll('slot')` returns two, `trigger` and an unnamed default. Content assigned via `textContent` renders in the default slot's assigned text; `elements-api.json` lists neither |
+| `obs-tooltip` | ~~undocumented~~ **documented**: `trigger`, `default` | **RETRACTED (Task 10 correction) — see below.** The row below explains; kept here rather than deleted |
 
-**Fourth instance, found while verifying a different component (Task 7/10).** `obs-tooltip` was
-never a defect here — the sentence it carries was passed to `.textContent`, which happens to work —
-but the same manifest gap that hid three defects above also hides that `obs-tooltip` has slots at
-all. A consumer trying to compose a richer tooltip body (an icon plus text, say) would have no way to
-discover the `trigger` slot from the published API and would reach for `textContent` by trial, which
-is exactly what happened here.
+> **Addendum withdrawn (Task 10 correction).** This row and the paragraph that followed it
+> originally claimed `obs-tooltip` was a fourth instance of G10 — that `elements-api.json` documents
+> no slots for it. **That is false.** The manifest's own `obs-tooltip` entry carries
+> `"slots": ["trigger","default"]`, and slots are documented for **16** components in total:
+> `obs-button`, `obs-tag`, `obs-checkbox`, `obs-link`, `obs-severity`, `obs-tooltip`, `obs-drawer`,
+> `obs-modal`, `obs-page-header`, `obs-app-header`, `obs-toolbar`, `obs-divider`, `obs-banner`,
+> `obs-sidebar`, `obs-side-menu`, `obs-noc-player`. The original claim over-generalised from
+> `obs-radio`'s real `"slots": []` (see **G45**, unaffected by this correction) to "the manifest
+> documents no slots at all," which does not hold.
+>
+> The rendered finding — `obs-tooltip`'s shadow root really does have a `trigger` slot and a default
+> slot, confirmed live — is **not** in question; only the claim that the manifest fails to document
+> them is retracted. Kept here rather than deleted, for the same reason G21, G40 and the OQ5
+> correction are: a wrong claim left standing costs more than one marked corrected.
 
 The same file also omits **enum values for string props**. `obs-drawer`'s `footer` preset is
 documented only as a source comment:
@@ -1849,29 +1857,50 @@ option shape carrying `description`/`suffix` fields the component renders beneat
 
 ---
 
-### New finding — G46: no shield or protection glyph
+### G46 — CORRECTED: a shield glyph exists; filed as capability, should have been discoverability
 
-**Class: DS — capability.** Same shape as **G3** (no open-lock glyph).
+**This entry was wrong as filed. Corrected in place, with the disproving evidence, rather than
+silently rewritten — the same convention as G21, G40 and the OQ5 correction below.**
 
-Rendered live, checking each candidate's shadow root for a real `<svg>`:
+**Original claim (as filed):** *"No shield or protection glyph. `shield`, `shieldAlt`, `security`,
+`protect` do not paint; `businessService`, `service`, `link`, `search`, `plus`, `minus`, `check` do.
+... Class: DS — capability."* That probe tried exactly four guessed names and stopped — it never
+tried the icon registry's real one.
+
+**What is actually true.**
+`node_modules/@mtdt/observeops-ds-spec/components/registry/icon.json` carries its own name index —
+`names.list`, **635** entries — including `shield-check`, `secure` and `protected-resource`.
+Rendered live, with the DS bundle and CSS loaded, all three paint:
 
 ```json
-{ "shield": false, "shieldAlt": false, "security": false, "protect": false,
-  "businessService": true, "service": true, "link": true, "search": true,
-  "plus": true, "minus": true, "check": true }
+{ "shield": false, "shield-check": true, "shieldCheck": true, "secure": true,
+  "protected-resource": true, "protectedResource": true, "shieldAlt": false,
+  "security": false, "protect": false }
 ```
 
-None of the four plausible names for a protection/consequence glyph exist. The six control names
-probed alongside them all painted, which rules out a probe-method error and confirms the negative
-result — the same "fails silently, not with an error" behaviour G24 already documented for icons.
+The capability exists. Only the four names originally guessed were wrong, and `obs-icon` fails
+**silently** on an unresolved name (an empty shadow root, not a warning), so the wrong guess read as
+a confirmed absence rather than a probe that stopped too early.
 
-**Consumer workaround:** the Evaluation Logic control's consequence readout (`.ev-row__meta`,
-`.ev-row__rule` in `src/slo-profile/evaluationLogic.js`) carries its tone through a colour token
-(`--secondary-red` for the failure count, `--page-text-color` otherwise) instead of an icon — no
-glyph was reached for at all, rather than shipping a wrong one.
+**Class: DS — discoverability** (reclassified; was filed as capability). This is the same shape as
+**G14** ("no inventory of logo names") and **G24** ("no icon inventory, and the registry is not
+one") — an icon exists, cannot be found from the published API, and a consumer who guesses the
+obvious short name concludes it doesn't exist. That is exactly the wrong conclusion this entry
+itself drew on first filing, and it is the reason the shipped app went out with no shield at all
+(see the corrected build below).
 
-**Ask:** a shield/protection glyph, named `shield` or `security` to match the vocabulary a consumer
-would try first — both names currently render nothing.
+**Consumer workaround, now retired.** The Evaluation Logic control originally shipped its
+consequence readout (`.ev-row__meta` in `src/slo-profile/evaluationLogic.js`) with no icon at all,
+carrying tone through colour tokens alone, because this mistaken finding said no shield existed.
+Once the real name was found, the control was updated to render `obs-icon name="shield-check"`
+beside each row's tolerance text — coloured by token, not hardcoded: `--input-placeholder-color`
+(neutral) for Strict, `--severity-up` (positive) for Redundant, since Strict is a legitimate choice
+and must not read as a warning state.
+
+**Ask (sharpened):** an icon inventory — the same ask as G14 and G24, now confirmed to cost real
+design fidelity, not just lookup time — or name aliasing so a guessable short form like `shield`
+resolves to its real entry, or a console warning when `obs-icon` receives a name that resolves to
+nothing instead of failing silently.
 
 ---
 

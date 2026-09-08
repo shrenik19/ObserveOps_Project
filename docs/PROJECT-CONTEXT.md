@@ -347,32 +347,39 @@ implementation rather than only a description, on the theory that a control the 
 adapt is worth more than a paragraph about one they can't.
 
 Everything *inside* that control stays DS: the quorum field is `obs-input type="number"` with
-documented `addon-before`/`addon-after`, and the full explanatory sentence renders into an
-`obs-tooltip` via `textContent` (see the G10 addendum in `DS-GAPS.md` — `obs-tooltip` has two real
-slots, `trigger` and a default, that the manifest does not document at all).
+documented `addon-before`/`addon-after`, the full explanatory sentence renders into an `obs-tooltip`
+via `textContent`, and each row's consequence carries an `obs-icon name="shield-check"`, coloured by
+token — neutral for Strict, positive for Redundant.
 
 ### What building it cost the DS report
 
-Five new gap entries, **G45–G49** — `obs-radio` cannot carry per-option content (G45, above); no
-shield/protection glyph (G46); no card/tile component, the second time this app has hit that wall
-(G47, after G31); `obs-button` has no pressed/toggled state, so the SLO list's flat/grouped view
-toggle co-opts `variant` instead (G48); and `obs-select`/`obs-tags` have no `label` attribute while
-`obs-input` does (G49) — which shipped a real bug: four Create-form fields rendered with **no visible
-label at all**, past a 661-test suite and a 19-check render probe, caught only by reading a
-screenshot. `src/wan-link-discovery/createForm.js:28` had already recorded the same gap once before
-this build repeated it.
+Five new gap entries, **G45–G49** — `obs-radio` cannot carry per-option content (G45, above); a
+shield glyph exists but was undiscoverable under the names tried, corrected from a capability gap to
+a discoverability one after an incomplete first probe (G46); no card/tile component, the second time
+this app has hit that wall (G47, after G31); `obs-button` has no pressed/toggled state, so the SLO
+list's flat/grouped view toggle co-opts `variant` instead (G48); and `obs-select`/`obs-tags` have no
+`label` attribute while `obs-input` does (G49) — which shipped a real bug: four Create-form fields
+rendered with **no visible label at all**, past a 661-test suite and a 19-check render probe, caught
+only by reading a screenshot. `src/wan-link-discovery/createForm.js` line 28 had already recorded the
+same gap once before this build repeated it.
 
-Two corrections to the record, not new gaps: **OQ5** in the companion spec guessed `obs-table` had no
-collapsible group-header rows — it does (`group-by`, `group-collapsible`, plus `sticky-header`,
-`max-height`, `sort` and `sortable`); and `obs-tooltip` was confirmed to carry two real slots the
-manifest omits, more evidence for the standing **G10** finding.
+Three corrections to the record, not additional gaps: **OQ5** in the companion spec guessed
+`obs-table` had no collapsible group-header rows — it does (`group-by`, `group-collapsible`, plus
+`sticky-header`, `max-height`, `sort` and `sortable`); **G46** itself was first filed as "no shield
+glyph exists" from a probe of only four names, corrected once the real name (`shield-check`) was
+found (see `DS-GAPS.md`); and `DS-GAPS.md`'s own **G10** addendum, which claimed `elements-api.json`
+documents no slots for `obs-tooltip`, was wrong and is withdrawn — the manifest's `obs-tooltip` entry
+does carry `"slots": ["trigger","default"]`, and 16 components have documented slots in total. The
+rendered fact that `obs-tooltip` has those two slots stands; only the claim that the manifest hides
+them does not.
 
 ### Verified by rendering
 
 `scripts/probe-slo.mjs` drives both screens end to end in real Chrome — the flat and grouped SLO
 list, the profile table, and the Create form's Evaluation Logic control, including the *N = M is
-unreachable* clamp and that every field label actually paints (not merely that the attribute is
-present in markup, which is exactly what let G49 through once already).
+unreachable* clamp, that both rows' shield glyphs actually paint (not merely exist in the DOM — the
+same discipline that caught G49), and that every field label actually paints (not merely that the
+attribute is present in markup, which is exactly what let G49 through once already).
 
 **DS conformance:**
 

@@ -127,8 +127,12 @@ What that means in practice:
   what it would cost, and `Redundant` advertises its ceiling from inside `Strict`.
 - **`N` runs `1..M-1`.** `N = M` remains unrepresentable — phase 1 **D9**, enforced in
   `evaluation.js`, not in the input.
-- **No shield glyph exists** (**G46**), so the consequence carries its tone through a token rather
-  than an icon.
+- **A shield glyph does exist, under `shield-check`** (`secure` and `protected-resource` also
+  render) — corrected after an initial probe wrongly concluded no shield/security/protect glyph
+  exists (**G46**, filed as capability, corrected to discoverability in `docs/DS-GAPS.md`; the
+  original probe tried only `shield`, `shieldAlt`, `security` and `protect`, never the real name).
+  Each row carries `obs-icon name="shield-check"` beside its tolerance text, coloured by token:
+  neutral (`--input-placeholder-color`) for Strict, positive (`--severity-up`) for Redundant.
 
 **Why this rather than composing around `obs-radio`.** A reference app that quietly downgrades a
 design to fit the DS reports nothing except its own compromise. Building the control as designed
@@ -220,7 +224,7 @@ both invisible to it.
 | | Class | Finding |
 |---|---|---|
 | **G45** | DS — capability | **`obs-radio` cannot carry per-option content.** No `<slot>` in its shadow root; a light-DOM child is present and unpainted. A radio whose options each carry a consequence, an expandable body and an embedded control cannot be built. **This build ships that control as app markup, so the gap comes with a working reference implementation** — markup, behaviour and tests — rather than a description. Ask: a per-option slot, or an option `description` / `suffix`. |
-| **G46** | DS — capability | **No shield or protection glyph.** `shield`, `shieldAlt`, `security`, `protect` do not paint; `businessService`, `service`, `link`, `search`, `plus`, `minus`, `check` do. Same shape as **G3**'s open-lock finding. |
+| **G46** | ~~DS — capability~~ **DS — discoverability** (corrected) | **CORRECTED — a shield glyph exists.** The prediction below was wrong: it probed only `shield`, `shieldAlt`, `security`, `protect` and stopped. `shield-check`, `secure` and `protected-resource` all paint (635-entry icon registry, `components/registry/icon.json`). Reclassified from capability to discoverability — same shape as **G14**/**G24**, not **G3**. See `docs/DS-GAPS.md` for the full correction. <br><br>*Original prediction, kept for the record:* "No shield or protection glyph. `shield`, `shieldAlt`, `security`, `protect` do not paint; `businessService`, `service`, `link`, `search`, `plus`, `minus`, `check` do. Same shape as **G3**'s open-lock finding." |
 | **G47** | DS — capability | **No card component.** 47 elements, none of them a card, so any tile-based screen hand-rolls its grid. |
 | — | — | **OQ5 is partly answered, in the DS's favour:** `obs-table` does have `group-by` and `group-collapsible`, along with `sticky-header`, `max-height`, `sort` and `sortable`. Phase 1 §8 guessed it had no collapsible group rows. Record the correction rather than the guess. |
 
