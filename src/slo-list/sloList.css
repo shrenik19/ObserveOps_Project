@@ -1,0 +1,52 @@
+/* src/slo-list/sloList.css
+   Token-only. Resolve every value through the MCP `resolve_token` before adding it; there is not
+   one hex/rgb/hsl in this app's CSS and this file must not be the first. */
+
+#slo-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.slo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--common-padd-space);
+}
+
+.slo-tile {
+  background: var(--common-widget-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--btn-radius);
+  padding: var(--common-padd-space);
+  color: var(--page-text-color);
+}
+
+.slo-tile__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.slo-tile__name { font-weight: 600; }
+.slo-tile__head obs-severity { margin-left: auto; }
+
+.slo-tile__slots,
+.slo-tile__nums { display: flex; gap: 14px; }
+.slo-tile__slots { margin-bottom: 12px; }
+
+.slo-tile__slot,
+.slo-tile__num { flex: 1; min-width: 0; }
+
+.slo-tile__lb,
+.slo-tile__num span {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--input-placeholder-color);
+}
+
+.slo-tile__num b { display: block; font-size: 19px; font-weight: 600; }
+.slo-tile__eval { white-space: nowrap; }

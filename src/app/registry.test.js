@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { modules, findModule, findScreen, allScreens } from './registry.js'
 
 describe('registry data', () => {
-  it('lists the six product modules in sidebar order', () => {
+  it('lists the seven product modules in sidebar order', () => {
     expect(modules.map((m) => m.key)).toEqual([
-      'dashboard', 'monitors', 'alerts', 'topology', 'reports', 'settings',
+      'dashboard', 'monitors', 'slo', 'alerts', 'topology', 'reports', 'settings',
     ])
   })
 

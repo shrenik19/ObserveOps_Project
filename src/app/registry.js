@@ -22,6 +22,19 @@ export const modules = [
       },
     ],
   },
+  {
+    key: 'slo', label: 'SLO', icon: 'monitor',
+    screens: [
+      {
+        key: 'list',
+        label: 'SLO',
+        description:
+          'The SLO estate: Strict and Redundant SLOs side by side, and the same estate regrouped ' +
+          'under its Business Services with each service carrying the severest status of its SLOs.',
+        load: () => import('../slo-list/screen.js'),
+      },
+    ],
+  },
   { key: 'alerts', label: 'Alerts', icon: 'alert', screens: [] },
   { key: 'topology', label: 'Topology', icon: 'networkTopology', screens: [] },
   {
