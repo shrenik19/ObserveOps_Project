@@ -19,3 +19,52 @@
    reads the property and passes; Chrome shows both views stacked. See wanLinkDiscovery.css. */
 #slo-profile-list[hidden],
 #slo-profile-form[hidden] { display: none; }
+
+/* Option G. The one invented control in this app — see evaluationLogic.js for why, and G45 for
+   the ask that retires it. Colour is tokens only, as everywhere else. */
+
+.ev__label { font-weight: 600; margin-bottom: 2px; }
+.ev__req { color: var(--secondary-red); font-style: normal; }
+
+.ev__lead {
+  margin: 0 0 9px;
+  color: var(--input-placeholder-color);
+  line-height: 1.55;
+}
+
+.ev__rows { display: flex; flex-direction: column; gap: 6px; }
+
+.ev-row {
+  background: var(--common-main-bg);
+  border-radius: var(--btn-radius);
+  padding: 11px 14px;
+  cursor: pointer;
+  color: var(--page-text-color);
+}
+
+.ev-row.is-on { background: var(--default-tag-bg); padding: 13px 14px; cursor: default; }
+.ev-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.ev-row__top { display: flex; align-items: center; gap: 11px; }
+.ev-row__name { font-weight: 600; }
+.ev-row__meta { margin-left: auto; color: var(--input-placeholder-color); }
+
+.ev-row__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--common-widget-bg);
+  flex: none;
+}
+
+.ev-row.is-on .ev-row__dot {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 4px var(--common-widget-bg), inset 0 0 0 8px var(--primary);
+}
+
+/* See the note in wanLinkDiscovery.css: an author `display` rule beats the UA's `[hidden]`, so a
+   body toggled with `el.hidden` stays painted unless this override exists. */
+.ev-row__body[hidden] { display: none; }
+.ev-row__body { margin-top: 8px; padding-left: 27px; }
+.ev-row__rule { margin: 0 0 12px; color: var(--input-placeholder-color); line-height: 1.55; }
