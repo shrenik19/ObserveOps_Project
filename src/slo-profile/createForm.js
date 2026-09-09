@@ -12,7 +12,7 @@ const SERVICES = ['E-commerce Platform', 'Network Core', 'Branch Connectivity', 
 const label = (id, text, { required = false } = {}) =>
   `<label class="slo-field__label" for="${id}">${text}${required ? '<span class="slo-field__req">*</span>' : ''}</label>`
 
-export function renderCreateForm(host, { onCancel }) {
+export function renderCreateForm(host, { onCancel, onCreate = () => {} }) {
   host.innerHTML = `
     <div class="slo-form">
       <div class="slo-form__grid">
@@ -69,7 +69,7 @@ export function renderCreateForm(host, { onCancel }) {
         </div>
       </div>
       <footer class="slo-form__actions">
-        <span class="slo-form__note"><i class="ev__req">*</i> fields are mandatory</span>
+        <span class="slo-form__note"><i class="slo-field__req">*</i> fields are mandatory</span>
         <obs-button id="slo-form-reset" variant="default">Reset</obs-button>
         <obs-button id="slo-form-create" variant="primary">Create SLO Profile</obs-button>
       </footer>
@@ -81,8 +81,25 @@ export function renderCreateForm(host, { onCancel }) {
   // Source says "3 monitors selected", so M is 3 and `of M` is derived, never typed.
   const { evaluation } = renderEvaluationLogic(host.querySelector('#slo-evaluation'), { members: 3 })
 
-  host.querySelector('#slo-form-reset').addEventListener('click', () => renderCreateForm(host, { onCancel }))
-  host.querySelector('#slo-form-create').addEventListener('click', onCancel)
+  // obs-input/obs-select are not upgraded custom elements under jsdom (no real `.value`
+  // accessor), and the app reads other DS field values the same way — see
+  // src/wan-link-discovery/createForm.js's `text()` helper.
+  const fieldValue = (id) => host.querySelector(`#${id}`).getAttribute('value') ?? ''
+
+  // The current form values are what gets stored — spec §8 puts only EDITING out of scope; "The
+  // Create form creates."
+  const readDraft = () => ({
+    name: fieldValue('slo-name'),
+    service: fieldValue('slo-bs'),
+    frequency: fieldValue('slo-frequency'),
+    target: fieldValue('slo-target'),
+    warning: fieldValue('slo-warning'),
+    start: fieldValue('slo-start'),
+    evaluation: evaluation.mode === 'strict' ? 'Strict' : 'Redundancy',
+  })
+
+  host.querySelector('#slo-form-reset').addEventListener('click', () => renderCreateForm(host, { onCancel, onCreate }))
+  host.querySelector('#slo-form-create').addEventListener('click', () => onCreate(readDraft()))
 
   return { evaluation }
 }

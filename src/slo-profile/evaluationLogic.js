@@ -25,7 +25,7 @@ export function renderEvaluationLogic(host, { members }) {
       <p class="ev__lead" id="ev-lead"></p>
       <div class="ev__rows" role="radiogroup" aria-label="Evaluation Logic">
         ${MODES.map(({ mode, label }) => `
-          <div class="ev-row" data-mode="${mode}" role="radio" tabindex="0" aria-checked="false">
+          <div class="ev-row" data-mode="${mode}" role="radio" tabindex="-1" aria-checked="false">
             <div class="ev-row__top">
               <span class="ev-row__dot" aria-hidden="true"></span>
               <span class="ev-row__name">${label}</span>
@@ -55,6 +55,9 @@ export function renderEvaluationLogic(host, { members }) {
       const on = evaluation.mode === mode
       el.classList.toggle('is-on', on)
       el.setAttribute('aria-checked', String(on))
+      // Roving tabindex: only the selected radio is a tab stop, per the WAI-ARIA radio group
+      // pattern. Both rows used to carry tabindex="0" — two tab stops inside one group.
+      el.setAttribute('tabindex', on ? '0' : '-1')
       el.querySelector('.ev-row__body').hidden = !on
       el.querySelector('.ev-row__meta').textContent = evaluation.meta(mode)
       el.querySelector('.ev-row__rule').textContent = evaluation.rule(mode)
@@ -67,6 +70,16 @@ export function renderEvaluationLogic(host, { members }) {
 
   const pick = (mode) => { evaluation.setMode(mode); render() }
 
+  // Arrow key traversal, per the WAI-ARIA radio group pattern: Up/Left selects the previous radio,
+  // Down/Right the next, moving BOTH the selection and focus together (unlike a roving tabindex
+  // used only for a toolbar, a single-select radiogroup checks whatever it focuses).
+  const modeIndex = (mode) => MODES.findIndex((m) => m.mode === mode)
+  const moveTo = (delta, fromMode) => {
+    const next = MODES[(modeIndex(fromMode) + delta + MODES.length) % MODES.length].mode
+    pick(next)
+    row(next).focus()
+  }
+
   for (const { mode } of MODES) {
     row(mode).addEventListener('click', (e) => {
       // The quorum input lives inside the Redundant row; typing in it must not re-pick the row.
@@ -75,6 +88,8 @@ export function renderEvaluationLogic(host, { members }) {
     })
     row(mode).addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(mode) }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); moveTo(-1, mode) }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); moveTo(1, mode) }
     })
   }
 

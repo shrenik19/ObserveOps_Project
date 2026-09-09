@@ -6,10 +6,23 @@ describe('create slo profile form', () => {
   beforeEach(() => { host = document.createElement('div'); renderCreateForm(host, { onCancel() {} }) })
 
   it('labels every field with text a user can actually see', () => {
-    const labels = [...host.querySelectorAll('.slo-form__grid label')].map((l) => l.textContent.trim().replace(/\s*\*$/, ''))
+    const labelEls = [...host.querySelectorAll('.slo-form__grid label')]
+    const labels = labelEls.map((l) => l.textContent.trim().replace(/\s*\*$/, ''))
+    // Pinned at twelve, not merely "contains these ten": a check that only asserts membership
+    // stays green even if labels are missing entirely, which is exactly the bug this pins against.
+    expect(labelEls).toHaveLength(12)
     for (const field of ['SLO Name', 'SLO Description', 'Business Service Name', 'SLO For',
-      'Source Filter', 'Source', 'Frequency', 'Target', 'Warning', 'Start Date']) {
+      'Source Filter', 'Source', 'Frequency', 'Target', 'Warning', 'Start Date', 'Tags', 'Notify Team']) {
       expect(labels).toContain(field)
+    }
+  })
+
+  it('points every label at a control that actually exists', () => {
+    const labelEls = [...host.querySelectorAll('.slo-form__grid label')]
+    for (const label of labelEls) {
+      const forId = label.getAttribute('for')
+      expect(forId).toBeTruthy()
+      expect(host.querySelector(`#${forId}`)).not.toBeNull()
     }
   })
 
@@ -46,5 +59,36 @@ describe('create slo profile form', () => {
     host.querySelector('#slo-form-reset').click()
     expect(host.querySelector('#ev-quorum').getAttribute('value')).toBe('2')
     expect(host.querySelector('.ev-row')).not.toBeNull()   // still on the form
+  })
+
+  // Spec §8: "The Create form creates." Clicking Create must hand the caller a draft carrying the
+  // form's own current values, not silently discard them (see slo-profile/screen.js's onCreate).
+  it('Create calls onCreate with the values the form holds', () => {
+    let draft = null
+    const h = document.createElement('div')
+    renderCreateForm(h, { onCancel() {}, onCreate: (d) => { draft = d } })
+
+    h.querySelector('#slo-form-create').click()
+
+    expect(draft).toEqual({
+      name: 'Checkout Availability',
+      service: 'E-commerce Platform',
+      frequency: 'Daily',
+      target: '99',
+      warning: '99.5',
+      start: '01-09-2026',
+      evaluation: 'Redundancy',
+    })
+  })
+
+  it('Create reports Strict when Strict is selected', () => {
+    let draft = null
+    const h = document.createElement('div')
+    renderCreateForm(h, { onCancel() {}, onCreate: (d) => { draft = d } })
+
+    h.querySelector('[data-mode="strict"]').click()
+    h.querySelector('#slo-form-create').click()
+
+    expect(draft.evaluation).toBe('Strict')
   })
 })

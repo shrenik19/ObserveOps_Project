@@ -57,4 +57,28 @@ describe('the two views', () => {
     expect(root.querySelector('#slo-profile-list').hidden).toBe(false)
     expect(root.querySelector('#slo-profile-form').innerHTML).toBe('')
   })
+
+  // Spec §8 puts only EDITING out of scope. "The Create form creates" — the table must show the
+  // row without navigating away from it, the way lama/screen.js and
+  // wan-link-discovery/profileStore.js already persist their own Create flows.
+  it('persists the created profile, so the table gains a row matching what the form held', () => {
+    const table = root.querySelector('#slo-profile-table')
+    const before = table.rows.length
+
+    root.querySelector('#slo-profile-create').click()
+    root.querySelector('#slo-form-create').click()
+
+    const rows = table.rows
+    expect(rows).toHaveLength(before + 1)
+    const created = rows[rows.length - 1]
+    expect(created).toMatchObject({
+      name: 'Checkout Availability',
+      service: 'E-commerce Platform',
+      frequency: 'Daily',
+      target: '99',
+      warning: '99.5',
+      start: '01-09-2026',
+      evaluation: 'Redundancy',
+    })
+  })
 })

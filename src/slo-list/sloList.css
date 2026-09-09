@@ -49,7 +49,16 @@
 }
 
 .slo-tile__num b { display: block; font-size: 19px; font-weight: 600; }
-.slo-tile__eval { white-space: nowrap; }
+
+/* Sits in a `flex: 1; min-width: 0` column with no overflow handling of its own, so a long quorum
+   reading ("Redundant · 2 of 3") could paint past the tile's right border. Clip it and expose the
+   full text on `title` (see slo-list/screen.js) so nothing is lost. */
+.slo-tile__eval {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .slo-group + .slo-group { margin-top: 18px; }
 

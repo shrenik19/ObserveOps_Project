@@ -51,13 +51,23 @@ export function mount(root) {
   const showForm = () => {
     list.hidden = true
     form.hidden = false
-    renderCreateForm(form, { onCancel: showList })
+    renderCreateForm(form, {
+      onCancel: showList,
+      // The Create form creates (spec §8): persist the draft, refresh the table from the store so
+      // the new row is there, then return — the same pattern lama/screen.js and
+      // wan-link-discovery/profileStore.js already use for their own Create flows.
+      onCreate: (draft) => {
+        store.add(draft)
+        table.rows = store.rows()
+        showList()
+      },
+    })
   }
 
-  const onCreate = () => showForm()
-  root.querySelector('#slo-profile-create').addEventListener('click', onCreate)
+  const openCreateForm = () => showForm()
+  root.querySelector('#slo-profile-create').addEventListener('click', openCreateForm)
 
   return function unmount() {
-    root.querySelector('#slo-profile-create')?.removeEventListener('click', onCreate)
+    root.querySelector('#slo-profile-create')?.removeEventListener('click', openCreateForm)
   }
 }

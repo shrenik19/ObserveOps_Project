@@ -5,7 +5,13 @@ describe('the evaluation logic control', () => {
   let host
   const rows = () => [...host.querySelectorAll('.ev-row')]
   const selected = () => host.querySelector('.ev-row.is-on')
-  beforeEach(() => { host = document.createElement('div'); renderEvaluationLogic(host, { members: 3 }) })
+  // Appended to the document so `.focus()` actually moves `document.activeElement` — needed by
+  // the roving-tabindex and arrow-key tests below.
+  beforeEach(() => {
+    host = document.createElement('div')
+    document.body.append(host)
+    renderEvaluationLogic(host, { members: 3 })
+  })
 
   it('offers exactly two modes, as a radio group', () => {
     expect(host.querySelector('[role="radiogroup"]')).not.toBeNull()
@@ -80,11 +86,47 @@ describe('the evaluation logic control', () => {
   // obs-radio would have given us this for free; it is ours to keep correct now.
   it('is operable by keyboard alone', () => {
     const strict = host.querySelector('[data-mode="strict"]')
-    expect(strict.getAttribute('tabindex')).toBe('0')
     strict.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     expect(selected().dataset.mode).toBe('strict')
     const redundant = host.querySelector('[data-mode="redundant"]')
     redundant.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }))
+    expect(selected().dataset.mode).toBe('redundant')
+  })
+
+  // Both rows used to carry tabindex="0" — two tab stops inside one radiogroup, with no way to
+  // reach the unselected row's own tab stop by design. Only the selected radio should be one.
+  it('gives only the selected row a tab stop (roving tabindex)', () => {
+    expect(host.querySelector('[data-mode="redundant"]').getAttribute('tabindex')).toBe('0')
+    expect(host.querySelector('[data-mode="strict"]').getAttribute('tabindex')).toBe('-1')
+
+    host.querySelector('[data-mode="strict"]').click()
+
+    expect(host.querySelector('[data-mode="strict"]').getAttribute('tabindex')).toBe('0')
+    expect(host.querySelector('[data-mode="redundant"]').getAttribute('tabindex')).toBe('-1')
+  })
+
+  // WAI-ARIA radio group pattern: arrow keys move both the selection and focus together.
+  it('moves selection and focus with the arrow keys', () => {
+    const redundant = host.querySelector('[data-mode="redundant"]')
+    const strict = host.querySelector('[data-mode="strict"]')
+    redundant.focus()
+
+    redundant.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+    expect(selected().dataset.mode).toBe('strict')
+    expect(document.activeElement).toBe(strict)
+
+    strict.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    expect(selected().dataset.mode).toBe('redundant')
+    expect(document.activeElement).toBe(redundant)
+  })
+
+  it('treats Left/Right the same as Up/Down', () => {
+    const redundant = host.querySelector('[data-mode="redundant"]')
+    redundant.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
+    expect(selected().dataset.mode).toBe('strict')
+
+    host.querySelector('[data-mode="strict"]')
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
     expect(selected().dataset.mode).toBe('redundant')
   })
 

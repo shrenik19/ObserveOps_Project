@@ -23,7 +23,7 @@ export const modules = [
     ],
   },
   {
-    key: 'slo', label: 'SLO', icon: 'monitor',
+    key: 'slo', label: 'SLO', icon: 'slo',
     screens: [
       {
         key: 'list',

@@ -105,4 +105,30 @@ describe('evaluation', () => {
     expect(e.quorum).toBe(2)
     expect(e.meta('redundant')).toBe('tolerates 1 failure')
   })
+
+  // obs-input type="number" carries no `step`, so 1.5 reaches setQuorum unchanged. The docstring's
+  // `1..M-1` is a set of integers; 1.5 is not in it.
+  it('rounds a non-integer quorum to the nearest integer', () => {
+    const e = createEvaluation({ members: 5 })
+    e.setQuorum(1.5)
+    expect(e.quorum).toBe(2)
+    expect(Number.isInteger(e.quorum)).toBe(true)
+    e.setQuorum(2.7)
+    expect(e.quorum).toBe(3)
+  })
+
+  it('rounds a bump that would land off-integer', () => {
+    const e = createEvaluation({ members: 5 })
+    e.setQuorum(2)
+    e.bump(0.5)
+    expect(e.quorum).toBe(3)
+    expect(Number.isInteger(e.quorum)).toBe(true)
+  })
+
+  it('rounds before clamping, so a rounded-up value still cannot reach M', () => {
+    const e = createEvaluation({ members: 3 })
+    e.setQuorum(2.6)
+    expect(e.quorum).toBe(2)          // rounds to 3, then clamps to maxQuorum() = 2
+    expect(Number.isInteger(e.quorum)).toBe(true)
+  })
 })

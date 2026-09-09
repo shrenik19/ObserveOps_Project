@@ -43,6 +43,25 @@ describe('slo list screen', () => {
     expect(root.querySelector('.slo-tile a')).toBeNull()
     expect(root.querySelector('.slo-tile').getAttribute('href')).toBeNull()
   })
+
+  it('clips a long evaluation reading and keeps the full text on title', () => {
+    const evalEl = root.querySelector('.slo-tile__eval')
+    expect(evalEl.getAttribute('title')).toBe(evalEl.textContent.trim())
+  })
+
+  // Spec §3: the flat head is `SLO` plus the Breached / Warning / Ok / Total counters, derived
+  // from the store rather than hardcoded. obs-page-header's `meta` is JSON [{label,value,status}];
+  // rendered and confirmed live before committing to this shape (see screen.js).
+  it('heads the flat view with SLO and counters derived from the store', () => {
+    const header = root.querySelector('obs-page-header')
+    expect(header.getAttribute('heading')).toBe('SLO')
+    expect(JSON.parse(header.getAttribute('meta'))).toEqual([
+      { label: 'Breached', value: 2, status: 'critical' },
+      { label: 'Warning', value: 1, status: 'warning' },
+      { label: 'Ok', value: 2, status: 'up' },
+      { label: 'Total', value: 5 },
+    ])
+  })
 })
 
 describe('the business service view', () => {
@@ -95,5 +114,20 @@ describe('the business service view', () => {
     expect(root.querySelector('#slo-bs-toggle').getAttribute('variant')).toBe('primary')
     toggle()
     expect(root.querySelector('#slo-bs-toggle').getAttribute('variant')).toBe('default')
+  })
+
+  // Spec §3: the grouped head is `Business Services` plus `N services · M SLOs`.
+  it('heads the grouped view with Business Services and the services summary', () => {
+    toggle()
+    const header = root.querySelector('obs-page-header')
+    expect(header.getAttribute('heading')).toBe('Business Services')
+    expect(JSON.parse(header.getAttribute('meta'))).toEqual([{ value: '3 services · 5 SLOs' }])
+  })
+
+  it('restores the flat head on toggling back', () => {
+    toggle(); toggle()
+    const header = root.querySelector('obs-page-header')
+    expect(header.getAttribute('heading')).toBe('SLO')
+    expect(JSON.parse(header.getAttribute('meta')).find((m) => m.label === 'Total').value).toBe(5)
   })
 })

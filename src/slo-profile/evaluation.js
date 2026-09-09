@@ -28,7 +28,10 @@ export function createEvaluation({ members, mode = 'redundant', quorum = 2 }) {
       // A non-finite n (NaN from a cleared or non-numeric field) would propagate through both
       // Math.min and Math.max and surface as "tolerates NaN failures". Keep the last good value.
       if (!Number.isFinite(n)) return
-      api.quorum = Math.max(1, Math.min(api.maxQuorum(), n))
+      // The docstring's `1..M-1` is a set of integers. `obs-input type="number"` carries no `step`,
+      // so a value like 1.5 passes straight through the change handler; round it before clamping so
+      // it cannot surface as "tolerates 1.5 failures".
+      api.quorum = Math.max(1, Math.min(api.maxQuorum(), Math.round(n)))
     },
 
     bump(delta) { api.setQuorum(api.quorum + delta) },

@@ -3,13 +3,16 @@
 > **New here?** Read [`PROJECT-CONTEXT.md`](./PROJECT-CONTEXT.md) first — it explains what was built,
 > which DS components it uses, and how discovery was done. This file assumes that context.
 
-> **Two entries in this file are withdrawn** — **G21** (a spacing scale does exist, under
-> `--padding-*`) and **G40** (`obs-radio as-button` is the segmented control). Both are kept in
-> place, with the rendered evidence that disproved them, because how a false entry got here is
-> worth more to the reader than a tidy list. Everything else stands. **One correction to a companion
-> document** is recorded the same way, immediately after G40: OQ5 in
-> `docs/superpowers/specs/2026-09-01-redundancy-slo-design.md` guessed `obs-table` had no group-header
-> support; it does.
+> **Four entries in this file are corrections, not fresh findings.** **G21** is withdrawn (a
+> spacing scale does exist, under `--padding-*`). **G40** is withdrawn (`obs-radio as-button` is the
+> segmented control). **G46** is corrected in place (a shield glyph — `shield-check` — does exist;
+> reclassified from a DS capability gap to a discoverability one). The **G10 `obs-tooltip` slots
+> addendum** is retracted (the manifest does document `obs-tooltip`'s slots; only the claim that it
+> did not is wrong — G10 itself, for the other components it lists, stands). Each is kept in place,
+> with the rendered evidence that disproved it, because how a false entry got here is worth more to
+> the reader than a tidy list. **One correction to a companion document** is recorded the same way,
+> immediately after G40: OQ5 in `docs/superpowers/specs/2026-09-01-redundancy-slo-design.md`
+> guessed `obs-table` had no group-header support; it does.
 
 ## Status — re-verified against elements 0.1.159 / css 0.1.4 / spec 0.1.197
 
@@ -1916,8 +1919,8 @@ type/frequency/evaluation summary and a status pill — and it hand-rolls the gr
 G31's Overview screen did, for the same reason: there is nothing to reach for.
 
 - `src/slo-list/sloList.css` styles `.slo-tile` as a bordered, token-only surface (border, radius,
-  padding, hover — all through `var(--token)`), the same shape as `src/app/cardList.js`'s existing
-  `.card` rules.
+  padding — all through `var(--token)`; no `:hover` rule exists on it), the same shape as
+  `src/app/cardList.js`'s existing `.card` rules.
 - `src/app/cardList.js` is the precedent this screen followed rather than reinventing its own
   approach to a tile.
 

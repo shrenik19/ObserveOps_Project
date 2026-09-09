@@ -46,8 +46,32 @@ check('a tile has real size', await page.$eval('.slo-tile', (e) => e.getBounding
   check('the scenario SLO states a quorum', evals[0] === 'Redundant · 2 of 3', evals[0])
   check('no tile counts groups', !/group/i.test(evals.join(' ')), evals)
 }
+{
+  // The eval text used to paint past its tile's right border (unclipped, in a `flex: 1;
+  // min-width: 0` column with no overflow rule). Compare the eval span's own right edge to its
+  // tile's, not just its text content or the tile's height — neither of which would have caught
+  // text crossing the border while the tile itself measured a normal size.
+  const overflow = await page.$$eval('.slo-tile', (tiles) => tiles.map((tile) => {
+    const evalEl = tile.querySelector('.slo-tile__eval')
+    return evalEl.getBoundingClientRect().right - tile.getBoundingClientRect().right
+  }))
+  check('the eval text never crosses its tile\'s right border', overflow.every((d) => d <= 0.5), overflow)
+}
 check('status is a DS severity that painted',
   await page.$eval('.slo-tile obs-severity', (e) => e.getBoundingClientRect().width > 0))
+{
+  // Spec §3: the flat head is `SLO` plus the Breached/Warning/Ok/Total counters, derived from the
+  // store. Rendered through obs-page-header's `heading`/`meta` — confirmed live, not read off the
+  // manifest, per spec §6.
+  const head = await page.$eval('obs-page-header', (e) => ({
+    heading: e.shadowRoot.querySelector('.title')?.textContent.trim(),
+    metaText: e.shadowRoot.querySelector('.meta')?.textContent.replace(/\s+/g, ' ').trim(),
+    metaHeight: e.shadowRoot.querySelector('.meta')?.getBoundingClientRect().height ?? 0,
+  }))
+  check('the flat head reads SLO with the four counters painted',
+    head.heading === 'SLO' && head.metaHeight > 0 &&
+    ['Breached', 'Warning', 'Ok', 'Total'].every((w) => head.metaText.includes(w)), head)
+}
 await shot('slo-list')
 
 section('Artboard 1 — the Business Service view')
@@ -67,6 +91,15 @@ await page.waitForTimeout(400)
   check('a service takes the severest status of its SLOs',
     head === 'Breached' && tiles.filter((t) => t === 'Ok').length === 2, { head, tiles })
 }
+{
+  // Spec §3: the grouped head is `Business Services` plus `N services · M SLOs`.
+  const ph = await page.$eval('obs-page-header', (e) => ({
+    heading: e.shadowRoot.querySelector('.title')?.textContent.trim(),
+    metaText: e.shadowRoot.querySelector('.meta')?.textContent.replace(/\s+/g, ' ').trim(),
+  }))
+  check('the grouped head reads Business Services with the services summary',
+    ph.heading === 'Business Services' && ph.metaText === '3 services · 5 SLOs', ph)
+}
 await shot('slo-list-bs')
 
 section('Artboard 6 — the profile table')
@@ -77,7 +110,7 @@ check('the table painted', await page.$eval('#slo-profile-table', (e) => e.getBo
   check('Evaluation Logic reads only Strict, Redundancy or an em dash',
     cells.every((c) => ['Strict', 'Redundancy', '—'].includes(c)), cells)
 }
-await shot('slo-profile-table')
+const rowsBeforeCreate = await page.$eval('#slo-profile-table', (t) => t.rows.length)
 
 section('Artboard 2 — Create SLO Profile')
 await page.click('#slo-profile-create')
@@ -124,13 +157,36 @@ check('the business service picker is a select, not a text field',
   // that a `label` element or attribute exists in the DOM.
   const labelBoxes = await page.$$eval('.slo-form__grid label',
     (els) => els.map((e) => e.getBoundingClientRect().height))
-  check('every field label painted with real height',
-    labelBoxes.length > 0 && labelBoxes.every((h) => h > 0), labelBoxes)
+  // Pinned at 12, not merely "at least one": deleting eleven of the twelve labels left this check
+  // green when it only asserted `length > 0`.
+  check('all twelve field labels painted with real height',
+    labelBoxes.length === 12 && labelBoxes.every((h) => h > 0), labelBoxes)
   const labelTexts = await texts('.slo-form__grid label')
   check('Business Service Name has a visible label',
     labelTexts.some((t) => t.replace(/\s*\*$/, '') === 'Business Service Name'), labelTexts)
 }
 await shot('slo-create')
+
+// Create persists: spec §8 puts only editing out of scope, and the row must be visible in the
+// table without navigating away and back. Submit with the form's own default values, then confirm
+// the table gained exactly one row carrying them.
+await page.click('#slo-form-create')
+await page.waitForTimeout(400)
+check('creating returns to the table', await page.$eval('#slo-profile-list', (e) => !e.hidden))
+{
+  const rows = await page.$eval('#slo-profile-table', (t) => t.rows)
+  check('the table gained exactly one row', rows.length === rowsBeforeCreate + 1, rows.length)
+  const created = rows[rows.length - 1]
+  check('the new row carries the values the form held',
+    created.name === 'Checkout Availability' &&
+    created.service === 'E-commerce Platform' &&
+    created.frequency === 'Daily' &&
+    created.target === '99' &&
+    created.warning === '99.5' &&
+    created.start === '01-09-2026' &&
+    created.evaluation === 'Redundancy', created)
+}
+await shot('slo-profile-table')
 
 section('Deck')
 check('no console or page errors', errors.length === 0, errors.slice(0, 3))

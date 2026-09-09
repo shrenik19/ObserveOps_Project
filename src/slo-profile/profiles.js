@@ -17,8 +17,23 @@ const SEED = [
 
 export function createProfileStore(seed = SEED) {
   const profiles = seed.map((p) => ({ ...p }))
+
+  // Scoped to this store, not the module, the same way src/wan-link-discovery/profileStore.js
+  // scopes its ids: the screen recreates its store on remount, and a shared counter would carry
+  // ids across instances that are otherwise independent.
+  let seq = profiles.length
+  const nextId = () => `sp-${++seq}`
+
   return {
-    list: () => profiles.map((p) => ({ ...p })),
     rows: () => profiles.map((p) => ({ ...p })),
+
+    // The Create form creates (spec §8): a new profile is appended and returned so the table can
+    // show it without navigating away and back. `type` defaults to Availability — the Create form
+    // (artboard 2) collects no Availability/Performance distinction of its own.
+    add(draft) {
+      const profile = { id: nextId(), type: 'Availability', ...draft }
+      profiles.push(profile)
+      return { ...profile }
+    },
   }
 }
