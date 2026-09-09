@@ -348,8 +348,10 @@ adapt is worth more than a paragraph about one they can't.
 
 Everything *inside* that control stays DS: the quorum field is `obs-input type="number"` with
 documented `addon-before`/`addon-after`, the full explanatory sentence renders into an `obs-tooltip`
-via `textContent`, and each row's consequence carries an `obs-icon name="shield-check"`, coloured by
-token — neutral for Strict, positive for Redundant.
+via `textContent`. The consequence is text only: a `shield-check` glyph was carried there briefly
+and removed on 2026-09-09 at the designer's direction, with the selected row's tint changed from
+`--default-tag-bg` (a blue) to `--neutral-lighter`, so the control signals selection by surface
+rather than by colour.
 
 ### What building it cost the DS report
 

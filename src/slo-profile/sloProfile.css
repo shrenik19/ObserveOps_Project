@@ -42,19 +42,14 @@
   color: var(--page-text-color);
 }
 
-.ev-row.is-on { background: var(--default-tag-bg); padding: 13px 14px; cursor: default; }
+.ev-row.is-on { background: var(--neutral-lighter); padding: 13px 14px; cursor: default; }
 .ev-row:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .ev-row__top { display: flex; align-items: center; gap: 11px; }
 .ev-row__name { font-weight: 600; }
 
-/* The shield carries the auto margin, not the meta text after it, so the icon lands immediately
-   before the consequence it illustrates rather than opening a gap between them. Strict's shield
-   reads neutral (a legitimate choice, not a warning); Redundant's reads positive (its cover is
-   holding). Both from tokens — obs-icon inherits currentColor, no shadow-DOM piercing needed. */
-.ev-row__shield { margin-left: auto; flex: none; color: var(--input-placeholder-color); }
-.ev-row[data-mode="redundant"] .ev-row__shield { color: var(--severity-up); }
-.ev-row__meta { color: var(--input-placeholder-color); }
+/* The consequence carries the auto margin, so it sits hard right in the row. */
+.ev-row__meta { margin-left: auto; color: var(--input-placeholder-color); }
 
 .ev-row__dot {
   width: 16px;

@@ -131,8 +131,10 @@ What that means in practice:
   render) — corrected after an initial probe wrongly concluded no shield/security/protect glyph
   exists (**G46**, filed as capability, corrected to discoverability in `docs/DS-GAPS.md`; the
   original probe tried only `shield`, `shieldAlt`, `security` and `protect`, never the real name).
-  Each row carries `obs-icon name="shield-check"` beside its tolerance text, coloured by token:
-  neutral (`--input-placeholder-color`) for Strict, positive (`--severity-up`) for Redundant.
+  **The rows do not use it.** The glyph was added once the correction landed and removed again on
+  2026-09-09 at the designer's direction, along with the tinted selected row: the consequence is
+  text, and selection is signalled by a neutral surface rather than a colour. G46's finding is
+  unaffected — it is about the icon being undiscoverable, not about this screen consuming it.
 
 **Why this rather than composing around `obs-radio`.** A reference app that quietly downgrades a
 design to fit the DS reports nothing except its own compromise. Building the control as designed

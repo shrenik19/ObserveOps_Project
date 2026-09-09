@@ -6,7 +6,7 @@
 // and unpainted. Rather than downgrade the design to fit the component, the design is built and
 // handed to the DS team as G45 — a working reference implementation instead of a description.
 // Everything inside the row that the DS DOES have is the DS's: obs-input for the quorum,
-// obs-tooltip for the sentence, obs-icon (shield-check) for the consequence glyph. Colour is
+// obs-tooltip for the sentence. Colour is
 // tokens only.
 
 import { createEvaluation } from './evaluation.js'
@@ -29,7 +29,6 @@ export function renderEvaluationLogic(host, { members }) {
             <div class="ev-row__top">
               <span class="ev-row__dot" aria-hidden="true"></span>
               <span class="ev-row__name">${label}</span>
-              <obs-icon class="ev-row__shield" name="shield-check" size="14"></obs-icon>
               <span class="ev-row__meta"></span>
               <obs-tooltip placement="top-end"></obs-tooltip>
             </div>

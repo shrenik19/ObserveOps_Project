@@ -33,15 +33,6 @@ describe('the evaluation logic control', () => {
       .toBe('tolerates 1 failure')
   })
 
-  // Restored per the approved Option G design after G46 was corrected: a shield glyph does exist
-  // (`shield-check`), it was only missing from an earlier, incomplete icon probe.
-  it('marks each row\'s consequence with a shield glyph', () => {
-    expect(host.querySelector('[data-mode="strict"] .ev-row__shield').getAttribute('name'))
-      .toBe('shield-check')
-    expect(host.querySelector('[data-mode="redundant"] .ev-row__shield').getAttribute('name'))
-      .toBe('shield-check')
-  })
-
   it('expands only the selected row', () => {
     expect(host.querySelector('[data-mode="redundant"] .ev-row__body').hidden).toBe(false)
     expect(host.querySelector('[data-mode="strict"] .ev-row__body').hidden).toBe(true)

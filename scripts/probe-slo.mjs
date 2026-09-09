@@ -130,19 +130,6 @@ await page.waitForTimeout(500)
 check('two evaluation rows', (await page.$$('.ev-row')).length === 2)
 check('the rows painted', await page.$eval('.ev-row', (e) => e.getBoundingClientRect().height > 20))
 {
-  // G46 was originally (wrongly) filed as "no shield glyph exists" — the earlier probe never tried
-  // `shield-check`. Assert the icon is actually PAINTED, not merely present in the DOM: the same
-  // discipline that caught the obs-select/obs-tags label bug (an attribute/element check alone
-  // would have passed even if obs-icon silently rendered an empty box for an unresolved name).
-  // Selector is tag-qualified because Playwright's CSS engine pierces open shadow roots by
-  // default, and obs-icon reflects the host's class onto its internal <svg> — an unqualified
-  // `.ev-row__shield` therefore matches twice per row (host + shadow svg), not once.
-  const shieldHeights = await page.$$eval('obs-icon.ev-row__shield',
-    (els) => els.map((e) => e.getBoundingClientRect().height))
-  check('both rows carry a painted shield glyph',
-    shieldHeights.length === 2 && shieldHeights.every((h) => h > 0), shieldHeights)
-}
-{
   const metas = await texts('.ev-row__meta')
   check('BOTH rows state what they tolerate',
     metas[0] === 'tolerates 0 failures' && metas[1] === 'tolerates 1 failure', metas)
