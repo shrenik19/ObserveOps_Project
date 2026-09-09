@@ -32,7 +32,7 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 - **Vanilla JS + Vite 8** — no framework. The DS ships web components, so the app is plain DOM. This
   is deliberate: it keeps the DS's components on the critical path so anything awkward about them
   surfaces immediately instead of being smoothed over by a wrapper.
-- **Vitest + jsdom** — 591 tests across 35 files.
+- **Vitest + jsdom** — 679 tests across 42 files.
 - `@mtdt/observeops-ds-elements` · `-ds-css` · `-ds-spec` (public on npm, no auth).
 - The **`observeops-ds` MCP server** for component discovery and token resolution — registered by
   the project's own `.mcp.json`.
@@ -80,15 +80,15 @@ src/wan-link-discovery/                                              131 tests
   provisionGrid.js              select / rename / provision the discovered links (18 tests)
   wanLinkDiscovery.css          token-only styling — no hex/rgb/hsl anywhere
 src/slo-list/
-  screen.js                     flat + Business Service grouped views          (14 tests)
+  screen.js                     flat + Business Service grouped views          (18 tests)
   sloStore.js                   the SLO estate — no DOM, no DS                  (5 tests)
   sloList.css                   token-only styling — no hex/rgb/hsl anywhere
 src/slo-profile/
-  screen.js                     the profile table / Create form toggle          (8 tests)
-  profiles.js                   the shipped profile rows — no DOM, no DS        (5 tests)
-  createForm.js                 the Create SLO Profile form                     (6 tests)
-  evaluation.js                 Strict/Redundant + quorum — no DOM, no DS      (14 tests)
-  evaluationLogic.js            the one invented control — see G45 in DS-GAPS.md (12 tests)
+  screen.js                     the profile table / Create form toggle          (9 tests)
+  profiles.js                   the shipped profile rows — no DOM, no DS        (7 tests)
+  createForm.js                 the Create SLO Profile form, + Help Card slot  (10 tests)
+  evaluation.js                 Strict/Redundant + quorum — no DOM, no DS      (17 tests)
+  evaluationLogic.js            the one invented control — see G45 in DS-GAPS.md (16 tests)
   sloProfile.css                token-only styling — no hex/rgb/hsl anywhere
 vite.config.js                  index.html + the two redirect stubs
 .mcp.json                       registers the observeops-ds MCP server
@@ -103,7 +103,7 @@ docs/                           see "Key context" below
 ```bash
 npm install
 npm run dev            # then open / — the app is one page
-npm test               # 591 tests across 35 files
+npm test               # 679 tests across 42 files
 npm run build          # builds the app and the two redirect stubs
 ```
 

@@ -1,125 +1,123 @@
-# Handoff — 2026-09-04 15:17
+# Handoff — 2026-09-09 14:27
 
 ## Read first
 
-`CLAUDE.md` in this folder — especially **"How we work — the method that produced all of this"** and
-**"Standing constraints"**. This session produced a live demonstration of why rule 1 (*verify by
-rendering, never by reading*) exists; see "Gotchas & notes".
+`CLAUDE.md` in this folder — especially **"How we work — the method that produced all of this"**
+and **"Standing constraints"**. This session produced two more demonstrations of why rule 1
+(*verify by rendering, never by reading*) exists; both are under "Gotchas & notes", and both got
+past a fully green test suite **and** a green render probe.
 
-Then read the execution ledger, which is the authoritative record of this branch and survives any
-lost session:
-**`.superpowers/sdd/2026-09-03-wan-link-discovery/progress.md`**
+**Two workstreams share this repo and this branch (`master`).** This handoff covers the SLO one. A
+second Claude session has been working on WAN Link Discovery in parallel; its record is at
+`.superpowers/sdd/2026-09-03-wan-link-discovery/progress.md` and ends with a
+`=== PAUSED BY USER REQUEST ===` block holding its resume instructions. **The handoff this file
+replaces was that session's** (dated 2026-09-04, describing work since completed and pushed); it is
+preserved in git history at `b103f2b` if you need it.
 
-It holds every ruling made on your behalf, with what each costs if wrong. It ends with a
-`=== PAUSED BY USER REQUEST ===` block giving the exact resume instructions.
+The authoritative record of the SLO work — every decision taken during execution, with what each
+costs if it turns out wrong — is committed at:
+**`docs/superpowers/plans/2026-09-08-slo-ds-port-ledger.md`** (27 rulings).
 
 ## What we worked on this session
 
-Resumed and drove the **WAN Link Discovery** implementation plan
-(`docs/superpowers/plans/2026-09-03-wan-link-discovery.md`) — 12 tasks, executed by dispatching a
-fresh implementer per task with an independent review and fix loop after each. The previous session
-had ended at a usage limit mid-Task-8. Task 12 was paused mid-flight and then re-dispatched.
-**All 12 tasks are now complete.** Task 12 itself is awaiting its review.
+Phase 2 of the Redundancy SLO work: porting the approved wireframe onto the published design system
+as two real routed screens. Executed as a ten-task plan with a fresh subagent per task and a review
+after each, then a whole-branch review, its fix wave, and publishing.
 
 ## Completed
 
-Branch `feat/wan-link-discovery`, **591 tests across 35 files, all green**, build clean.
+- **`#/slo/list`** — the SLO estate as tiles with live status counters, and a briefcase toggle that
+  regroups it under Business Services. Each service heading carries the **severest** status among
+  its SLOs (`E-commerce Platform` reads *Breached* while two of its three SLOs read *Ok* — that
+  case exists precisely to prove the rule isn't "first wins").
+- **`#/settings/slo-profile`** — the shipped profile table (Evaluation Logic beside Frequency,
+  plain text per **G1**), and behind it the Create SLO Profile form. Create **persists**, and the
+  new row appears in the table.
+- **The Option G Evaluation Logic control** — `src/slo-profile/evaluationLogic.js`, the one
+  deliberately invented component in this app (spec **P4**). `obs-radio` has no slot, so rather
+  than downgrade an approved design it was built and filed as **G45** with working code the DS team
+  can lift. Full WAI-ARIA radiogroup: roving tabindex, arrow keys, Enter/Space.
+- **`docs/DS-GAPS.md` gained G45–G49**, each verified by rendering, plus two corrections retiring
+  claims that turned out to be false (see Gotchas).
+- **679 tests across 42 files. `scripts/probe-slo.mjs` at 29/29** — and it passes against the
+  **live** site, not only localhost.
+- **Published:** https://shrenik19.github.io/ObserveOps_Project/
 
-| Task | What landed |
-|---|---|
-| 1–5 | Platform matrix, seeded monitors + credential prefill, CSV contract, four-stage run, profile store |
-| 6 | Screen shell, route and the profile list |
-| 7 | Create form — Single mode |
-| 8 | Create form — CSV mode, plus the Reset fix |
-| 9–10 | Progress panel and provision grid |
-| 11 | The four views wired into one flow, and the deep link from a device |
-| 12 | Verified by rendering (`scripts/probe-wan-link-discovery.mjs`, 80 checks), DS conformance, the colour guard, and the docs |
+## In progress
 
-Every task passed an independent spec-and-quality review; four needed fix rounds, and all of those
-came back clean on re-review.
+Nothing mid-flight in the SLO work. The plan is complete, reviewed, fixed and pushed.
 
-## What Task 12 resolved
+Two things are **deliberately reserved** rather than unfinished:
 
-The inherited partial work was picked up rather than redone. The `[hidden]` CSS fix was **complete
-and correct for both selectors** — confirmed by measuring the painted box, not the property.
-`_x.mjs` became section H of `scripts/probe-wan-link-discovery.mjs`; `_x.mjs` and `_xshots/` were
-deleted, superseded by the probe's own regenerated `docs/shots/wld-*.png`.
-
-**One Critical defect found by rendering, invisible to the green suite** — `obs-table` reflects
-`selected` back as a JSON *string*, so `provisionGrid.js`'s `Array.isArray` guard dropped every
-click and **"Add Selected Objects" could never be enabled with the mouse**. Fixed, with two
-regression tests that fail against the old code. Filed as DS-GAPS **G41**.
-
-**Two DS-GAPS entries were withdrawn as false** — **G21** (the spacing scale does exist, as
-`--padding-xs/sm/md/lg`; only the name `--spacing-*` is absent) and **G40**. Both are kept in place
-with the evidence that disproved them. The G21 error had propagated into two source comments, now
-corrected.
+- **`.slo-create__help` in `src/slo-profile/createForm.js`** — the Help Card column exists at the
+  wireframe's 56/44 split, titled *"SLO Help card"*, with an intentionally **empty** body. A test
+  asserts it is empty, so a placeholder cannot quietly become the deliverable. The real card (the
+  worked five-day matrix and the "recovered N percentage points" note) is fully designed in
+  `redundancy-slo/wireframe.html` artboard 2 and lands here when the designer calls for it.
+- **Artboards 3–5** (SLO detail Overview, Configured Entities, the breach) stay wireframe-only, by
+  the designer's decision. Consequently the SLO tiles **do not navigate** — spec **P3**.
 
 ## Next steps
 
-1. **Task 12's review**, then the **whole-branch review** from merge-base `cad09b6`.
-2. **Fix DS-GAPS G44** — `src/wan-link/wanLink.css` uses `var(--secondary-text-color)` eight times
-   and that token does not exist, so eight de-emphasised elements render at full strength on the
-   already-shipped WAN Link screen. The DS's real token is `--text-color-common-secondary`. Left out
-   of Task 12's commit on purpose: it changes a different, already-reviewed screen's appearance and
-   needs its own visual review (`node scripts/verify-wan-link.mjs`).
-3. Decide how to finish the branch. It is **not** on `master`, and CI publishes from `master`, so
-   nothing here is live yet.
+1. **Place the real Help Card** into `.slo-create__help` when asked — source is artboard 2 of
+   `redundancy-slo/wireframe.html`. Delete the "body is empty" assertion in `createForm.test.js` as
+   part of that change; it is the handover marker.
+2. **Decide whether `docs/DS-GAPS.md` should be public.** The repo is public and that file is now a
+   49-entry critique of the internal `@mtdt/observeops-ds-*` packages, naming exact versions. It
+   predates this session, but it deserves a conscious decision rather than an inherited one.
+3. **Hand G45–G49 to the DS team.** G45 ships with a working reference implementation; G49 shipped
+   a real bug in this build and is the strongest case in the file.
+4. **PQ2 — the model split — is still unresolved.** Artboard 2 models one redundancy group;
+   artboards 3–5 model several plus an ungrouped remainder. Nothing built here exposes it, so it
+   stayed deferred. It becomes blocking the day someone builds the detail screen.
 
 ## Decisions made
 
-Every ruling is in the ledger with its cost-if-wrong. The ones that changed the shipped result:
+Full list with costs-if-wrong is in the ledger. The ones that shaped the product:
 
-- **Kept the interrupted implementer's uncommitted Task 8 work** instead of reverting to a clean
-  base. Its tests were transcribed verbatim from the brief, so they could not be shaped to fit the
-  code — 27 of 31 passed against the untouched tree, confirming the inherited work was correct.
-- **Rejected DS-GAPS entry G40 and rewrote the mode toggle on `obs-radio as-button`.** An implementer
-  filed G40 claiming `obs-button` has no selected state. The DS spec's own decision tree names
-  `as-button` for exactly this shape (a 2–5 option segmented control, 255× usage), and **this
-  codebase already used it** in `report-categories/categorySettingsPanel.js`. `DS-GAPS.md` is handed
-  to the DS team as a deliverable; one false entry costs more than the rewrite did. G40 is kept as a
-  WITHDRAWN (filed in error) record with the evidence that disproved it, so nobody re-files it.
-- **Kept Frequency and Operation Timeout required in CSV mode**, against the brief's own code
-  snippet. They are per-profile parameters, not CSV columns — the brief's tests contradicted its
-  snippet, and the tests won.
-- **Accepted a scope expansion into `src/app/router.js`.** `parse()` was not stripping the query
-  string off the screen segment, so the new deep link resolved to nothing and would have dropped the
-  user on the Settings module index. The reviewer signed it off after auditing every call site.
-- **Routed seven findings into Task 12 as requirements C1–C7** rather than fixing them blind —
-  including driving a discovery run on the *real* timer path, and following the device deep link in
-  a real browser. Neither had ever been exercised.
+- **Option G was built as designed rather than composed around `obs-radio`.** A reference app that
+  quietly downgrades a design to fit the DS reports nothing except its own compromise.
+- **`N = M` is unreachable, enforced in `evaluation.js`, not as an input `min`/`max`.** Asking for
+  all M members is what Strict *means*. The factory throws below 2 members, and the quorum rounds
+  and rejects non-finite values.
+- **Create persists.** Originally parked as deliberate ("the wireframe doesn't persist either"),
+  then **overturned** by the final review: `src/lama/screen.js` and
+  `src/wan-link-discovery/profileStore.js` both write to their stores, so SLO Profile would have
+  been the only Create form in this app that discards its input.
+- **Selection is signalled by surface, not colour** (`--neutral-lighter`, not the blue
+  `--default-tag-bg`), and the consequence carries no shield glyph — both at the designer's
+  direction on 2026-09-09.
 
 ## Gotchas & notes
 
-- **The `[hidden]` trap — the most valuable finding on this branch, and the reason Task 12 exists.**
-  The UA's `[hidden] { display: none }` is the weakest rule in the cascade, so **any** id- or
-  class-selector that sets `display` beats it: the element stays *painted* while `el.hidden` reads
-  `true`. jsdom reads the property, so every unit test saw "hidden" and passed while the browser
-  showed the element. Rendered proof: with the Create form open, `#wld-list` still measured
-  1351×506 — the profile table was sitting above the form, the progress panel and the provision
-  grid. Eleven tasks, four task reviews and four re-reviews all passed over it. **If you add a rule
-  that sets `display` on anything this screen toggles, add the `[hidden]` override with it.**
-  Task 12 re-checked all ten elements this screen toggles, in every state, by measuring the painted
-  box — `#wld-list`, `#wld-port-field` and eight others are all correctly unpainted when hidden, and
-  `scripts/probe-wan-link-discovery.mjs` now asserts that on every run. The cascade rule is broader
-  than "id- or class-selector": author origin beats the UA stylesheet at *any* specificity, so a bare
-  `obs-button { display: … }` would do it too. DS components are safe — they ship
-  `:host([hidden]){display:none!important}` themselves.
-- **The DS-GAPS bar is high.** Before filing an entry, search `ds-spec/components/registry/*.json`
-  *and* `registry/elements-api.json`, including components you did not think to look at. G40 was
-  filed and withdrawn on this branch for exactly that failure.
-- **The rendering probes are the verification, not conformance.** `node
-  scripts/probe-wan-link-discovery.mjs` (80 checks, all four views, the real timers, the deep link)
-  and `node scripts/verify-wan-link.mjs`. Both need `npm run dev` and `CHROME` set to
-  `C:\Program Files\Google\Chrome\Application\chrome.exe` — the tooling otherwise looks for a macOS
-  path. `ORIGIN` and `SHOTS` override the dev server and the screenshot directory.
-- **The conformance checker exits 2 after one line if `playwright-core` is missing — which reads like
-  a pass.** And screens load by dynamic `import()`, so Chromium can sample before the screen mounts
-  and score an almost-empty page very highly. Check the element count against a known-good run —
-  but note the count is only light-DOM `obs-button/input/select/switch/checkbox/radio/link`, so a
-  spare screen scores low legitimately. The discovery screen's **100/100 on 2 components** was
-  verified genuine by replicating the checker's own timing and confirming the screen had mounted
-  (`#wld-content` present, table rendering 2 rows, 11 distinct `obs-*` tags). Conformance only ever
-  sees a screen's first view — the Create form, progress panel and provision grid are never scored.
-- Three deferred minor findings are logged in the ledger for the whole-branch review to triage. None
-  block merge on their own.
+- **Two defects reached this branch past a fully green test suite AND a green render probe.** Both
+  were caught only by opening a screenshot:
+  1. **Four form fields rendered with no label at all.** `obs-select` and `obs-tags` have no
+     `label` attribute; `obs-input` does. The unit test asserted the attribute was *present* — it
+     was, and the component ignored it. Now **G49**. `src/wan-link-discovery/createForm.js:28`
+     already carried a comment saying exactly this, so the codebase knew and the plan ignored it.
+  2. **Tile text painted outside its card border**, then over-corrected into truncating the quorum
+     away entirely. Settled with `.slo-tile__slot:last-child { flex: 1.8 }`.
+  **The lesson now encoded in `scripts/probe-slo.mjs`: when a claim is visual, assert geometry, not
+  DOM presence.** It pins the label count at 12 and measures painted heights and edges.
+- **Two gap entries were filed as fact and were false**, and are corrected in place using the
+  file's withdrawn-claim convention: a shield glyph *does* exist (`shield-check` — the original
+  probe tried only `shield`, `shieldAlt`, `security`, `protect`), and the manifest *does* document
+  slots, for 16 components. **`elements-api.json` is a starting point, never proof.**
+- **Playwright pierces open shadow roots by default**, and `obs-icon` reflects its host class onto
+  its internal `<svg>` — an unqualified `.some-class` selector matches twice per icon.
+  Tag-qualify it (`obs-icon.some-class`).
+- **A probe with no DS CSS loaded reports false negatives:** components coloured through
+  `--severity-*` render *invisibly* rather than failing, and read as "not rendered". Inject
+  `@mtdt/observeops-ds-css` alongside the elements bundle.
+- **Sharing `master` with another session:** never run a bare `git commit` or `git add -A` here —
+  use `git add <paths>` then `git commit -o <paths>`. A bare commit swept that session's work into
+  the wrong commit once, on 2026-09-07. Never run process-wide kills (`taskkill /IM node.exe`) — an
+  implementer did, and it would have killed the other session's dev server. Use a distinct port
+  (5199) for probe runs; 5173 is theirs.
+- **`npm test` can report a wildly low count** (once: 531 across 37 files instead of 679 across 42)
+  if the other session is writing files during collection. Re-run before believing it.
+- **Conformance scores 68/100 on `#/slo/list`** — expected, not a defect: the tile grid is
+  hand-rolled because the DS has no card component (**G47**), and the checker counts DS elements.
+  `#/settings/slo-profile` scores 100/100, and the Create form is never scored at all, because
+  conformance only ever sees a screen's first view.
