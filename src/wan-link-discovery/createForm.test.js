@@ -47,12 +47,9 @@ describe('create form — the monitor drives everything', () => {
     expect(el.textContent).not.toContain('Monitors WAN link performance by collecting key metrics')
     // The redesign's central claim is that method is derived, never asked — guard the claim
     // itself, not just the one id/sentence a differently-worded control (a "Protocol" dropdown, an
-    // SNMP/SSH toggle) would sail past. Exclude #wld-cred-hint: it legitimately names the protocol
-    // (e.g. "SSH — prefilled from the monitor") to explain a credential prefill — that is an
-    // explanation of a derived fact, not a method-selection control asking the user anything.
-    const hint = el.querySelector('#wld-cred-hint').textContent
-    const bodyWithoutHint = el.textContent.replace(hint, '')
-    expect(bodyWithoutHint).not.toMatch(/method|SNMP|SSH/i)
+    // SNMP/SSH toggle) would sail past. The #wld-cred-hint carve-out this sweep used to need is
+    // gone with the hint itself, so the assertion now covers the whole form with no exception.
+    expect(el.textContent).not.toMatch(/method|SNMP|SSH/i)
   })
 
   it('prefills the credential when the protocol matches', () => {
@@ -121,9 +118,46 @@ describe('create form — reactive rules', () => {
 })
 
 describe('create form — notifications', () => {
-  it('renders a Bcc affordance next to Notify', () => {
+  it('starts with Bcc collapsed behind the link, as the product does', () => {
     const el = form()
     expect(el.querySelector('#wld-bcc')).not.toBeNull()
+    expect(el.querySelector('#wld-bcc-row').hidden).toBe(true)
+    expect(el.querySelector('#wld-bcc').hidden).toBe(false)
+  })
+
+  it('reveals the Bcc field and takes the link away', () => {
+    const el = form()
+    el.querySelector('#wld-bcc').click()
+    expect(el.querySelector('#wld-bcc-row').hidden).toBe(false)
+    expect(el.querySelector('#wld-bcc').hidden).toBe(true)
+    expect(el.querySelector('#wld-bcc-input')).not.toBeNull()
+  })
+
+  it('the remove control collapses it again and clears what was typed', () => {
+    const el = form()
+    el.querySelector('#wld-bcc').click()
+    el.querySelector('#wld-bcc-input').value = 'ops@example.com'
+    el.querySelector('#wld-bcc-remove').click()
+    expect(el.querySelector('#wld-bcc-row').hidden).toBe(true)
+    expect(el.querySelector('#wld-bcc').hidden).toBe(false)
+    expect(el.querySelector('#wld-bcc-input').value).toBe('')
+  })
+
+  it('Reset collapses Bcc back to its initial state', () => {
+    const el = form()
+    el.querySelector('#wld-bcc').click()
+    el.querySelector('#wld-bcc-input').value = 'ops@example.com'
+    el.querySelector('#wld-reset').click()
+    expect(el.querySelector('#wld-bcc-row').hidden).toBe(true)
+    expect(el.querySelector('#wld-bcc').hidden).toBe(false)
+    expect(el.querySelector('#wld-bcc-input').value).toBe('')
+  })
+
+  it('carries the Notify prompt the product uses, not the generic one', () => {
+    const el = form()
+    expect(el.querySelector('#wld-notify').getAttribute('placeholder'))
+      .toContain('@User or Email')
+    expect(el.querySelector('#wld-bcc-input').getAttribute('placeholder')).toBe('Email')
   })
 })
 

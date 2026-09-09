@@ -122,9 +122,10 @@
 }
 
 .wld-form__legend {
+  /* No rule under the heading: the sub-category separators were removed on request. The 8px that
+     used to sit between the text and the line is dropped with it, so the heading keeps its own
+     margin and nothing else. */
   margin: 22px 0 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--chart-border-color);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -132,6 +133,38 @@
      emitted by @mtdt/observeops-ds-css (checked dist/observeops-ds.css — absent in both themes), so
      it resolves to nothing there. Using --neutral-light instead: confirmed present in both themes. */
   color: var(--neutral-light);
+}
+
+/* Notifications. The product gives Notify the full width and parks the Bcc affordance at the right
+   end of the same line, so this is a flex row rather than one of the 3-column grid rows above. */
+.wld-form__notify {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin-block-end: 12px;
+}
+
+/* display:flex above outranks the UA's `[hidden] { display: none }` — the same cascade trap
+   documented at the top of this file. Without this the collapsed Bcc row stays painted. */
+.wld-form__notify[hidden] {
+  display: none;
+}
+
+.wld-form__notify .wld-field {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Both controls sit on the input's line, not the label's, so they are nudged off the row's end. */
+.wld-form__bcc {
+  padding-block-end: 6px;
+}
+
+/* The DS has no red text-style button variant (error is a FILLED red), and the product draws this
+   control as a bare red glyph — so the colour is set on the host, which is what --secondary-red is
+   already used for four times in this file. No shadow-DOM piercing: obs-icon inherits currentColor. */
+.wld-form__bcc-remove {
+  color: var(--secondary-red);
 }
 
 .wld-form__gate {

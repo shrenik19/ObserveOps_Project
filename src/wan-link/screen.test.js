@@ -85,13 +85,13 @@ describe('wan-link list', () => {
 })
 
 describe('wan-link deep link into discovery', () => {
-  it('offers Add WAN Link, which points at the discovery form for this monitor', () => {
+  // The Add WAN Link button was removed from the template on request. Pinned as an absence so it
+  // cannot drift back unnoticed; the deep-link ROUTE it used to open is covered in
+  // wan-link-discovery/screen.test.js, which is unaffected by this removal.
+  it('no longer offers an Add WAN Link entry point', () => {
     const root = document.createElement('div')
     mount(root)
-    const button = root.querySelector('#wan-link-add')
-    expect(button).toBeTruthy()
-    expect(button.textContent).toContain('Add WAN Link')
-    expect(button.getAttribute('data-href'))
-      .toBe('#/settings/wan-link-discovery?monitor=m-nxos')
+    expect(root.querySelector('#wan-link-add')).toBeNull()
+    expect(root.textContent).not.toContain('Add WAN Link')
   })
 })

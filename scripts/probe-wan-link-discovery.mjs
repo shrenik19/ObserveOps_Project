@@ -337,6 +337,40 @@ check('csv · the file field is EMPTY after a Single→CSV round-trip', roundTri
 await shot('wld-mode-csv-roundtrip')
 
 // ═══════════════ E · Reset restores the INITIAL state ═══════════════
+section('E0 · Notifications · Bcc reveal')
+// This section exists because of a bug jsdom structurally cannot see. "+ Bcc" was first built on
+// obs-link, which link.json documents as a NAVIGATION control ("Performs an action? -> Button, not
+// a link"). One click cleared the hash, the router remounted the Overview, and the half-filled form
+// was destroyed — while 38 jsdom tests passed, because jsdom does not navigate. It is an
+// obs-button variant="transparent" now, and these checks pin that the form survives the clicks.
+const bccState = () => page.evaluate(() => {
+  const g = (id) => document.getElementById(id)
+  const painted = (el) => { const b = el?.getBoundingClientRect(); return !!b && b.width > 0 && b.height > 0 }
+  return {
+    hash: location.hash,
+    formMounted: !!document.querySelector('.wld-form'),
+    linkPainted: painted(g('wld-bcc')),
+    rowPainted: painted(g('wld-bcc-row')),
+  }
+})
+const bccBefore = await bccState()
+check('bcc · starts collapsed — the link shows, the row does not paint',
+  bccBefore.linkPainted && !bccBefore.rowPainted, bccBefore)
+
+await page.click('#wld-bcc')
+await page.waitForTimeout(400)
+const bccOpen = await bccState()
+check('bcc · the click REVEALS the row and does not navigate away',
+  bccOpen.rowPainted && !bccOpen.linkPainted && bccOpen.formMounted
+  && bccOpen.hash === bccBefore.hash, bccOpen)
+
+await page.click('#wld-bcc-remove')
+await page.waitForTimeout(400)
+const bccClosed = await bccState()
+check('bcc · the remove control collapses it, form still mounted',
+  !bccClosed.rowPainted && bccClosed.linkPainted && bccClosed.formMounted
+  && bccClosed.hash === bccBefore.hash, bccClosed)
+
 section('E · Reset')
 await pick('wld-mode', 'single')
 await pick('wld-probe', 'UDP Jitter')
@@ -578,14 +612,18 @@ check('grid · the row stays selected across the rename',
 
 // ═══════════════ H · the device deep link ═══════════════
 section('H · deep link from the WAN Link screen')
+// The Add WAN Link button that used to originate this deep link was removed from the WAN Link
+// screen's template on request, so there is no in-app entry point left to click. The ROUTE is
+// still live, and it is the route this section exists to prove: router.js must strip the query
+// string off the screen segment, or the hash resolves against nothing and drops the user on the
+// Settings module index. That fix has no other browser-level evidence, so drive it directly.
+const href = '#/settings/wan-link-discovery?monitor=m-nxos'
 await page.goto(WAN_LINK, { waitUntil: 'networkidle' })
-await page.waitForSelector('obs-button#wan-link-add')
 await page.waitForTimeout(500)
-const href = await page.locator('obs-button#wan-link-add').getAttribute('data-href')
-check('deeplink · the Add WAN Link button is present and carries a href', Boolean(href), href)
+check('deeplink · the Add WAN Link button is gone from the WAN Link screen',
+  await page.evaluate(() => !document.getElementById('wan-link-add')))
 
-// Follow the href the button actually carries — do not synthesise the URL.
-await page.locator('obs-button#wan-link-add').click()
+await page.goto(`${ORIGIN}/${href}`, { waitUntil: 'networkidle' })
 await page.waitForTimeout(1200)
 const landed = await page.evaluate(() => ({
   hash: location.hash,
@@ -612,7 +650,6 @@ const locked = await page.evaluate(() => {
     // Disabled has to LOOK disabled, not just carry the attribute.
     drawnDisabled: sel?.classList.contains('disabled') ?? false,
     trigger: m.shadowRoot?.querySelector('.trig').textContent.replace(/\s+/g, ' ').trim(),
-    hint: document.getElementById('wld-monitor-hint').textContent.trim(),
     vendor: document.getElementById('wld-vendor').getAttribute('value'),
     os: document.getElementById('wld-os').getAttribute('value'),
     gatedPainted: document.getElementById('wld-gated').getBoundingClientRect().height > 0,
@@ -620,12 +657,14 @@ const locked = await page.evaluate(() => {
 })
 console.log('  locked:', JSON.stringify(locked))
 await shot('wld-deeplink')
-check('deeplink · the Monitor is pre-filled with the button\'s monitor', locked.value === 'm-nxos', locked.value)
+check('deeplink · the Monitor is pre-filled from the hash', locked.value === 'm-nxos', locked.value)
 check('deeplink · the Monitor is disabled, and drawn as disabled',
   locked.disabledAttr && locked.drawnDisabled, locked)
 check('deeplink · the trigger still shows the monitor\'s name',
   locked.trigger.includes('CORE-NX-01.test.com'), locked.trigger)
-check('deeplink · the lock is explained to the user', /locked/.test(locked.hint), locked.hint)
+// The '· locked — opened from this device' hint was removed from the label on request, so
+// nothing on the page explains the disabled Monitor any more. The lock itself is still asserted
+// above (disabledAttr + drawnDisabled); only its explanation is gone.
 check('deeplink · the cascade ran, so the form is already gated open',
   locked.vendor === 'Cisco Systems' && locked.os === 'nx-os' && locked.gatedPainted, locked)
 
@@ -637,7 +676,6 @@ const lockedAfterReset = await page.evaluate(() => {
     value: m.getAttribute('value'),
     disabledAttr: m.hasAttribute('disabled'),
     drawnDisabled: m.shadowRoot?.querySelector('.sel')?.classList.contains('disabled') ?? false,
-    hint: document.getElementById('wld-monitor-hint').textContent.trim(),
     gatedPainted: document.getElementById('wld-gated').getBoundingClientRect().height > 0,
     cred: document.getElementById('wld-cred').getAttribute('value'),
   }

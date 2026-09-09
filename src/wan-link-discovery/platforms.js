@@ -34,7 +34,9 @@ const PORT_PROBES = ['UDP Echo', 'UDP Jitter']
 export const needsPort = (probe) => PORT_PROBES.includes(probe)
 
 // Only the three NX-OS probes have a monitor template today. The others create a valid operation
-// that nothing can yet render, so the dropdown says so rather than leaving it silent.
+// that nothing can yet render. The probe dropdown used to carry that caveat inline; the label was
+// removed on request, so this predicate is now the only record of which probes are templated and
+// has no consumer in the app.
 const TEMPLATED = ['ICMP Echo', 'UDP Echo', 'UDP Jitter']
 export const hasTemplate = (probe) => TEMPLATED.includes(probe)
 
@@ -45,10 +47,7 @@ export const osOptions = (vendor) =>
   platformsFor(vendor).map((p) => ({ value: p.key, text: p.label }))
 
 export const probeOptions = (osKey) =>
-  (PLATFORMS[osKey]?.probes ?? []).map((probe) => ({
-    value: probe,
-    text: hasTemplate(probe) ? probe : `${probe}   (no monitor template yet)`,
-  }))
+  (PLATFORMS[osKey]?.probes ?? []).map((probe) => ({ value: probe, text: probe }))
 
 /** The Operations block is named by the vendor — the product already varies this string. */
 export const slaTitle = (vendor) =>

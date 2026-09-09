@@ -36,13 +36,13 @@ const selectField = (id, label, { required = false, hint = '' } = {}) => `
   </div>
 `
 
-const inputField = (id, label, { required = false, hint = '', value = '' } = {}) => `
+const inputField = (id, label, { required = false, hint = '', value = '', placeholder = 'Enter' } = {}) => `
   <div class="wld-field" id="${id}-field">
     <label class="wld-field__label" for="${id}">
       ${label}${required ? '<span class="wld-field__req">*</span>' : ''}
       ${hint ? `<span class="wld-field__hint">${hint}</span>` : ''}
     </label>
-    <obs-input id="${id}" block placeholder="Enter" value="${value}"></obs-input>
+    <obs-input id="${id}" block placeholder="${placeholder}" value="${value}"></obs-input>
   </div>
 `
 
@@ -52,25 +52,31 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
   el.innerHTML = `
     <div class="wld-form__row">
       ${inputField('wld-name', 'Discovery Profile Name', { required: true })}
-      <div></div>
       <!-- A segmented control IS obs-radio with as-button — there is no separate DS component for
            it (see components/registry/radio.json: variant "segmented", 255x usage, and its own
            decision tree: "small compact set (2-5)? -> plain segmented (as-button)"). It renders its
-           own selected treatment; no wrapper, host CSS, or invented attribute needed. -->
-      <obs-radio id="wld-mode" as-button></obs-radio>
+           own selected treatment; no host CSS or invented attribute needed.
+           Column 2, not 3: the shipped Create Discovery Profile puts its type toggle immediately
+           right of Discovery Profile Name, not out at the far edge. The wld-field--action wrapper
+           is the same one the Create Credential Profile button uses two rows down — it bottom-aligns
+           an unlabelled control with the labelled input beside it. -->
+      <div class="wld-field wld-field--action">
+        <obs-radio id="wld-mode" as-button></obs-radio>
+      </div>
+      <div></div>
     </div>
 
     <div class="wld-form__row">
-      ${selectField('wld-monitor', 'Monitor', { required: true, hint: '<span id="wld-monitor-hint"></span>' })}
-      ${selectField('wld-vendor', 'Vendor', { hint: '· from monitor' })}
-      ${selectField('wld-os', 'Device OS', { required: true, hint: '· editable' })}
+      ${selectField('wld-monitor', 'Monitor', { required: true })}
+      ${selectField('wld-vendor', 'Vendor')}
+      ${selectField('wld-os', 'Device OS', { required: true })}
     </div>
     <p class="wld-form__warning" id="wld-os-warning" hidden>
       Probe cleared — it is not available on this Device OS.
     </p>
 
     <div class="wld-form__row">
-      ${selectField('wld-cred', 'Credential Profiles', { required: true, hint: '<span id="wld-cred-hint"></span>' })}
+      ${selectField('wld-cred', 'Credential Profiles', { required: true })}
       <div class="wld-field wld-field--action">
         <obs-button variant="neutral-lightest">Create Credential Profile</obs-button>
       </div>
@@ -90,7 +96,7 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
           <div></div>
         </div>
         <div class="wld-form__row">
-          ${selectField('wld-iface', 'Source Interface', { hint: '· from the monitor' })}
+          ${selectField('wld-iface', 'Source Interface')}
           ${inputField('wld-src-loc', 'Source Router Location')}
           <div></div>
         </div>
@@ -137,14 +143,28 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
       </div>
 
       <h4 class="wld-form__legend">Notifications</h4>
-      <div class="wld-form__row">
-        ${inputField('wld-notify', 'Notify')}
-        <div class="wld-field wld-field--action">
-          <!-- Inert chrome: the product's Bcc affordance on this row, unwired — same treatment the
-               Monitors category bar gets in src/wan-link/screen.js. -->
-          <obs-button id="wld-bcc" variant="neutral-lightest">+ Bcc</obs-button>
-        </div>
-        <div></div>
+      <!-- The product runs Notify at FULL width with the Bcc affordance parked at the right end of
+           the same line, then reveals a labelled Bcc row beneath it. That is not a 3-column grid
+           row, so this section gets its own flex row.
+           Both controls are obs-button variant="transparent" — "No fill, text-style", 255x usage.
+           NOT obs-link: link.json is explicit that it is a Navigation control whose default renders
+           a RouterLink, its decision flow opens with "Performs an action? -> Button, not a link",
+           and text-link's dontUse is literally "for actions (use Button)". Using obs-link here was
+           tried and it did exactly what the DS says it does — clicking it cleared the hash, the
+           router remounted the Overview, and the half-filled form was destroyed. jsdom cannot see
+           that; a real browser found it in one click.
+           The remove icon is obs-icon timesCircle, which the icon registry omits but the package
+           does ship — see G24. -->
+      <div class="wld-form__notify">
+        ${inputField('wld-notify', 'Notify', {
+          placeholder: '@User or Email or /Handle or #User Profile or Mobile Number',
+        })}
+        <obs-button id="wld-bcc" variant="transparent" class="wld-form__bcc">+ Bcc</obs-button>
+      </div>
+      <div class="wld-form__notify" id="wld-bcc-row" hidden>
+        ${inputField('wld-bcc-input', 'Bcc', { placeholder: 'Email' })}
+        <obs-button id="wld-bcc-remove" variant="transparent" squared class="wld-form__bcc-remove"
+                    aria-label="Remove Bcc"><obs-icon name="timesCircle" size="18"></obs-icon></obs-button>
       </div>
     </div>
 
@@ -171,7 +191,6 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
   setOptions('wld-monitor', monitorOptions(), monitorId ?? '')
   if (locked && monitorId) {
     $('wld-monitor').setAttribute('disabled', '')
-    $('wld-monitor-hint').textContent = '· locked — opened from this device'
   }
 
   const monitor = () => findMonitor($('wld-monitor').getAttribute('value'))
@@ -259,9 +278,6 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     const prefill = prefillCredential(m, platform.method)
     const keptCred = creds.some((c) => c.value === previousCred) ? previousCred : ''
     setOptions('wld-cred', creds, prefill || keptCred)
-    $('wld-cred-hint').textContent = prefill
-      ? `· ${platform.method} — prefilled from the monitor`
-      : `· ${platform.method} — the monitor has no matching credential`
 
     const previousProbe = $('wld-probe').getAttribute('value')
     const probes = probeOptions(osKey)
@@ -311,6 +327,20 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
   })
 
   $('wld-exit').addEventListener('click', () => onCancel())
+  // Bcc is revealed, not always-on — the product hides it behind the "+ Bcc" link and takes it
+  // away again with the red remove control. The field itself stays inert: this screen has no
+  // notification model behind it, and adding one is not what aligning the design asks for.
+  $('wld-bcc').addEventListener('click', () => {
+    $('wld-bcc-row').hidden = false
+    $('wld-bcc').hidden = true
+  })
+  $('wld-bcc-remove').addEventListener('click', () => {
+    $('wld-bcc-input').value = ''
+    $('wld-bcc-input').setAttribute('value', '')
+    $('wld-bcc-row').hidden = true
+    $('wld-bcc').hidden = false
+  })
+
   $('wld-reset').addEventListener('click', () => {
     const keepMonitor = locked && !!monitorId
     if (!keepMonitor) {
@@ -322,7 +352,6 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     // Cred/probe/iface are always monitor-derived — clear them here too, then let syncMonitor()
     // (called below) recompute them fresh, whether or not the monitor itself was kept.
     setOptions('wld-cred', [], '')
-    $('wld-cred-hint').textContent = ''
     setOptions('wld-probe', [], '')
     setOptions('wld-iface', [], '')
     $('wld-os-warning').hidden = true
@@ -330,7 +359,7 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     $('wld-name').value = ''
     ;[
       'wld-isp', 'wld-src-loc', 'wld-dst-loc', 'wld-dip', 'wld-timeout', 'wld-port',
-      'wld-payload', 'wld-tos', 'wld-freq', 'wld-optimeout', 'wld-notify',
+      'wld-payload', 'wld-tos', 'wld-freq', 'wld-optimeout', 'wld-notify', 'wld-bcc-input',
     ].forEach((id) => {
       const value = RESET_DEFAULTS[id] ?? ''
       $(id).value = value
@@ -339,6 +368,9 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
     // The uploaded-file display is not in the list above — it has no RESET_DEFAULTS entry and
     // starts blank, not with a placeholder-shaped default.
     $('wld-csv-name').setAttribute('value', '')
+    // Reset returns the form to its INITIAL state, and Bcc starts collapsed behind the link.
+    $('wld-bcc-row').hidden = true
+    $('wld-bcc').hidden = false
 
     $('wld-error').hidden = true
     syncMonitor()

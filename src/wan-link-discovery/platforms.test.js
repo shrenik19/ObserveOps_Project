@@ -55,11 +55,15 @@ describe('platform matrix', () => {
     expect(hasTemplate('ICMP Ping')).toBe(false)
   })
 
-  it('labels the untemplated probes in the dropdown', () => {
+  it('labels every probe with its own name, unqualified', () => {
     const xe = probeOptions('ios-xe')
     expect(xe[0]).toEqual({ value: 'ICMP Echo', text: 'ICMP Echo' })
-    expect(xe[2].value).toBe('Path Echo')
-    expect(xe[2].text).toContain('no monitor template yet')
+    expect(xe[2]).toEqual({ value: 'Path Echo', text: 'Path Echo' })
+    // Every option on every platform, keys taken from PLATFORMS itself so the list cannot go
+    // stale — no caveat can creep back onto a single probe unnoticed.
+    const all = Object.keys(PLATFORMS).flatMap((os) => probeOptions(os))
+    expect(all.length).toBeGreaterThan(xe.length) // the sweep really covered more than one platform
+    for (const o of all) expect(o.text).toBe(o.value)
   })
 
   it('names the Operations block after the vendor', () => {
