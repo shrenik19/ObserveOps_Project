@@ -50,6 +50,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G47** no card / tile component | 🆕 **OPEN** | 0 of 47 elements match `card\|tile`. `src/slo-list/sloList.css` hand-rolls its tile grid, following the precedent `src/app/cardList.js` already set. **Second instance of G31** |
 | **G48** `obs-button` has no pressed/toggled state | 🆕 **OPEN** | Its 9 attributes are exactly `variant, size, disabled, loading, outline, square, block, shape, squared` — nothing for "currently engaged". The SLO list view toggle co-opts `variant` (`primary` = engaged) instead |
 | **G49** `obs-select`/`obs-tags` have no `label`; `obs-input` does | 🆕 **OPEN** | Shipped a real bug: 4 fields rendered with no visible label, past a 661-test suite and a 19-check probe, because the test asserted the ignored attribute was present. External `<label for>` doesn't associate with a custom element either. Second time this exact gap has bitten this project |
+| **G50** `obs-filters` kind="bar" has no `defaultChips` | 🆕 **OPEN** | The element exposes only `fields`, `value` and `match`; a `defaultChips` property and a `default-chips` attribute are both silently ignored, yet the bar's own spec documents `defaultChips` as the FilterBar API and says the leading chips "come from the MODULE". Seeding `value` with valueless conditions is the only way to draw them — and they arrive removable, with Match/Clear All showing before anything is applied |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -1993,3 +1994,59 @@ functional fix at all.
 **Ask:** a `label` attribute on `obs-select` and `obs-tags` matching `obs-input`'s exactly, or —
 failing that — documented `ElementInternals`/`attachInternals().labels` support so an external
 `<label for>` actually associates with the control.
+
+### New finding — G50: `obs-filters` kind="bar" has no `defaultChips`
+
+**Class: DS — capability, with a documentation contradiction on top.**
+
+The SLO Profile screen needed the product's standard leading filter chips — `SLO Type`,
+`Frequency`, `Business Service`, then `+ Filter`. In the shipped product those are **default
+chips**: captions the module declares, which carry **no ×** because they are not removable.
+
+`registry/filters.json` documents them, twice, as the module's job:
+
+- `apis.FilterBar.props.defaultChips` — *"Array — the leading non-removable chips declared by the
+  consuming module (e.g. Groups/Types/Severity)"*
+- and a `note` under the same block: *"PITFALL: the leading default-chips come from the MODULE via
+  defaultChips, not the base bar — read a real consumer to reproduce faithfully."*
+
+**The element does not implement it.** Probed live in real Chrome against elements 0.1.167, five
+configurations side by side:
+
+| attempt | result |
+|---|---|
+| `el.defaultChips = [...]` (property) | ignored — becomes a dead JS expando; the bar renders only `+ Filter` |
+| `default-chips='[…]'` (attribute) | ignored; worse, the element fell back to its **built-in demo data** (`Select Filter = MySQL (+1)`, `AWS Auto Scaling (+3)`) |
+| `el.fields` + `el.value = []` | `+ Filter` alone — the report-categories baseline |
+| `el.value` = one **valueless** condition per field | ✅ draws `SLO Type ×` `Frequency ×` `Business Service ×` `+ Filter` |
+| `el.value` = one real condition | one chip + `+ Filter`, Match hidden (correct per G17) |
+
+Feature-detection confirms it: `['fields','value','match','defaultChips','fieldSchema'].filter(p => p in el)`
+returns exactly `["fields","value","match"]`. Neither documented name — `defaultChips` nor
+`fieldSchema` — exists on the element.
+
+**And there is no styling escape hatch.** `obs-filters`' shadow root contains **zero `part`
+attributes** (`shadowRoot.querySelectorAll('[part]')` → `[]`), so the chips cannot be restyled from
+outside at all. The internal structure the consumer would need to reach is
+`.chip-wrap > .chip > .seg.field + .seg.op + .seg.val > obs-select`, plus `.seg-x` for the ×.
+
+**Workaround shipped** (`src/slo-profile/screen.js`): seed `value` with one valueless condition per
+field. It draws the right row through the documented `value` API and filters correctly — verified
+with 8 real-mouse checks in Chrome, including a two-condition AND and `Clear All`. Two cosmetic
+deviations remain and are **not fixable without reaching into the shadow DOM**:
+
+1. the seeded chips carry a removable `×` — real default chips have none;
+2. `Match All Filters` and `Clear All` show from first paint, because three conditions exist as far
+   as the element is concerned (G17 only hides Match below two).
+
+A third, subtler consequence: because the seeded chips are real conditions, **`+ Filter` appends a
+fourth chip** rather than filling one of the three, and **abandoning a half-built chip emits
+`{conditions: [], match: 'all'}`** — dropping the seeds from the consumer's state while the bar
+still paints them. Benign here (no conditions = no filtering) but it makes `el.value` and the
+rendered bar disagree, which is the same family as **G16**.
+
+**Ask:** implement `defaultChips` on `obs-filters` as `registry/filters.json` already documents it —
+non-removable leading chips that do not count as conditions for the Match/Clear All thresholds.
+Failing that, expose `::part()` hooks for `chip`, `chip-remove`, `bar-right` so a consumer can at
+least suppress the affordances the product doesn't show. And either way, correct the registry: it
+currently documents an API the element does not have.

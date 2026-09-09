@@ -74,6 +74,26 @@ heading. See phase 1 §4.
 No icon, no component. This is not a styling preference: **G1** records that `obs-table` cannot put
 a component or an icon in a cell — re-found twice since, as **G23** and **G39** — and a plain-text column simply does not need one.
 
+**The filter bar sits between the toolbar and the table** — `SLO Type · Frequency ·
+Business Service · + Filter`, the three fields the product's own SLO Profile list filters on. One
+`obs-filters kind="bar"`, the same element the Report module uses, with `fields` built from the
+store so the value pickers can never drift from the rows on screen.
+
+**The three leading chips are seeded as valueless conditions, not as default chips.** The product
+draws them with `defaultChips` — non-removable captions the module declares — and
+`registry/filters.json` documents that API twice. **The element does not implement it**: only
+`fields`, `value` and `match` exist, and both a `defaultChips` property and a `default-chips`
+attribute are silently ignored. Seeding `value` with one valueless condition per field renders the
+same row through the documented API, which is what ships here. Two cosmetic deviations follow and
+are unreachable without reaching into a shadow root that exposes **no `part` attributes at all**:
+the chips keep a removable `×`, and `Match All Filters` / `Clear All` show from first paint. Filed
+as **G50**.
+
+**A valueless chip does not filter.** It is the resting state of a leading chip, so the screen
+ignores any condition whose value is empty — otherwise the table would open filtered to nothing.
+Every write to `table.rows` goes through one `render()`, so a filtered view survives creating a
+profile rather than being silently replaced by the full store.
+
 ### View 2 — the Create form (artboard 2)
 
 `SLO_setup_2` field for field, with **Evaluation Logic as the only addition**, full width between
