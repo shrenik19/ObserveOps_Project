@@ -104,3 +104,21 @@
 }
 
 .slo-form__note { margin-right: auto; color: var(--input-placeholder-color); }
+
+/* The Create screen is two columns, as artboard 2 is: the form, and the Help Card beside it.
+   Ratio follows the wireframe (56/44). The card is reserved space for now — titled, empty,
+   and not approximated. */
+.slo-create { display: flex; gap: 14px; align-items: flex-start; }
+.slo-create .slo-form { flex: 1 1 56%; min-width: 0; }
+
+.slo-create__help {
+  flex: 1 1 44%;
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--btn-radius);
+  background: var(--common-main-bg);
+  padding: var(--common-padd-space);
+}
+
+.slo-create__help-title { margin: 0; font-size: 13px; font-weight: 600; color: var(--page-text-color); }
+.slo-create__help-body { min-height: 320px; }

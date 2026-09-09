@@ -14,6 +14,7 @@ const label = (id, text, { required = false } = {}) =>
 
 export function renderCreateForm(host, { onCancel, onCreate = () => {} }) {
   host.innerHTML = `
+    <div class="slo-create">
     <div class="slo-form">
       <div class="slo-form__grid">
         <div data-field="name" class="slo-field">
@@ -73,6 +74,14 @@ export function renderCreateForm(host, { onCancel, onCreate = () => {} }) {
         <obs-button id="slo-form-reset" variant="default">Reset</obs-button>
         <obs-button id="slo-form-create" variant="primary">Create SLO Profile</obs-button>
       </footer>
+    </div>
+    <aside class="slo-create__help" aria-labelledby="slo-help-title">
+      <h3 class="slo-create__help-title" id="slo-help-title">SLO Help card</h3>
+      <!-- Reserved. The full Help Card exists in redundancy-slo/wireframe.html artboard 2 — the
+           worked 5-day matrix and the "recovered N percentage points" note — and lands here when
+           the designer calls for it. Deliberately empty rather than approximated. -->
+      <div class="slo-create__help-body"></div>
+    </aside>
     </div>
   `
 

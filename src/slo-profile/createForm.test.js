@@ -45,6 +45,15 @@ describe('create slo profile form', () => {
     expect(host.querySelectorAll('.ev-row')).toHaveLength(2)
   })
 
+  // Reserved, not built: the designer asked for the slot and its title only, and will say when
+  // the full Help Card (artboard 2's worked matrix) should land in it.
+  it('reserves a titled Help Card beside the form', () => {
+    const help = host.querySelector('.slo-create__help')
+    expect(help).not.toBeNull()
+    expect(help.querySelector('.slo-create__help-title').textContent.trim()).toBe('SLO Help card')
+    expect(help.querySelector('.slo-create__help-body').textContent.trim()).toBe('')
+  })
+
   it('offers Reset and Create', () => {
     expect(host.querySelector('#slo-form-create').textContent).toContain('Create SLO Profile')
     expect(host.querySelector('#slo-form-reset')).not.toBeNull()

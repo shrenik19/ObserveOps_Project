@@ -164,6 +164,14 @@ check('the business service picker is a select, not a text field',
   check('Business Service Name has a visible label',
     labelTexts.some((t) => t.replace(/\s*\*$/, '') === 'Business Service Name'), labelTexts)
 }
+{
+  // Reserved space, so assert it is PRESENT AND PAINTED rather than that it has content.
+  const help = await page.$eval('.slo-create__help', (e) => ({
+    title: e.querySelector('.slo-create__help-title').textContent.trim(),
+    w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height,
+  }))
+  check('the Help Card slot is reserved, titled and painted', help.title === 'SLO Help card' && help.w > 200 && help.h > 200, help)
+}
 await shot('slo-create')
 
 // Create persists: spec §8 puts only editing out of scope, and the row must be visible in the
