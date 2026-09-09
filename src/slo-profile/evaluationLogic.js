@@ -87,6 +87,7 @@ export function renderEvaluationLogic(host, { members }) {
       pick(mode)
     })
     row(mode).addEventListener('keydown', (e) => {
+      if (e.target.closest('#ev-quorum')) return
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(mode) }
       else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); moveTo(-1, mode) }
       else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); moveTo(1, mode) }

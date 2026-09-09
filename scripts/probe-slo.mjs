@@ -60,6 +60,18 @@ check('a tile has real size', await page.$eval('.slo-tile', (e) => e.getBounding
 check('status is a DS severity that painted',
   await page.$eval('.slo-tile obs-severity', (e) => e.getBoundingClientRect().width > 0))
 {
+  // G-series confusion: the SLO page header used to carry the Monitors module's own glyph
+  // ('monitor'), left over after the sidebar/Overview card were fixed to 'slo'. Assert the
+  // `obs-icon` slotted into the page header itself is named 'slo' AND actually painted — a name
+  // check alone would have passed even if 'slo' silently rendered an empty box.
+  const headerIcon = await page.$eval('obs-page-header obs-icon[slot="before"]', (e) => ({
+    name: e.getAttribute('name'),
+    height: e.getBoundingClientRect().height,
+  }))
+  check('the page header icon is slo, not monitor, and it painted',
+    headerIcon.name === 'slo' && headerIcon.height > 0, headerIcon)
+}
+{
   // Spec §3: the flat head is `SLO` plus the Breached/Warning/Ok/Total counters, derived from the
   // store. Rendered through obs-page-header's `heading`/`meta` — confirmed live, not read off the
   // manifest, per spec §6.

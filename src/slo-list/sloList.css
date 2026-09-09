@@ -39,6 +39,8 @@
 .slo-tile__slot,
 .slo-tile__num { flex: 1; min-width: 0; }
 
+.slo-tile__slot:last-child { flex: 1.8; }
+
 .slo-tile__lb,
 .slo-tile__num span {
   display: block;

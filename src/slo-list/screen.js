@@ -7,7 +7,7 @@ import { pageHeaderHTML } from '../app/pageHeader.js'
 import { createStore } from './sloStore.js'
 import './sloList.css'
 
-export const meta = { pageHeader: { heading: 'SLO', icon: 'monitor' } }
+export const meta = { pageHeader: { heading: 'SLO', icon: 'slo' } }
 
 // obs-severity carries the level; `value` overrides its label so `critical` reads `Breached`.
 const STATUS_LABEL = { up: 'Ok', warning: 'Warning', critical: 'Breached' }
@@ -43,7 +43,7 @@ export const tileHTML = (slo) => {
 }
 
 const TEMPLATE = `
-  ${pageHeaderHTML({ heading: 'SLO', icon: 'monitor' })}
+  ${pageHeaderHTML({ heading: 'SLO', icon: 'slo' })}
   <div class="app-shell__body">
     <main class="app-shell__content" id="slo-content">
       <obs-toolbar data-role="content-toolbar">

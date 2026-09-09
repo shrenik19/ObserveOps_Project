@@ -159,4 +159,34 @@ describe('the evaluation logic control', () => {
     input.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     expect(selected().dataset.mode).toBe('strict')
   })
+
+  // The click handler on the row already guards `#ev-quorum`; the keydown handler added for arrow
+  // traversal did not. `keydown` is composed and bubbles out of obs-input's shadow root, so a
+  // keyboard user stepping the number with ArrowUp/ArrowDown inside the field got the event
+  // intercepted, preventDefault()-ed (killing the native step), and routed into moveTo() — which
+  // switches the mode and moves focus away, hiding the quorum field out from under them. Dispatch
+  // from `#ev-quorum` itself (bubbling, as a real shadow-DOM event would) — the existing arrow
+  // tests above all dispatch on the row itself, which is why none of them caught this.
+  it('does not hijack arrow keys pressed inside the quorum input', () => {
+    const input = host.querySelector('#ev-quorum')
+    const strict = host.querySelector('[data-mode="strict"]')
+    // obs-input is an unregistered custom element in this jsdom suite (main.js registers the DS
+    // once, which unit tests don't import), so it carries no native focus behaviour of its own —
+    // `input.focus()` is not a reliable oracle here. What the bug actually does is move focus onto
+    // the OTHER row via `row(next).focus()`, which — unlike obs-input — is a real tabindex'd div
+    // and does become `document.activeElement` in jsdom. Assert against that: focus must stay off
+    // the strict row, and `document.activeElement` must not change, when the guard is doing its job.
+    input.focus()
+    const before = document.activeElement
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+    expect(selected().dataset.mode).toBe('redundant')
+    expect(document.activeElement).not.toBe(strict)
+    expect(document.activeElement).toBe(before)
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+    expect(selected().dataset.mode).toBe('redundant')
+    expect(document.activeElement).not.toBe(strict)
+    expect(document.activeElement).toBe(before)
+  })
 })
