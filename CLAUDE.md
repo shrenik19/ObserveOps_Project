@@ -252,6 +252,8 @@ published before the refactor keep working:
 | Report / Category RBAC | https://shrenik19.github.io/ObserveOps_Project/#/reports/categories |
 | WAN Link (NX-OS) | https://shrenik19.github.io/ObserveOps_Project/#/monitors/wan-link |
 | WAN Link Discovery | https://shrenik19.github.io/ObserveOps_Project/#/settings/wan-link-discovery |
+| SLO estate | https://shrenik19.github.io/ObserveOps_Project/#/slo/list |
+| SLO Profile | https://shrenik19.github.io/ObserveOps_Project/#/settings/slo-profile |
 | ↳ old LAMA link | `…/lama.html` → redirects to `#/settings/lama` |
 | ↳ old Report link | `…/report-categories.html` → redirects to `#/reports/categories` |
 
