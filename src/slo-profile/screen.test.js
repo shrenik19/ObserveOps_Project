@@ -3,7 +3,15 @@ import { mount } from './screen.js'
 
 describe('slo profile screen', () => {
   let root
-  beforeEach(() => { root = document.createElement('div'); document.body.append(root); mount(root) })
+  beforeEach(() => {
+    // Each mount re-uses the same ids. Left to pile up in document.body, a selector like
+    // '#slo-profile-form obs-drawer' resolves its #id half through getElementById — the FIRST match
+    // in the document — and silently reads the wrong screen. Clear the body every time.
+    document.body.replaceChildren()
+    root = document.createElement('div')
+    document.body.append(root)
+    mount(root)
+  })
 
   it('renders the profile table', () => {
     expect(root.querySelector('#slo-profile-table')).not.toBeNull()
@@ -35,18 +43,28 @@ describe('slo profile screen', () => {
 
 describe('the two views', () => {
   let root
-  beforeEach(() => { root = document.createElement('div'); document.body.append(root); mount(root) })
-
-  it('starts on the table', () => {
-    expect(root.querySelector('#slo-profile-list').hidden).toBe(false)
-    expect(root.querySelector('#slo-profile-form').hidden).toBe(true)
+  beforeEach(() => {
+    // Each mount re-uses the same ids. Left to pile up in document.body, a selector like
+    // '#slo-profile-form obs-drawer' resolves its #id half through getElementById — the FIRST match
+    // in the document — and silently reads the wrong screen. Clear the body every time.
+    document.body.replaceChildren()
+    root = document.createElement('div')
+    document.body.append(root)
+    mount(root)
   })
 
-  it('opens the Create form without changing route', () => {
+  it('starts on the table, with no drawer open', () => {
+    expect(root.querySelector('#slo-profile-list').hidden).toBe(false)
+    expect(root.querySelector('#slo-profile-form').children).toHaveLength(0)
+  })
+
+  // The Create form is an OVERLAY now, not a swapped-in section: the list stays mounted and visible
+  // underneath, because hiding what a drawer overlays defeats the point of a drawer.
+  it('opens the Create form in a drawer, over the list, without changing route', () => {
     const before = window.location.hash
     root.querySelector('#slo-profile-create').click()
-    expect(root.querySelector('#slo-profile-form').hidden).toBe(false)
-    expect(root.querySelector('#slo-profile-list').hidden).toBe(true)
+    expect(root.querySelector('#slo-profile-form obs-drawer')).not.toBeNull()
+    expect(root.querySelector('#slo-profile-list').hidden).toBe(false)
     expect(root.querySelectorAll('.ev-row')).toHaveLength(2)
     expect(window.location.hash).toBe(before)
   })
@@ -100,7 +118,15 @@ describe('the filter bar', () => {
   const change = (conditions, match = 'all') =>
     bar().dispatchEvent(new CustomEvent('change', { detail: [{ conditions, match }] }))
 
-  beforeEach(() => { root = document.createElement('div'); document.body.append(root); mount(root) })
+  beforeEach(() => {
+    // Each mount re-uses the same ids. Left to pile up in document.body, a selector like
+    // '#slo-profile-form obs-drawer' resolves its #id half through getElementById — the FIRST match
+    // in the document — and silently reads the wrong screen. Clear the body every time.
+    document.body.replaceChildren()
+    root = document.createElement('div')
+    document.body.append(root)
+    mount(root)
+  })
 
   it('sits between the toolbar and the table', () => {
     expect(bar()).not.toBeNull()
@@ -203,5 +229,82 @@ describe('the filter bar', () => {
     const byKey = Object.fromEntries(bar().fields.map((f) => [f.key, f.values]))
     expect(byKey.service).toContain('E-commerce Platform')
     expect(new Set(byKey.service).size).toBe(byKey.service.length)
+  })
+})
+
+// The Create drawer — the DS's large / full-screen tier, per the product's own Create SLO Profile.
+describe('the Create SLO Profile drawer', () => {
+  let root
+  const open = () => { root.querySelector('#slo-profile-create').click() }
+  const drawer = () => root.querySelector('#slo-profile-form obs-drawer')
+
+  beforeEach(() => {
+    document.body.replaceChildren()
+    root = document.createElement('div')
+    document.body.append(root)
+    mount(root)
+    open()
+  })
+
+  it('is the large / full-screen tier, multi-pane', () => {
+    expect(drawer().getAttribute('width')).toBe('96%')
+    expect(drawer().getAttribute('scrolled-content')).toBe('false')
+    expect(drawer().getAttribute('title')).toBe('Create SLO Profile')
+  })
+
+  it('lays out a 2 : 6 : 4 body — rail, form, Help Card', () => {
+    expect(drawer().querySelectorAll('.pane-drawer__col')).toHaveLength(3)
+    expect(drawer().querySelector('.pane-drawer__nav .pane-drawer__nav-item')).not.toBeNull()
+    expect(drawer().querySelector('.pane-drawer__form .slo-form')).not.toBeNull()
+    expect(drawer().querySelector('.pane-drawer__help .slo-help')).not.toBeNull()
+  })
+
+  it('offers Availability and Performance in the rail, Availability first and selected', () => {
+    const items = [...drawer().querySelectorAll('.pane-drawer__nav-item')]
+    expect(items.map((i) => i.textContent.trim())).toEqual(['Availability', 'Performance'])
+    expect(items[0].classList.contains('is-selected')).toBe(true)
+  })
+
+  it('moves the selected treatment when a type is picked', () => {
+    drawer().querySelectorAll('.pane-drawer__nav-item')[1].click()
+    const items = [...drawer().querySelectorAll('.pane-drawer__nav-item')]
+    expect(items[1].classList.contains('is-selected')).toBe(true)
+    expect(items[0].classList.contains('is-selected')).toBe(false)
+  })
+
+  // profiles.js recorded that the form collects no Availability/Performance distinction, so `type`
+  // defaulted to Availability for everything created. The rail is now where that is decided.
+  it('stores the type the rail is on', () => {
+    drawer().querySelectorAll('.pane-drawer__nav-item')[1].click()
+    root.querySelector('#slo-form-create').click()
+    const rows = root.querySelector('#slo-profile-table').rows
+    expect(rows[rows.length - 1].type).toBe('Performance')
+  })
+
+  it('still defaults to Availability when the rail is left alone', () => {
+    root.querySelector('#slo-form-create').click()
+    const rows = root.querySelector('#slo-profile-table').rows
+    expect(rows[rows.length - 1].type).toBe('Availability')
+  })
+
+  it('shows the picked type in the Help Card', () => {
+    drawer().querySelectorAll('.pane-drawer__nav-item')[1].click()
+    const text = drawer().querySelector('.slo-help').textContent.replace(/\s+/g, ' ')
+    expect(text).toContain('Performance')
+  })
+
+  // The Help Card is a live mirror of the form, which is what makes it worth a third of the drawer.
+  it('follows the evaluation control into Strict', () => {
+    const help = () => drawer().querySelector('.slo-help').textContent.replace(/\s+/g, ' ')
+    expect(help()).toContain('recovered 40 percentage points')
+    root.querySelector('[data-mode="strict"]').click()
+    expect(help()).toContain('Switch to Redundant')
+    expect(help()).toContain('scores 40%')
+  })
+
+  it('closes back to the table when the drawer closes', () => {
+    drawer().dispatchEvent(new CustomEvent('close'))
+    expect(root.querySelector('#slo-profile-form').children).toHaveLength(0)
+    expect(root.querySelector('#slo-profile-list').hidden).toBe(false)
   })
 })

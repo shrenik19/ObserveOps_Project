@@ -12,9 +12,8 @@ const SERVICES = ['E-commerce Platform', 'Network Core', 'Branch Connectivity', 
 const label = (id, text, { required = false } = {}) =>
   `<label class="slo-field__label" for="${id}">${text}${required ? '<span class="slo-field__req">*</span>' : ''}</label>`
 
-export function renderCreateForm(host, { onCancel, onCreate = () => {} }) {
+export function renderCreateForm(host, { onCancel, onCreate = () => {}, onChange = () => {} }) {
   host.innerHTML = `
-    <div class="slo-create">
     <div class="slo-form">
       <div class="slo-form__grid">
         <div data-field="name" class="slo-field">
@@ -75,25 +74,36 @@ export function renderCreateForm(host, { onCancel, onCreate = () => {} }) {
         <obs-button id="slo-form-create" variant="primary">Create SLO Profile</obs-button>
       </footer>
     </div>
-    <aside class="slo-create__help" aria-labelledby="slo-help-title">
-      <h3 class="slo-create__help-title" id="slo-help-title">SLO Help card</h3>
-      <!-- Reserved. The full Help Card exists in redundancy-slo/wireframe.html artboard 2 — the
-           worked 5-day matrix and the "recovered N percentage points" note — and lands here when
-           the designer calls for it. Deliberately empty rather than approximated. -->
-      <div class="slo-create__help-body"></div>
-    </aside>
-    </div>
   `
 
   host.querySelector('#slo-bs').options = SERVICES.map((s) => ({ value: s, text: s }))
-
-  // Source says "3 monitors selected", so M is 3 and `of M` is derived, never typed.
-  const { evaluation } = renderEvaluationLogic(host.querySelector('#slo-evaluation'), { members: 3 })
 
   // obs-input/obs-select are not upgraded custom elements under jsdom (no real `.value`
   // accessor), and the app reads other DS field values the same way — see
   // src/wan-link-discovery/createForm.js's `text()` helper.
   const fieldValue = (id) => host.querySelector(`#${id}`).getAttribute('value') ?? ''
+
+  // The Help Card in the drawer's third column mirrors this form, so every value it shows has to
+  // report itself. This is that report — the evaluation control contributes mode and quorum
+  // separately, because those two live inside it.
+  const readState = () => ({
+    service: fieldValue('slo-bs'),
+    frequency: fieldValue('slo-frequency'),
+    target: fieldValue('slo-target'),
+    warning: fieldValue('slo-warning'),
+  })
+
+  // Source says "3 monitors selected", so M is 3 and `of M` is derived, never typed.
+  const { evaluation } = renderEvaluationLogic(host.querySelector('#slo-evaluation'), {
+    members: 3,
+    onChange: ({ mode, quorum }) => onChange({ ...readState(), mode, quorum }),
+  })
+
+  // The DS fields emit `change`; one delegated listener keeps the Help Card in step with all of
+  // them without wiring each field by hand.
+  host.addEventListener('change', () => {
+    onChange({ ...readState(), mode: evaluation.mode, quorum: evaluation.quorum })
+  })
 
   // The current form values are what gets stored — spec §8 puts only EDITING out of scope; "The
   // Create form creates."
@@ -107,7 +117,8 @@ export function renderCreateForm(host, { onCancel, onCreate = () => {} }) {
     evaluation: evaluation.mode === 'strict' ? 'Strict' : 'Redundancy',
   })
 
-  host.querySelector('#slo-form-reset').addEventListener('click', () => renderCreateForm(host, { onCancel, onCreate }))
+  host.querySelector('#slo-form-reset')
+    .addEventListener('click', () => renderCreateForm(host, { onCancel, onCreate, onChange }))
   host.querySelector('#slo-form-create').addEventListener('click', () => onCreate(readDraft()))
 
   return { evaluation }

@@ -165,12 +165,19 @@ check('the business service picker is a select, not a text field',
     labelTexts.some((t) => t.replace(/\s*\*$/, '') === 'Business Service Name'), labelTexts)
 }
 {
-  // Reserved space, so assert it is PRESENT AND PAINTED rather than that it has content.
-  const help = await page.$eval('.slo-create__help', (e) => ({
-    title: e.querySelector('.slo-create__help-title').textContent.trim(),
-    w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height,
+  // The Help Card is no longer a reserved slot: it is column 3 of the Create drawer's 2 : 6 : 4
+  // body, carrying artboard 2's worked example. Assert it PAINTED and that it says something.
+  const help = await page.$eval('.pane-drawer__help .slo-help', (e) => ({
+    title: e.querySelector('.pane-drawer__help-title').textContent.trim(),
+    w: e.getBoundingClientRect().width,
+    h: e.getBoundingClientRect().height,
+    // head + group + 3 members + quorum + Overall + "Strict would be" = 8
+    matrixRows: e.querySelectorAll('.slo-help__matrix tr').length,
+    note: e.querySelector('.slo-help__note').textContent.replace(/\s+/g, ' ').trim(),
   }))
-  check('the Help Card slot is reserved, titled and painted', help.title === 'SLO Help card' && help.w > 200 && help.h > 200, help)
+  check('the Help Card is titled, painted and worked through',
+    help.title === 'SLO Help card' && help.w > 200 && help.h > 200 &&
+    help.matrixRows === 8 && help.note.includes('recovered 40 percentage points'), help)
 }
 await shot('slo-create')
 

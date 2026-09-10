@@ -5,6 +5,8 @@
 import { pageHeaderHTML } from '../app/pageHeader.js'
 import { createProfileStore } from './profiles.js'
 import { renderCreateForm } from './createForm.js'
+import { renderPaneDrawer, renderNavRail } from '../app/paneDrawer.js'
+import { renderSloHelpCard } from './helpCard.js'
 import './sloProfile.css'
 
 export const meta = { pageHeader: { heading: 'Settings', icon: 'settings' } }
@@ -33,7 +35,7 @@ const TEMPLATE = `
 
         <obs-table id="slo-profile-table" row-key="id" page-size="0" sticky-header max-height="100%"></obs-table>
       </section>
-      <section id="slo-profile-form" hidden></section>
+      <section id="slo-profile-form"></section>
     </main>
   </div>
 `
@@ -117,22 +119,69 @@ export function mount(root) {
   const list = root.querySelector('#slo-profile-list')
   const form = root.querySelector('#slo-profile-form')
 
-  const showList = () => { form.hidden = true; list.hidden = false; form.innerHTML = '' }
+  // --- The Create drawer --------------------------------------------------------------------------
+  // Create SLO Profile opens OVER the list as the DS's large / full-screen drawer — width 96%,
+  // scrolled-content="false", a 2 : 6 : 4 body. The list is left mounted underneath rather than
+  // swapped out: the drawer is an overlay, and hiding what it overlays would defeat that.
+  //
+  // Column 1 is the SLO TYPE rail. The product puts Availability / Performance there, and it fills
+  // a real hole: profiles.js records that the form "collects no Availability/Performance
+  // distinction of its own", so `type` was defaulting to Availability for every profile created.
+  // Now the rail decides it.
+  const SLO_TYPES = [
+    { key: 'Availability', label: 'Availability' },
+    { key: 'Performance', label: 'Performance' },
+  ]
+
+  const showList = () => {
+    list.hidden = false
+    form.replaceChildren()
+  }
+
   const showForm = () => {
-    list.hidden = true
-    form.hidden = false
-    renderCreateForm(form, {
-      onCancel: showList,
-      // The Create form creates (spec §8): persist the draft, refresh the table from the store so
-      // the new row is there, then return — the same pattern lama/screen.js and
-      // wan-link-discovery/profileStore.js already use for their own Create flows.
-      onCreate: (draft) => {
-        store.add(draft)
-        syncFields()
-        render()
-        showList()
+    let sloType = 'Availability'
+
+    const formColumn = document.createElement('div')
+    const help = renderSloHelpCard({ type: sloType })
+
+    const build = () => {
+      renderCreateForm(formColumn, {
+        onCancel: showList,
+        // The Create form creates (spec §8): persist the draft, refresh the table from the store so
+        // the new row is there, then return — the same pattern lama/screen.js and
+        // wan-link-discovery/profileStore.js already use for their own Create flows.
+        onCreate: (draft) => {
+          store.add({ ...draft, type: sloType })
+          syncFields()
+          render()
+          showList()
+        },
+        onChange: (state) => help.update(state),
+      })
+    }
+    build()
+
+    // Picking a type re-renders the rail in place, so the selected treatment follows the pick.
+    const buildRail = () => renderNavRail({
+      items: SLO_TYPES,
+      selected: sloType,
+      onSelect: (key) => {
+        sloType = key
+        help.update({ type: key })
+        drawer.querySelector('.pane-drawer__rail').replaceWith(buildRail())
       },
     })
+
+    const drawer = renderPaneDrawer({
+      title: 'Create SLO Profile',
+      nav: buildRail(),
+      form: formColumn,
+      help,
+      onClose: showList,
+    })
+
+    list.hidden = false
+    form.replaceChildren(drawer)
   }
 
   const openCreateForm = () => showForm()

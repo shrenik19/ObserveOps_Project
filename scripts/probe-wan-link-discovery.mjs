@@ -143,8 +143,10 @@ const auditFormOpen = await hiddenAudit()
 console.log('  hidden audit (form open):', JSON.stringify(auditFormOpen))
 check('hidden · audit found exactly the Create form\'s toggled ids (form open)',
   auditCoversExactly(auditFormOpen, FORM_IDS), Object.keys(auditFormOpen))
-check('hidden · #wld-list is not painted while the form is open',
-  auditFormOpen['wld-list'].hiddenProp && !auditFormOpen['wld-list'].painted,
+// The Create form is an OVERLAY now — the DS large / full-screen drawer — so the list deliberately
+// stays mounted and painted UNDERNEATH it. What matters is that the drawer is actually covering it.
+check('overlay · the Create drawer covers the list, which stays mounted',
+  auditFormOpen['wld-list'].painted && !auditFormOpen['wld-list'].hiddenProp,
   auditFormOpen['wld-list'])
 check('hidden · nothing else toggled off is still painted',
   paintedWhileHidden(auditFormOpen).length === 0, paintedWhileHidden(auditFormOpen))
@@ -628,6 +630,7 @@ await page.waitForTimeout(1200)
 const landed = await page.evaluate(() => ({
   hash: location.hash,
   onCreateForm: !!document.querySelector('.wld-form') && !!document.getElementById('wld-monitor'),
+  inDrawer: !!document.querySelector('.pane-drawer__form .wld-form'),
   // The router bug this fixed: the hash resolved against nothing and dropped the user here.
   onModuleIndex: !!document.querySelector('.overview-card, .card-list a'),
   listPainted: (() => {
@@ -639,7 +642,9 @@ console.log('  landed:', JSON.stringify(landed))
 check('deeplink · the hash keeps its query string', landed.hash === href, landed.hash)
 check('deeplink · it lands on the discovery Create form', landed.onCreateForm, landed)
 check('deeplink · NOT on the Settings module index', !landed.onModuleIndex)
-check('deeplink · NOT on the profile list', !landed.listPainted)
+// Same overlay rule as above: deep-linking opens the drawer OVER the list rather than instead of it,
+// so the list being painted underneath is correct. The drawer being there is the real assertion.
+check('deeplink · the Create drawer is what opened', landed.inDrawer, landed)
 
 const locked = await page.evaluate(() => {
   const m = document.getElementById('wld-monitor')

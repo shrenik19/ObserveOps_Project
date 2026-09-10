@@ -109,7 +109,7 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
 
       <div id="wld-csv-block" hidden>
         <div class="wld-form__row">
-          <div class="wld-field">
+          <div class="wld-field wld-field--csv">
             <label class="wld-field__label" for="wld-csv-name">
               CSV<span class="wld-field__req">*</span>
             </label>
@@ -119,7 +119,7 @@ export function renderCreateForm({ monitorId = null, locked = false, onCancel, o
             </div>
             <button type="button" class="wld-form__sample" id="wld-csv-sample">Sample CSV</button>
           </div>
-          <div></div><div></div>
+          <div></div>
         </div>
         <p class="wld-form__gate" id="wld-csv-columns"></p>
       </div>

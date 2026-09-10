@@ -94,6 +94,34 @@ ignores any condition whose value is empty — otherwise the table would open fi
 Every write to `table.rows` goes through one `render()`, so a filtered view survives creating a
 profile rather than being silently replaced by the full store.
 
+### The Create drawer
+
+**Create SLO Profile opens as the DS's large / full-screen drawer**, not as a section beside the
+table — `width="96%"`, `scrolled-content="false"`, and a **2 : 6 : 4** body whose three columns
+scroll independently. This is the tier the drawer spec names for "complex multi-pane flows — a left
+nav + main scrollable form + a right reference panel", and the shape
+`apm-application-registration-drawer.vue` established. Measured in real Chrome at 1600px: 1534px
+wide (96%), columns 256 / 767 / 511px — **17 / 50 / 33%**, matching the reference's own measurement.
+
+The list stays mounted and visible underneath. A drawer that hides what it overlays is not a drawer.
+
+**Column 1 is the SLO type rail — and it closes a real hole.** `profiles.js` recorded that the
+Create form "collects no Availability/Performance distinction of its own", so every profile created
+through it was stored as `Availability` regardless. The rail is now where that is decided, and it is
+what `store.add` receives.
+
+**Column 3 is the Help Card, and it is now built.** The slot was reserved and deliberately empty
+("the designer asked for the slot and its title only"). It now carries what
+`redundancy-slo/wireframe.html` artboard 2 designed: a live summary of the form, the worked five-day
+matrix, and the Strict-vs-Redundant comparison note. It is a **teaching panel, not a preview** — the
+five days are a fixed worked example chosen so "recovered N percentage points" reports a real
+number. Only the evaluation mode and the quorum move it; under Strict the quorum row disappears,
+because a quorum means nothing when every member must be up.
+
+**`obs-drawer` fires `close` when it is removed from the DOM**, not only when the user closes it —
+undocumented, and the same trap G25 records for `obs-modal`. The shell acts on `close` only while
+the drawer is still connected. See **G51**.
+
 ### View 2 — the Create form (artboard 2)
 
 `SLO_setup_2` field for field, with **Evaluation Logic as the only addition**, full width between

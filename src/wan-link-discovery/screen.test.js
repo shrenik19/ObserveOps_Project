@@ -91,11 +91,14 @@ describe('the four views', () => {
     expect(root.querySelector('.wld-form')).toBeNull()
   })
 
-  it('opens the create form and hides the list', () => {
+  // The create form is an OVERLAY now — the DS's large / full-screen drawer — so the list stays
+  // mounted and visible underneath it rather than being swapped out.
+  it('opens the create form in a drawer, over the list', () => {
     const root = mounted()
     root.querySelector('#wld-create').click()
     expect(root.querySelector('.wld-form')).toBeTruthy()
-    expect(root.querySelector('#wld-list').hidden).toBe(true)
+    expect(root.querySelector('#wld-view obs-drawer')).not.toBeNull()
+    expect(root.querySelector('#wld-list').hidden).toBe(false)
   })
 
   it('returns to the list on Save and Exit', () => {

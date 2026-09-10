@@ -51,6 +51,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G48** `obs-button` has no pressed/toggled state | 🆕 **OPEN** | Its 9 attributes are exactly `variant, size, disabled, loading, outline, square, block, shape, squared` — nothing for "currently engaged". The SLO list view toggle co-opts `variant` (`primary` = engaged) instead |
 | **G49** `obs-select`/`obs-tags` have no `label`; `obs-input` does | 🆕 **OPEN** | Shipped a real bug: 4 fields rendered with no visible label, past a 661-test suite and a 19-check probe, because the test asserted the ignored attribute was present. External `<label for>` doesn't associate with a custom element either. Second time this exact gap has bitten this project |
 | **G50** `obs-filters` kind="bar" has no `defaultChips` | 🆕 **OPEN** | The element exposes only `fields`, `value` and `match`; a `defaultChips` property and a `default-chips` attribute are both silently ignored, yet the bar's own spec documents `defaultChips` as the FilterBar API and says the leading chips "come from the MODULE". Seeding `value` with valueless conditions is the only way to draw them — and they arrive removable, with Match/Clear All showing before anything is applied |
+| **G51** `obs-drawer` fires `close` when it is REMOVED from the DOM | 🆕 **OPEN** | Undocumented in the registry and in `elements-api.json`. Wiring `close` to "go back" therefore destroys whatever replaced the drawer — Save and Run swapped the progress panel in, the drawer's removal fired `close`, and the handler emptied the view again. **Second instance of G25**, which records the identical trap in `obs-modal`. Invisible to unit tests; found by clicking Save and Run in real Chrome |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -2050,3 +2051,45 @@ non-removable leading chips that do not count as conditions for the Match/Clear 
 Failing that, expose `::part()` hooks for `chip`, `chip-remove`, `bar-right` so a consumer can at
 least suppress the affordances the product doesn't show. And either way, correct the registry: it
 currently documents an API the element does not have.
+
+### New finding — G51: `obs-drawer` fires `close` when it is removed from the DOM
+
+**Class: DS — undocumented behaviour that shipped a real bug.** The second instance of **G25**,
+which records exactly this in `obs-modal`: *"Wiring `close` to cancel — the obvious reading — tears
+down whatever the confirm just opened."*
+
+Both Create screens now open the DS's large / full-screen drawer, and the obvious wiring is
+`onClose → go back to the list`. On WAN Link Discovery that quietly broke **Save and Run**:
+
+1. `Save and Run` calls `openProgress`, which does `view.replaceChildren(progressPanel)`.
+2. That removes the `obs-drawer` from the DOM.
+3. The removal fires **`close`**.
+4. The `close` handler runs `showList()`, which does `view.replaceChildren()` — emptying the view
+   and discarding the progress panel installed one tick earlier.
+
+The screen simply went blank on the primary action. `probe-wan-link-discovery.mjs` caught it as
+`onProgress: false` with no error text and an empty `#wld-view`, then timed out waiting for
+`#wld-prog-abort`. **The 137 unit tests for this screen all passed**, because jsdom never upgrades
+`obs-drawer` and so never fires the event.
+
+**Probed in real Chrome** (elements 0.1.167), the two cases are distinguishable:
+
+| how the drawer closed | `close` fires | `isConnected` | `open` attribute |
+|---|---|---|---|
+| user clicks the built-in `×` | yes | **`true`** | already cleared |
+| removed from the DOM (`replaceChildren`) | yes, **plus `after-close`** | **`false`** | — |
+
+**Workaround shipped** (`src/app/paneDrawer.js`): act on `close` only while the drawer is still
+connected.
+
+```js
+drawer.addEventListener('close', () => { if (drawer.isConnected) onClose() })
+```
+
+It works, and it is pinned by a unit test — but it depends on an ordering the DS has never promised,
+so a future release could invert it silently.
+
+**Ask:** either stop emitting `close` on disconnect, or distinguish the two — a `reason` on the event
+detail (`'user' | 'detached'`), or a documented guarantee that `close` fires only for a real close.
+At minimum, `elements-api.json` should say that `close` and `after-close` fire on removal: it
+currently lists the events with no note, which is what made the obvious wiring the wrong wiring.

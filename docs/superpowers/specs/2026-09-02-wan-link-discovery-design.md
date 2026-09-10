@@ -85,6 +85,35 @@ Right column, top-right of the first row: a `Single | CSV` segmented control, ma
 `IP/Host | IP Range | CSV | CIDR` control the template already uses. It replaces today's
 `Single WAN Link Configuration` / `Bulk WAN Link Configuration` tab strip.
 
+### The form is a large / full-screen drawer
+
+The left rail above is not decoration on a page — it is **column 1 of the DS's large / full-screen
+drawer**: `width="96%"`, `scrolled-content="false"`, a **2 : 6 : 4** body whose columns scroll
+independently. Measured in real Chrome at 1600px: 1534px wide, columns 256 / 767 / 511px —
+**17 / 50 / 33%**. The profile list stays mounted underneath.
+
+The first build shipped the form as a full-page section and so dropped the rail with it. Restoring
+the drawer restores the rail, and with it the claim this feature rests on: **WAN Link reads as a
+category among its real siblings.** Every other category is shown and disabled — hiding them would
+misrepresent where WAN Link sits, which is the one thing the tree is here to show.
+
+**Column 3 is the Discovery Help Card** — the product's four collapsible rows (Supported Platforms ·
+Network & Connectivity Requirements · Credential Requirements and Permissions · Discovery
+Mechanisms) plus a documentation link. Its copy is this spec's own: the platform matrix from Block 2,
+the derived method, and declare → push → verify.
+
+**Only the form is a drawer.** The progress panel and the provision grid are the steps after it and
+stay full-page views — they are not a form beside a reference panel.
+
+**Two things this cost, both worth recording.** `obs-drawer` fires `close` when it is **removed from
+the DOM**, so wiring `close` to "go back" destroyed the progress panel that Save and Run had just
+installed — the screen went blank on its primary action, past 137 green unit tests, and only a real
+click found it (**G51**). And halving the form's width squeezed the CSV field's readonly input
+narrower than its own Upload button; the field owns its row, so it now spans two grid cells.
+
+> The decision table below rejects "a full-screen overlay" — that was about **the in-device entry
+> point**, which stays retired. The Create form's own presentation is this drawer.
+
 ### Block 1 — Profile
 
 | Field | Notes |

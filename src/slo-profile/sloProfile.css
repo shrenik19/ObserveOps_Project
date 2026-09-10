@@ -105,20 +105,67 @@
 
 .slo-form__note { margin-right: auto; color: var(--input-placeholder-color); }
 
-/* The Create screen is two columns, as artboard 2 is: the form, and the Help Card beside it.
-   Ratio follows the wireframe (56/44). The card is reserved space for now — titled, empty,
-   and not approximated. */
-.slo-create { display: flex; gap: 14px; align-items: flex-start; }
-.slo-create .slo-form { flex: 1 1 56%; min-width: 0; }
+/* The Create screen's two columns are gone: Create SLO Profile is now the DS's large / full-screen
+   drawer, and the 2 : 6 : 4 layout lives in src/app/paneDrawer.css. What is left here is the Help
+   Card's own content — the worked example from redundancy-slo/wireframe.html artboard 2. */
 
-.slo-create__help {
-  flex: 1 1 44%;
-  min-width: 0;
+.slo-help__lead { margin: 0 0 11px; font-size: 12px; line-height: 1.55; color: var(--page-text-color); }
+
+.slo-help__fields,
+.slo-help__matrix {
+  width: 100%;
+  margin-bottom: 11px;
   border: 1px solid var(--border-color);
-  border-radius: var(--btn-radius);
+  border-collapse: collapse;
   background: var(--common-main-bg);
-  padding: var(--common-padd-space);
+  font-size: 11.5px;
 }
 
-.slo-create__help-title { margin: 0; font-size: 13px; font-weight: 600; color: var(--page-text-color); }
-.slo-create__help-body { min-height: 320px; }
+.slo-help__fields th,
+.slo-help__matrix th {
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  font-size: 9.5px;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--input-placeholder-color);
+}
+
+.slo-help__fields td,
+.slo-help__matrix td {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  color: var(--page-text-color);
+}
+
+.slo-help__matrix { text-align: center; }
+.slo-help__matrix td:first-child { text-align: left; }
+
+/* Up / Down and Ok / Breach carry the DS's own status colours — never a hardcoded green or red. */
+.slo-help__matrix .is-up { color: var(--severity-up); }
+.slo-help__matrix .is-down { color: var(--severity-down); }
+
+.slo-help__matrix .is-group td { background: var(--neutral-light); text-align: left; font-weight: 600; }
+.slo-help__quorum { font-weight: 400; color: var(--input-placeholder-color); }
+.slo-help__matrix .is-quorum td { color: var(--input-placeholder-color); }
+.slo-help__matrix .is-overall td { font-weight: 600; }
+/* The counterfactual is deliberately quieter than the real result it is compared against. */
+.slo-help__matrix .is-strict td { color: var(--input-placeholder-color); }
+
+.slo-help__example-heading {
+  margin: 0 0 5px;
+  font-size: 11px;
+  color: var(--input-placeholder-color);
+}
+
+.slo-help__note {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--severity-up-lighter);
+  border-radius: var(--btn-radius);
+  background: var(--severity-up-lightest);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--page-text-color);
+}

@@ -16,7 +16,7 @@ const MODES = [
   { mode: 'redundant', label: 'Redundant' },
 ]
 
-export function renderEvaluationLogic(host, { members }) {
+export function renderEvaluationLogic(host, { members, onChange = () => {} }) {
   const evaluation = createEvaluation({ members })
 
   host.innerHTML = `
@@ -65,6 +65,7 @@ export function renderEvaluationLogic(host, { members }) {
 
     quorumInput.setAttribute('value', String(evaluation.quorum))
     quorumInput.setAttribute('addon-after', `of ${members} must stay up`)
+    onChange({ mode: evaluation.mode, quorum: evaluation.quorum })
   }
 
   const pick = (mode) => { evaluation.setMode(mode); render() }

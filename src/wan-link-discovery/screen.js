@@ -1,6 +1,8 @@
 import { pageHeaderHTML } from '../app/pageHeader.js'
 import { createStore } from './profileStore.js'
 import { renderCreateForm } from './createForm.js'
+import { renderPaneDrawer } from '../app/paneDrawer.js'
+import { renderDiscoveryRail, renderDiscoveryHelp } from './discoveryPanes.js'
 import { renderProgressPanel } from './progressPanel.js'
 import { renderProvisionGrid } from './provisionGrid.js'
 import './wanLinkDiscovery.css'
@@ -76,12 +78,31 @@ export function mount(root) {
   const monitorFromHash = () =>
     new URLSearchParams((window.location.hash.split('?')[1] ?? '')).get('monitor')
 
+  // Create Discovery Profile opens OVER the list as the DS's large / full-screen drawer — width 96%,
+  // scrolled-content="false", a 2 : 6 : 4 body. The spec always described it this way: "Left rail:
+  // the existing category tree, `WAN Link` selected as a leaf." The form was built without that rail
+  // and so without the drawer that carries it; this restores both.
+  //
+  // Only the FORM is a drawer. The progress panel and the provision grid are the steps after it and
+  // stay full-page views — they are not a form beside a reference panel.
   function openForm(monitorId = null) {
-    show(renderCreateForm({
+    const form = renderCreateForm({
       monitorId,
       locked: Boolean(monitorId),
       onCancel: showList,
       onRun: openProgress,
+    })
+
+    live?.stop?.()
+    live = form
+    // The list stays mounted and visible: a drawer that hides what it overlays is not a drawer.
+    list.hidden = false
+    view.replaceChildren(renderPaneDrawer({
+      title: 'Create Discovery Profile',
+      nav: renderDiscoveryRail(),
+      form,
+      help: renderDiscoveryHelp(),
+      onClose: showList,
     }))
   }
 
