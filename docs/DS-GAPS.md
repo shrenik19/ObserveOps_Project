@@ -16,7 +16,7 @@
 
 ## Status — re-verified against elements 0.1.159 / css 0.1.4 / spec 0.1.197
 
-**Later additions (G32–G49) were found against elements 0.1.167 / css 0.1.6 / spec 0.1.210**, the
+**Later additions (G32–G52) were found against elements 0.1.167 / css 0.1.6 / spec 0.1.210**, the
 versions this repo currently installs; the fix-status table below has not been re-run against them.
 
 The DS team shipped fixes across three releases (0.1.143, 0.1.144, 0.1.146). Re-tested by upgrading and rebuilding the same screen
@@ -52,6 +52,7 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G49** `obs-select`/`obs-tags` have no `label`; `obs-input` does | 🆕 **OPEN** | Shipped a real bug: 4 fields rendered with no visible label, past a 661-test suite and a 19-check probe, because the test asserted the ignored attribute was present. External `<label for>` doesn't associate with a custom element either. Second time this exact gap has bitten this project |
 | **G50** `obs-filters` kind="bar" has no `defaultChips` | 🆕 **OPEN** | The element exposes only `fields`, `value` and `match`; a `defaultChips` property and a `default-chips` attribute are both silently ignored, yet the bar's own spec documents `defaultChips` as the FilterBar API and says the leading chips "come from the MODULE". Seeding `value` with valueless conditions is the only way to draw them — and they arrive removable, with Match/Clear All showing before anything is applied |
 | **G51** `obs-drawer` fires `close` when it is REMOVED from the DOM | 🆕 **OPEN** | Undocumented in the registry and in `elements-api.json`. Wiring `close` to "go back" therefore destroys whatever replaced the drawer — Save and Run swapped the progress panel in, the drawer's removal fired `close`, and the handler emptied the view again. **Second instance of G25**, which records the identical trap in `obs-modal`. Invisible to unit tests; found by clicking Save and Run in real Chrome |
+| **G52** no code block, and its tokens ship unused | 🆕 **OPEN** | `--code-tag-background-color` / `--code-tag-text-color` are defined in both themes and referenced by **nothing** — 4 occurrences in `observeops-ds.css`, all definitions, no rule consumes them. 0 of 47 elements match `code\|snippet\|copy\|clipboard`. Any screen showing a command hand-composes the box *and* its copy behaviour. **Same shape as G31 / G47** |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -2093,3 +2094,70 @@ so a future release could invert it silently.
 detail (`'user' | 'detached'`), or a documented guarantee that `close` fires only for a real close.
 At minimum, `elements-api.json` should say that `close` and `after-close` fire on removal: it
 currently lists the events with no note, which is what made the obvious wiring the wrong wiring.
+
+---
+
+### New finding — G52: no code-block component, and the code tokens ship with nothing consuming them
+
+**Class: DS — capability.**
+
+**Found building `apm-k8s-commands/`** (elements 0.1.167 / css 0.1.6 / spec 0.1.210), a change to
+the Kubernetes tab of Application Registration: four `helm` commands that each need their own titled
+box and their own copy button, so the customer runs them one at a time instead of pasting a chained
+blob.
+
+**The tokens exist. The component does not, and neither does a class.**
+
+`observeops-ds.css` defines, in both themes:
+
+| Token | light | dark |
+|---|---|---|
+| `--code-tag-background-color` | `#ecf1f9` | `#172336` |
+| `--code-tag-text-color` | `#1d2a3e` | `#cad3e2` |
+
+`grep -c code-tag` on the shipped stylesheet returns **4** — the two tokens, twice, once per theme.
+**No rule in the DS references either one**; a grep for `var(--code-tag-*)` in a declaration returns
+nothing. There is no `.code-tag` class, no `obs-code`, no `obs-snippet`. Something named a code
+*tag* was designed; only its two colours shipped.
+
+Nor is there a copy-to-clipboard affordance. `elements-api.json` ships 47 elements and
+`Object.keys(elements).filter(t => /code|snippet|copy|clipboard/i.test(t))` returns `[]`.
+
+**What the consumer has to build.** The command box is composed from raw `<div>` / `<pre>` plus
+`obs-button` and `obs-icon`, with all of its colour, radius, border and type pulled from tokens —
+including the two orphaned `--code-tag-*` ones, which is the only use they get anywhere. The copy
+behaviour is entirely consumer code: the clipboard write, the transient copied state, the revert
+timer, the swap of both the glyph and the accessible name, the `aria-live` announcement, and a
+`document.execCommand` fallback for the non-secure context a `file://` deliverable runs in.
+
+This is the same shape as **G31** and **G47** (no card / tile): a construct every product surface
+needs, absent from the DS, so every consumer hand-rolls a slightly different one. A command a
+customer runs as root on their cluster is not a good place for four teams to each invent their own
+box.
+
+**Ask, in order of value:**
+
+1. **`obs-code`** — a block with `command` / `language`, a built-in copy button, and the transient
+   copied state. It is the whole of this gap.
+2. Failing that, **publish a `.code-tag` class** that consumes the two tokens, so at least the
+   colours are not each consumer's guess.
+
+**Two design notes worth carrying into the component, learned by rendering this one:**
+
+- The block must **wrap**, not scroll horizontally. One of the four commands is a single
+  190-character line; in an `overflow-x` scroller it is cut off at the box edge with no affordance
+  saying so, and the customer cannot read what they are about to run.
+- A hanging indent for the wrapped lines is worse than none — `text-indent` outdents only the first
+  line of the block, so every *real* newline after it reads as indented, making a second command
+  look like a continuation of the first.
+
+**Not part of this gap — a claim checked and withdrawn before filing.** The draft of this entry also
+asserted that the `copy` glyph renders but is absent from the icon manifest, filing it as another
+instance of **G24 / G14**. That is wrong. `copy` is present in
+`components/registry/icon.json` at `names.list`, one of 635 registered names, and is discoverable
+through `list_icons` / `resolve_icon` — the manifest the 2026-08-12 changelog entry records adding.
+The draft's probe was `grep -rlI "copy" …`, which lists *files*, not lines; it returned `icon.json`,
+and the first `copy` in that file is the English word in a `knownIssues` sentence about *copying*
+SVG paths. Stopping at the first match turned a registered glyph into a fabricated gap. **`-l` on a
+file large enough to contain both a prose match and a data match tells you nothing** — the same
+shortcut that produced **G46** and **G40**.
