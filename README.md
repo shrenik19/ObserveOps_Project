@@ -4,6 +4,8 @@ A reference implementation of the ObserveOps **Report module** screen, built ent
 published `@mtdt/observeops-ds-*` packages, with a category-level Public/Private RBAC feature on the
 left-nav category list.
 
+**▶ Live app: <https://shrenik19.github.io/ObserveOps_Project/>** — opens on any machine, nothing to install.
+
 **New here? Read these two first:**
 
 | File | What it is |
@@ -33,7 +35,8 @@ already declared, so it is a plain `npm install` rather than installing new scop
 still refuses, just run `npm install` in a terminal yourself; the packages are public on npm and
 need no auth.
 
-Then open the URL Vite prints — just the root, e.g. <http://localhost:5173/>.
+Then open the URL Vite prints — just the root, e.g. `http://localhost:5173/`. That address only
+works on the machine running `npm run dev`; to share the app, send the live link above.
 
 > The app is a single page. `/` lands on an Overview listing every screen; the screens themselves
 > are routes inside it — `#/reports/categories` and `#/settings/lama`. The sidebar navigates
