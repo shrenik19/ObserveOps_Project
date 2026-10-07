@@ -1,123 +1,77 @@
-# Handoff — 2026-09-09 14:27
+# Handoff — 2026-10-07 18:55
 
 ## Read first
 
-`CLAUDE.md` in this folder — especially **"How we work — the method that produced all of this"**
-and **"Standing constraints"**. This session produced two more demonstrations of why rule 1
-(*verify by rendering, never by reading*) exists; both are under "Gotchas & notes", and both got
-past a fully green test suite **and** a green render probe.
-
-**Two workstreams share this repo and this branch (`master`).** This handoff covers the SLO one. A
-second Claude session has been working on WAN Link Discovery in parallel; its record is at
-`.superpowers/sdd/2026-09-03-wan-link-discovery/progress.md` and ends with a
-`=== PAUSED BY USER REQUEST ===` block holding its resume instructions. **The handoff this file
-replaces was that session's** (dated 2026-09-04, describing work since completed and pushed); it is
-preserved in git history at `b103f2b` if you need it.
-
-The authoritative record of the SLO work — every decision taken during execution, with what each
-costs if it turns out wrong — is committed at:
-**`docs/superpowers/plans/2026-09-08-slo-ds-port-ledger.md`** (27 rulings).
+`CLAUDE.md` in this folder — especially **"How we work"** and **"Standing constraints"**. The
+previous handoff (the SLO workstream, 2026-09-09) is preserved in git at `beb9653`; nothing in it
+was mid-flight, and its "Next steps" still stand.
 
 ## What we worked on this session
 
-Phase 2 of the Redundancy SLO work: porting the approved wireframe onto the published design system
-as two real routed screens. Executed as a ten-task plan with a fresh subagent per task and a review
-after each, then a whole-branch review, its fix wave, and publishing.
+**ME Service Desk Plus integration**, merged into this app on the published DS. The design was
+first agreed as a standalone mockup (ServiceNow-form and Integration-Profile screenshots as the
+reference, field list and positions from the designer), then ported here as one routed screen:
+**`#/settings/integration`**.
 
 ## Completed
 
-- **`#/slo/list`** — the SLO estate as tiles with live status counters, and a briefcase toggle that
-  regroups it under Business Services. Each service heading carries the **severest** status among
-  its SLOs (`E-commerce Platform` reads *Breached* while two of its three SLOs read *Ok* — that
-  case exists precisely to prove the rule isn't "first wins").
-- **`#/settings/slo-profile`** — the shipped profile table (Evaluation Logic beside Frequency,
-  plain text per **G1**), and behind it the Create SLO Profile form. Create **persists**, and the
-  new row appears in the table.
-- **The Option G Evaluation Logic control** — `src/slo-profile/evaluationLogic.js`, the one
-  deliberately invented component in this app (spec **P4**). `obs-radio` has no slot, so rather
-  than downgrade an approved design it was built and filed as **G45** with working code the DS team
-  can lift. Full WAI-ARIA radiogroup: roving tabindex, arrow keys, Enter/Space.
-- **`docs/DS-GAPS.md` gained G45–G49**, each verified by rendering, plus two corrections retiring
-  claims that turned out to be false (see Gotchas).
-- **679 tests across 42 files. `scripts/probe-slo.mjs` at 29/29** — and it passes against the
-  **live** site, not only localhost.
-- **Published:** https://shrenik19.github.io/ObserveOps_Project/
+- **`src/integrations/`** — four views in one screen, each deep-linkable with `?view=`:
+  - the **Settings section menu** (`obs-side-menu mode="sections"`) with Integration open, SDP
+    right after ServiceNow, tagged NEW;
+  - an **Integration landing** — a card per integration (hand-rolled: no DS card, G47);
+  - **Integration Profile** — the profile table (12 seeded rows, 2 of them SDP), search, an
+    Integration Type filter chip, and the **Create Integration Profile** drawer. Picking ME Service
+    Desk Plus adds the designer's twelve selects in pairs (Request Template/Impact … Service
+    Category/Item), then Auto Close Ticket*, Request Subject*, Request Description*. Create
+    validates (required, unique name) and persists into the table. ServiceNow keeps its own fields
+    and "Incident" wording;
+  - the **ME Service Desk Plus connection form** — the ServiceNow form's fields minus "Create Alert
+    from Motadata ObserveOps as Event / Incident". Test shows a success banner.
+  - LAMA in the menu routes to the existing `#/settings/lama`; other integrations show an info
+    banner saying they keep their existing screens.
+- **29 unit tests**; full suite **764 / 764 across 48 files** (run with `--maxWorkers=3`, see
+  CLAUDE.md gotchas).
+- **`scripts/probe-integrations.mjs` — 38/38 in real Chrome**, driving real clicks and typing:
+  painted captions in order, pair geometry, validation, create, Escape-to-close, deep links.
+- **Conformance:** Integration Profile and SDP views 100/100; the landing 70/100 (component 0 —
+  hand-rolled cards, the same situation as `#/slo/list` at 68).
+- Colour guard clean; `npm run build` clean.
+- **`docs/DS-GAPS.md` gained G53 and G54**, both verified by rendering:
+  - **G53** `obs-side-menu` opens sections only once, at setup — and always opens the first one.
+    Workaround: markup seeded with only the Integration section, full list assigned after mount.
+  - **G54** no ManageEngine logo, and an unknown `obs-logo` name renders a "?" indistinguishable
+    from a real logo. Workaround: a lettered "SDP" tile.
 
 ## In progress
 
-Nothing mid-flight in the SLO work. The plan is complete, reviewed, fixed and pushed.
-
-Two things are **deliberately reserved** rather than unfinished:
-
-- **`.slo-create__help` in `src/slo-profile/createForm.js`** — the Help Card column exists at the
-  wireframe's 56/44 split, titled *"SLO Help card"*, with an intentionally **empty** body. A test
-  asserts it is empty, so a placeholder cannot quietly become the deliverable. The real card (the
-  worked five-day matrix and the "recovered N percentage points" note) is fully designed in
-  `redundancy-slo/wireframe.html` artboard 2 and lands here when the designer calls for it.
-- **Artboards 3–5** (SLO detail Overview, Configured Entities, the breach) stay wireframe-only, by
-  the designer's decision. Consequently the SLO tiles **do not navigate** — spec **P3**.
+**Not committed, not published.** Working tree: `CLAUDE.md`, `docs/DS-GAPS.md`,
+`src/app/registry.js` modified; `src/integrations/` and `scripts/probe-integrations.mjs` new.
+Commit with explicit paths (`git add <paths>` + `git commit -o <paths>`), per the shared-branch rule.
 
 ## Next steps
 
-1. **Place the real Help Card** into `.slo-create__help` when asked — source is artboard 2 of
-   `redundancy-slo/wireframe.html`. Delete the "body is empty" assertion in `createForm.test.js` as
-   part of that change; it is the handover marker.
-2. **Decide whether `docs/DS-GAPS.md` should be public.** The repo is public and that file is now a
-   49-entry critique of the internal `@mtdt/observeops-ds-*` packages, naming exact versions. It
-   predates this session, but it deserves a conscious decision rather than an inherited one.
-3. **Hand G45–G49 to the DS team.** G45 ships with a working reference implementation; G49 shipped
-   a real bug in this build and is the strongest case in the file.
-4. **PQ2 — the model split — is still unresolved.** Artboard 2 models one redundancy group;
-   artboards 3–5 model several plus an ungrouped remainder. Nothing built here exposes it, so it
-   stayed deferred. It becomes blocking the day someone builds the detail screen.
+1. **Commit and publish** once the user approves — `/publish`, or push `master` (the deploy
+   workflow runs tests, build and the colour guard).
+2. **Designer review of the placeholder pick-lists** in `catalogue.js` `FIELD_OPTIONS`. They are
+   SDP out-of-the-box values where SDP has them; a real build reads them from the SDP instance.
+3. Optional: the landing cards could carry `obs-logo` marks for the integrations the DS does have
+   (ServiceNow, Jira, Slack, Teams render real logos) — skipped to keep scope to the approved mock.
 
 ## Decisions made
 
-Full list with costs-if-wrong is in the ledger. The ones that shaped the product:
-
-- **Option G was built as designed rather than composed around `obs-radio`.** A reference app that
-  quietly downgrades a design to fit the DS reports nothing except its own compromise.
-- **`N = M` is unreachable, enforced in `evaluation.js`, not as an input `min`/`max`.** Asking for
-  all M members is what Strict *means*. The factory throws below 2 members, and the quorum rounds
-  and rejects non-finite values.
-- **Create persists.** Originally parked as deliberate ("the wireframe doesn't persist either"),
-  then **overturned** by the final review: `src/lama/screen.js` and
-  `src/wan-link-discovery/profileStore.js` both write to their stores, so SLO Profile would have
-  been the only Create form in this app that discards its input.
-- **Selection is signalled by surface, not colour** (`--neutral-lighter`, not the blue
-  `--default-tag-bg`), and the consequence carries no shield glyph — both at the designer's
-  direction on 2026-09-09.
+- **One route, internal views, `?view=` in the hash via `history.replaceState`** — a hashchange
+  would remount the screen. The router already strips a `?query` from the screen segment.
+- **SDP calls a ticket a "Request"** (Request Subject / Request Description); ServiceNow keeps
+  "Incident". Auto Close Ticket is required for SDP only, as the designer listed it.
+- **Other Settings sections get one stand-in child each** so they render as collapsible sections,
+  as in the product, rather than as clickable leaves.
+- **The drawer forwards `close` only while connected** — the G51 guard `paneDrawer.js` uses.
 
 ## Gotchas & notes
 
-- **Two defects reached this branch past a fully green test suite AND a green render probe.** Both
-  were caught only by opening a screenshot:
-  1. **Four form fields rendered with no label at all.** `obs-select` and `obs-tags` have no
-     `label` attribute; `obs-input` does. The unit test asserted the attribute was *present* — it
-     was, and the component ignored it. Now **G49**. `src/wan-link-discovery/createForm.js:28`
-     already carried a comment saying exactly this, so the codebase knew and the plan ignored it.
-  2. **Tile text painted outside its card border**, then over-corrected into truncating the quorum
-     away entirely. Settled with `.slo-tile__slot:last-child { flex: 1.8 }`.
-  **The lesson now encoded in `scripts/probe-slo.mjs`: when a claim is visual, assert geometry, not
-  DOM presence.** It pins the label count at 12 and measures painted heights and edges.
-- **Two gap entries were filed as fact and were false**, and are corrected in place using the
-  file's withdrawn-claim convention: a shield glyph *does* exist (`shield-check` — the original
-  probe tried only `shield`, `shieldAlt`, `security`, `protect`), and the manifest *does* document
-  slots, for 16 components. **`elements-api.json` is a starting point, never proof.**
-- **Playwright pierces open shadow roots by default**, and `obs-icon` reflects its host class onto
-  its internal `<svg>` — an unqualified `.some-class` selector matches twice per icon.
-  Tag-qualify it (`obs-icon.some-class`).
-- **A probe with no DS CSS loaded reports false negatives:** components coloured through
-  `--severity-*` render *invisibly* rather than failing, and read as "not rendered". Inject
-  `@mtdt/observeops-ds-css` alongside the elements bundle.
-- **Sharing `master` with another session:** never run a bare `git commit` or `git add -A` here —
-  use `git add <paths>` then `git commit -o <paths>`. A bare commit swept that session's work into
-  the wrong commit once, on 2026-09-07. Never run process-wide kills (`taskkill /IM node.exe`) — an
-  implementer did, and it would have killed the other session's dev server. Use a distinct port
-  (5199) for probe runs; 5173 is theirs.
-- **`npm test` can report a wildly low count** (once: 531 across 37 files instead of 679 across 42)
-  if the other session is writing files during collection. Re-run before believing it.
-- **Conformance scores 68/100 on `#/slo/list`** — expected, not a defect: the tile grid is
-  hand-rolled because the DS has no card component (**G47**), and the checker counts DS elements.
-  `#/settings/slo-profile` scores 100/100, and the Create form is never scored at all, because
-  conformance only ever sees a screen's first view.
+- **Dev server for probes on port 5199** (`npx vite --port 5199 --strictPort`); 5173 may be another
+  session's. Run the probe with `ORIGIN=http://localhost:5199`.
+- **The `obs-drawer` host has no box of its own** — measure something in its body, not the host,
+  when asserting it opened.
+- **`obs-logo` never fails visibly** (G54): asserting "the logo painted" passes on the "?"
+  placeholder. Compare against a nonsense name instead.

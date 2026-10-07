@@ -79,6 +79,14 @@ export const modules = [
           'Evaluation Logic beside Frequency, and the Create SLO Profile form behind it.',
         load: () => import('../slo-profile/screen.js'),
       },
+      {
+        key: 'integration',
+        label: 'Integration',
+        description:
+          'Settings -> Integration with ME Service Desk Plus added: its connection form, and SDP as ' +
+          'an Integration Type in the Integration Profile list and its Create drawer.',
+        load: () => import('../integrations/screen.js'),
+      },
     ],
   },
 ]

@@ -16,6 +16,7 @@ A reference implementation of several ObserveOps screens, built entirely from th
 | **WAN Link Discovery** | WAN Link as a category in the Discovery Profile tree: pick an already-monitored router, declare the link, push the IP SLA operation and provision what verified. Cisco IOS XE, IOS XR and NX-OS, plus Juniper RPM. Four views in one screen — profile list, Create form (Single and CSV modes), progress panel, provision grid. |
 | **SLO** | The SLO estate as tiles — flat, or regrouped under each Business Service, whose tile carries the severest status of its own SLOs. |
 | **SLO Profile** | Settings → SLO Profile: the shipped profile table (Evaluation Logic beside Frequency) and its Create SLO Profile form — Strict vs. Redundant evaluation logic with a quorum stepper. |
+| **Integration** | Settings → Integration with **ME Service Desk Plus** added: the Settings section menu, an integration landing, the Integration Profile list and its Create drawer (SDP's twelve request fields), and the SDP connection form (the ServiceNow form minus "Create Alert … as Event / Incident"). |
 
 It serves two purposes at once:
 
@@ -32,7 +33,7 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 - **Vanilla JS + Vite 8** — no framework. The DS ships web components, so the app is plain DOM. This
   is deliberate: it keeps the DS's components on the critical path so anything awkward about them
   surfaces immediately instead of being smoothed over by a wrapper.
-- **Vitest + jsdom** — 679 tests across 42 files.
+- **Vitest + jsdom** — 764 tests across 48 files.
 - `@mtdt/observeops-ds-elements` · `-ds-css` · `-ds-spec` (public on npm, no auth).
 - The **`observeops-ds` MCP server** for component discovery and token resolution — registered by
   the project's own `.mcp.json`.
@@ -90,6 +91,12 @@ src/slo-profile/
   evaluation.js                 Strict/Redundant + quorum — no DOM, no DS      (17 tests)
   evaluationLogic.js            the one invented control — see G45 in DS-GAPS.md (16 tests)
   sloProfile.css                token-only styling — no hex/rgb/hsl anywhere
+src/integrations/                                                     29 tests
+  screen.js                     menu ↔ landing / profile list / SDP form, ?view= deep links (11 tests)
+  catalogue.js                  integrations, type fields, seeded profiles — no DOM, no DS (8 tests)
+  profileDrawer.js              the Create Integration Profile drawer           (10 tests)
+  connectionForm.js             the ME Service Desk Plus connection form
+  integrations.css              token-only styling — no hex/rgb/hsl anywhere
 vite.config.js                  index.html + the two redirect stubs
 .mcp.json                       registers the observeops-ds MCP server
 .claude/settings.json           pre-approves the npm commands
@@ -103,7 +110,7 @@ docs/                           see "Key context" below
 ```bash
 npm install
 npm run dev            # then open / — the app is one page
-npm test               # 679 tests across 42 files
+npm test               # 764 tests across 48 files
 npm run build          # builds the app and the two redirect stubs
 ```
 
@@ -149,6 +156,7 @@ the dev server, `SHOTS` the screenshot directory (default `docs/shots/`).
 node scripts/verify-wan-link.mjs              # the WAN Link list and its probe drawers
 node scripts/probe-wan-link-discovery.mjs     # WAN Link Discovery, all four views end to end
 node scripts/probe-slo.mjs                    # the SLO estate and SLO Profile, incl. Create form
+node scripts/probe-integrations.mjs           # Settings -> Integration: menu, profiles, drawer, SDP form
 ```
 
 `probe-wan-link-discovery.mjs` walks the whole screen — list → Create form (Single and CSV) →
@@ -163,7 +171,7 @@ see `docs/DS-GAPS.md` G41 and the `[hidden]` note at the top of `wanLinkDiscover
 
 | File | Job |
 |---|---|
-| `docs/DS-GAPS.md` | **The DS gap report — G0–G44** (G11 unused; **G21 and G40 are withdrawn**, each kept in place with the rendered evidence that disproved it). Written to be handed to the DS team on its own. Kept current: fixed items are marked ✅ with evidence, and the original report is preserved beneath. |
+| `docs/DS-GAPS.md` | **The DS gap report — G0–G54** (G11 unused; **G21 and G40 are withdrawn**, each kept in place with the rendered evidence that disproved it). Written to be handed to the DS team on its own. Kept current: fixed items are marked ✅ with evidence, and the original report is preserved beneath. |
 | `docs/PROJECT-CONTEXT.md` | What was built and why, for someone who has never seen the app. Companion to the gap report. |
 | `docs/superpowers/plans/…-ds-component-reference.md` | A consumer's-eye record of what each `obs-*` element's API *actually* is, versus what the registry says. The raw material behind the gap report. |
 | `docs/superpowers/specs/…-design.md` | The original design spec. |
@@ -226,6 +234,11 @@ anything, and change only what the feature actually requires.
 - **After any DS package update, clear Vite's cache** (`rm -rf node_modules/.vite`, then
   `npm run dev -- --force`) before judging anything. It serves a stale pre-bundle otherwise and will
   convincingly show the *old* component behaviour. This has caused false "still broken" readings.
+- **`npm test` can crash vitest workers on this machine** ("Worker forks emitted error … Worker exited
+  unexpectedly") and then report a low count with every reported test green — 459 of 598 one run,
+  682 of 682 with 2 files missing the next. That is a resource limit (each jsdom environment is
+  slow to start), not a test failure. Re-run with `npx vitest run --maxWorkers=3` for the full,
+  crash-free count before believing any number.
 - **The MCP server is spawned at session start**, so a running session keeps the build it began with.
   Anything MCP-side must be re-checked in a **fresh session**.
 - **The conformance checker exits 2 after one line if `playwright-core` is missing** — which reads
@@ -254,6 +267,7 @@ published before the refactor keep working:
 | WAN Link Discovery | https://shrenik19.github.io/ObserveOps_Project/#/settings/wan-link-discovery |
 | SLO estate | https://shrenik19.github.io/ObserveOps_Project/#/slo/list |
 | SLO Profile | https://shrenik19.github.io/ObserveOps_Project/#/settings/slo-profile |
+| Integration (ME Service Desk Plus) | https://shrenik19.github.io/ObserveOps_Project/#/settings/integration — add `?view=ME%20Service%20Desk%20Plus` or `?view=Integration%20Profile` to open a view |
 | ↳ old LAMA link | `…/lama.html` → redirects to `#/settings/lama` |
 | ↳ old Report link | `…/report-categories.html` → redirects to `#/reports/categories` |
 

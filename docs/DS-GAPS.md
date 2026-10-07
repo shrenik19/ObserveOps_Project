@@ -53,6 +53,8 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G50** `obs-filters` kind="bar" has no `defaultChips` | 🆕 **OPEN** | The element exposes only `fields`, `value` and `match`; a `defaultChips` property and a `default-chips` attribute are both silently ignored, yet the bar's own spec documents `defaultChips` as the FilterBar API and says the leading chips "come from the MODULE". Seeding `value` with valueless conditions is the only way to draw them — and they arrive removable, with Match/Clear All showing before anything is applied |
 | **G51** `obs-drawer` fires `close` when it is REMOVED from the DOM | 🆕 **OPEN** | Undocumented in the registry and in `elements-api.json`. Wiring `close` to "go back" therefore destroys whatever replaced the drawer — Save and Run swapped the progress panel in, the drawer's removal fired `close`, and the handler emptied the view again. **Second instance of G25**, which records the identical trap in `obs-modal`. Invisible to unit tests; found by clicking Save and Run in real Chrome |
 | **G52** no code block, and its tokens ship unused | 🆕 **OPEN** | `--code-tag-background-color` / `--code-tag-text-color` are defined in both themes and referenced by **nothing** — 4 occurrences in `observeops-ds.css`, all definitions, no rule consumes them. 0 of 47 elements match `code\|snippet\|copy\|clipboard`. Any screen showing a command hand-composes the box *and* its copy behaviour. **Same shape as G31 / G47** |
+| **G53** `obs-side-menu` opens its sections only once, at setup | 🆕 **OPEN** | `mode="sections"` seeds its open state when it is created: the **first** section with children always opens, plus the one holding `active`. Items assigned later open nothing, and `active` set later never opens its section. Settings → Integration had to seed the markup with only the Integration section, then assign the full list after mount |
+| **G54** no ManageEngine / ServiceDesk Plus logo — and a missing logo cannot be detected | 🆕 **OPEN** | Nine spellings (`ManageEngine`, `ServiceDesk Plus`, `ME Service Desk Plus`, `sdp`, …) render a "?" placeholder whose shadow DOM is identical to `name="qqqzzz-nonsense"`. ServiceNow and Jira render real marks. The SDP form uses a lettered stand-in |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -2161,3 +2163,62 @@ and the first `copy` in that file is the English word in a `knownIssues` sentenc
 SVG paths. Stopping at the first match turned a registered glyph into a fabricated gap. **`-l` on a
 file large enough to contain both a prose match and a data match tells you nothing** — the same
 shortcut that produced **G46** and **G40**.
+
+---
+
+### New finding — G53: `obs-side-menu` opens its sections only once, at setup
+
+**Class: DS — capability, undocumented.** Found building Settings → Integration
+(`src/integrations/screen.js`), which needs the product's Settings menu with the **Integration**
+section open and every other section closed.
+
+In `mode="sections"`, the element works out which sections are open **once, when it is created**
+(elements 0.1.167, `ObsSideMenu.ce` setup):
+
+1. the **first** top-level item that has children is opened — whatever `active` says;
+2. the section holding `active` is opened too.
+
+Nothing recomputes that later. Rendered in real Chrome:
+
+| how the menu was fed | result |
+|---|---|
+| `items` assigned as a property after mount, `active` = a child of Integration | **every section closed** — the active row is hidden |
+| full `items` in the markup, `active` in the markup | Integration open **and Log Settings open** (rule 1) |
+| markup holds only the Integration section; full list assigned after mount | Integration open, the rest closed — what the product shows |
+
+The third row is the workaround shipped. It uses only the public API — no shadow-DOM access — but it
+depends on the element never re-running its setup, which is not a documented promise.
+
+**Asks:** recompute the open state when `active` changes (open its ancestors); drop the "first
+section opens" default when `active` is set; and/or accept an `open` / `expanded` flag per item so a
+consumer can say which sections are open.
+
+---
+
+### New finding — G54: no ManageEngine / ServiceDesk Plus logo, and a missing logo cannot be detected
+
+**Class: DS — capability (the mark) and discoverability (the silent fallback).**
+
+The ME Service Desk Plus connection form wants the product's brand mark beside its title, as the
+ServiceNow form has. `obs-logo` (`observeops-logos.js`, elements 0.1.167) has none. Probed in real
+Chrome against a nonsense name as the negative control:
+
+| `name=` | renders |
+|---|---|
+| `ServiceNow`, `Jira` (positive controls) | the real brand mark |
+| `ManageEngine`, `manageengine`, `manage-engine`, `ServiceDesk Plus`, `servicedeskplus`, `Service Desk Plus`, `ME Service Desk Plus`, `sdp`, `me-sdp` | a blue "?" tile |
+| `qqqzzz-nonsense` | the same "?" tile — shadow DOM identical once the name is factored out |
+
+A `grep -i 'manage.?engine|service.?desk'` over `observeops-logos.js` finds nothing.
+
+The second half matters more than the first. The "?" renders as a normal 20×20 image, so **a missing
+logo cannot be told apart from a present one by size, by element count, or by any event**. A probe
+that asserts "the logo painted" passes on the placeholder.
+
+**Workaround shipped:** `.sdp-connection__mark` in `src/integrations/integrations.css` — a lettered
+"SDP" tile on `--primary`, token-only.
+
+**Asks:** add the ManageEngine ServiceDesk Plus mark; and make the fallback detectable — a
+`missing` attribute reflected on the host, or a `logo-missing` event — so a consumer can fall back
+deliberately instead of shipping a "?".
+
