@@ -98,30 +98,70 @@ check('the drawer opened', await page.$eval('.integration-drawer', (d) => d.getB
 check('before a type, only the three common fields', JSON.stringify(await paintedCaptions('.integration-drawer')) ===
   JSON.stringify(['Profile Name', 'Integration Type', 'Description']), await paintedCaptions('.integration-drawer'))
 
+const COMMON = ['Profile Name', 'Integration Type', 'Description']
+const TICKET = ['Auto Close Ticket', 'Request Subject', 'Request Description']
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+
+// The template's rows as painted: each row's field count, and whether a pair sits side by side.
+const templateRows = () => page.$$eval('[data-role="template-section"] .integration-drawer__pair', (rows) => rows.map((r) => {
+  const [a, b] = [...r.children].map((c) => c.getBoundingClientRect())
+  return b ? (Math.abs(a.top - b.top) < 2 && b.left > a.right ? 2 : 'misaligned') : 1
+}))
+
+// Step 1 — the type: SDP shows only Request Template, as Jira shows only Project.
 await pick('[data-role="integration-type"]', SDP)
 {
   const caps = await paintedCaptions('.integration-drawer')
-  const expected = ['Profile Name', 'Integration Type', 'Description', 'Request Template', 'Impact', 'Urgency', 'Priority',
-    'Mode', 'Level', 'Group', 'Technician', 'Category', 'Subcategory', 'Service Category', 'Item',
-    'Auto Close Ticket', 'Request Subject', 'Request Description']
-  check('SDP adds its fields, painted, in the designer\'s order', JSON.stringify(caps) === JSON.stringify(expected), caps)
+  check('SDP adds only Request Template', same(caps, [...COMMON, 'Request Template']), caps)
 }
+check('Request Template starts unset', !(await page.$eval('[data-role="field-Request Template"]', (s) => s.value)))
+check('Request Template is required, with a hint', await page.$$eval('.integration-drawer__type .integration-field__label', (els) => {
+  const l = els.find((e) => e.firstChild.textContent === 'Request Template')
+  return l?.querySelector('.integration-field__required') != null && l?.querySelector('obs-tooltip') != null
+}))
+check('Request Template fills only the left half', await page.$eval('[data-role="field-Request Template"]', (s) => {
+  const row = s.closest('.integration-drawer__pair').getBoundingClientRect()
+  const box = s.getBoundingClientRect()
+  return box.width > 100 && box.right < row.left + row.width / 2 + 1
+}))
+await shot('integration-3a-drawer-sdp-type')
+
+await page.locator('[data-role="profile-name"] input').fill('SDP P1 Requests')
+await page.click('[data-role="create"]')
+await page.waitForTimeout(300)
+check('Create without a template is refused, and says why', await page.$eval('[data-role="field-Request Template"]', (s) =>
+  s.nextElementSibling?.textContent === 'Select a Request Template' && s.nextElementSibling.getBoundingClientRect().height > 8))
+check('…and the drawer stays open', (await page.$$('[data-role="integration-profile-drawer"]')).length === 1)
+
+// Step 2 — the template: its fields appear, packed two per row.
+await pick('[data-role="field-Request Template"]', 'Network Outage')
 {
-  // Pairs sit side by side: the right field's caption starts at the same height as the left's.
-  const pairs = await page.$$eval('.integration-drawer__type .integration-drawer__pair', (rows) => rows.map((r) => {
-    const [a, b] = [...r.children].map((c) => c.getBoundingClientRect())
-    return Math.abs(a.top - b.top) < 2 && b.left > a.right
-  }))
-  check('the twelve selects pair up two per row', pairs.length === 6 && pairs.every(Boolean), pairs)
+  const caps = await paintedCaptions('.integration-drawer')
+  const expected = [...COMMON, 'Request Template', 'Impact', 'Urgency', 'Priority', 'Group', 'Technician', 'Category', 'Subcategory', ...TICKET]
+  check('Network Outage reveals its seven fields, then the ticket fields', same(caps, expected), caps)
+  const rows = await templateRows()
+  check('…packed 2-2-2-1, pairs side by side', same(rows, [2, 2, 2, 1]), rows)
 }
-check('Request Template defaults to Default Request',
-  await page.$eval('[data-role="field-Request Template"]', (s) => s.value) === 'Default Request')
+check('picking a template clears its error', !(await page.$eval('[data-role="field-Request Template"]', (s) => s.hasAttribute('data-invalid'))))
+await shot('integration-3b-drawer-sdp-network-outage')
+
+await pick('[data-role="field-Request Template"]', 'Default Request')
+{
+  const caps = await paintedCaptions('.integration-drawer')
+  const expected = [...COMMON, 'Request Template', 'Impact', 'Urgency', 'Priority', 'Level', 'Group', 'Technician',
+    'Category', 'Subcategory', 'Service Category', 'Item', ...TICKET]
+  check('switching to Default Request swaps in all ten fields', same(caps, expected), caps)
+  check('no Mode field anywhere', !caps.includes('Mode'))
+  const rows = await templateRows()
+  check('…five full pairs', same(rows, [2, 2, 2, 2, 2]), rows)
+}
 check('Auto Close Ticket is required for SDP', await page.$$eval('.integration-drawer__type .integration-field__label', (els) =>
   els.find((e) => e.firstChild.textContent === 'Auto Close Ticket')?.querySelector('.integration-field__required') != null))
 check('the description is a multi-line field', await page.$eval('[data-role="ticket-description"]', (e) => e.getBoundingClientRect().height > 60))
 check('no "Create Alert … as Event / Incident" choice', !(await page.$eval('[data-role="integration-profile-drawer"]', (d) => /as\s+event|event\s*\/\s*incident/i.test(d.innerText))))
 await shot('integration-3-drawer-sdp')
 
+await page.locator('[data-role="profile-name"] input').fill('')
 await page.click('[data-role="create"]')
 await page.waitForTimeout(300)
 check('an empty name is refused', await page.$eval('[data-role="profile-name"]', (e) => e.hasAttribute('error')))

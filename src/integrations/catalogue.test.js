@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SDP, INTEGRATIONS, INTEGRATION_TYPES, TYPE_FIELDS, FIELD_OPTIONS, createProfileStore } from './catalogue.js'
+import { SDP, INTEGRATIONS, INTEGRATION_TYPES, TYPE_FIELDS, TEMPLATE_FIELDS, FIELD_OPTIONS, createProfileStore } from './catalogue.js'
 
 describe('integration catalogue', () => {
   it('lists ME Service Desk Plus right after ServiceNow in the sub-menu', () => {
@@ -10,19 +10,30 @@ describe('integration catalogue', () => {
     expect(INTEGRATION_TYPES).toContain(SDP)
   })
 
-  it('lays out the SDP fields in the designer’s pairs and order', () => {
-    expect(TYPE_FIELDS[SDP]).toEqual([
-      ['Request Template', 'Impact'],
-      ['Urgency', 'Priority'],
-      ['Mode', 'Level'],
-      ['Group', 'Technician'],
-      ['Category', 'Subcategory'],
-      ['Service Category', 'Item'],
-    ])
+  it('gives SDP no fixed fields — its Request Template decides them', () => {
+    expect(TYPE_FIELDS[SDP]).toBeUndefined()
   })
 
-  it('has options for every select any type renders', () => {
-    const labels = Object.values(TYPE_FIELDS).flat(2)
+  it('offers one Request Template per entry in the template map', () => {
+    expect(FIELD_OPTIONS['Request Template']).toEqual(Object.keys(TEMPLATE_FIELDS))
+  })
+
+  it('maps each Request Template to its fields, in order', () => {
+    const all = ['Impact', 'Urgency', 'Priority', 'Level', 'Group', 'Technician', 'Category', 'Subcategory', 'Service Category', 'Item']
+    expect(TEMPLATE_FIELDS).toEqual({
+      'Default Request': all,
+      'Report an Incident': all.slice(0, 8),
+      'Network Outage': ['Impact', 'Urgency', 'Priority', 'Group', 'Technician', 'Category', 'Subcategory'],
+    })
+  })
+
+  it('drops Mode everywhere', () => {
+    expect(Object.values(TEMPLATE_FIELDS).flat()).not.toContain('Mode')
+    expect(FIELD_OPTIONS.Mode).toBeUndefined()
+  })
+
+  it('has options for every select any type or template renders', () => {
+    const labels = [...Object.values(TYPE_FIELDS).flat(2), ...Object.values(TEMPLATE_FIELDS).flat()]
     expect(labels.filter((l) => !FIELD_OPTIONS[l]?.length)).toEqual([])
   })
 })

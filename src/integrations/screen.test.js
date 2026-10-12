@@ -72,6 +72,7 @@ describe('integration screen', () => {
     drawer.querySelector('[data-role="profile-name"]').value = 'SDP P1'
     drawer.querySelector('[data-role="integration-type"]').value = SDP
     drawer.selectType(SDP)
+    drawer.selectTemplate('Default Request')
     drawer.querySelector('[data-role="create"]').click()
     expect(ctx.overlay.children).toHaveLength(0)
     expect(ctx.root.querySelector('#integration-table').rows.find((r) => r.name === 'SDP P1')?.type).toBe(SDP)

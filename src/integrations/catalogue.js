@@ -28,17 +28,10 @@ export const INTEGRATION_TYPES = [
   'Slack',
 ]
 
-// The selects each ticketing type adds below Description, as [left, right] rows. The SDP set and
-// its order are the designer's; the ServiceNow set is the shipped product's.
+// The selects a ticketing type adds below Description, as [left, right] rows — the shipped product's
+// ServiceNow set. SDP has none of its own: like Jira's Project -> Issue Type, its Request Template
+// decides the form (TEMPLATE_FIELDS).
 export const TYPE_FIELDS = {
-  [SDP]: [
-    ['Request Template', 'Impact'],
-    ['Urgency', 'Priority'],
-    ['Mode', 'Level'],
-    ['Group', 'Technician'],
-    ['Category', 'Subcategory'],
-    ['Service Category', 'Item'],
-  ],
   ServiceNow: [
     ['Category', 'Sub Category'],
     ['Group', 'Technician'],
@@ -47,14 +40,24 @@ export const TYPE_FIELDS = {
   ],
 }
 
+// The fields each SDP Request Template reveals, in order; the drawer packs them two per row. A
+// placeholder map agreed with the designer — a real build reads each template's fields from SDP.
+// Incident templates carry no service catalogue fields, and Network Outage is routed straight to the
+// network team, so it has no Level either.
+const SDP_FIELDS = ['Impact', 'Urgency', 'Priority', 'Level', 'Group', 'Technician', 'Category', 'Subcategory', 'Service Category', 'Item']
+export const TEMPLATE_FIELDS = {
+  'Default Request': SDP_FIELDS,
+  'Report an Incident': SDP_FIELDS.slice(0, 8),
+  'Network Outage': SDP_FIELDS.filter((f) => !['Level', 'Service Category', 'Item'].includes(f)),
+}
+
 // Placeholder pick-lists. With no backend there is no SDP instance to read them from; these are the
 // SDP out-of-the-box values where it has them.
 export const FIELD_OPTIONS = {
-  'Request Template': ['Default Request', 'Report an Incident', 'Network Outage'],
+  'Request Template': Object.keys(TEMPLATE_FIELDS),
   Impact: ['High', 'Medium', 'Low', 'Affects User'],
   Urgency: ['High', 'Normal', 'Low', 'Urgent'],
   Priority: ['High', 'Medium', 'Normal', 'Low'],
-  Mode: ['Web Form', 'E-Mail', 'Phone Call', 'System Generated'],
   Level: ['Tier 1', 'Tier 2', 'Tier 3', 'Tier 4'],
   Group: ['Network', 'Hardware Problems', 'Printer Problems', 'Database'],
   Technician: ['Administrator', 'Heather Graham', 'Howard Stern', 'John Roberts'],

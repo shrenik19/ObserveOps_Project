@@ -1,8 +1,10 @@
 // The Create Integration Profile drawer. Profile Name, Integration Type and Description are common
-// to every type; picking a ticketing type (ME Service Desk Plus, ServiceNow) adds that type's
-// selects, Auto Close Ticket, and the ticket Subject and Description templates beneath them.
+// to every type; picking a ticketing type adds that type's selects, Auto Close Ticket, and the ticket
+// Subject and Description templates beneath them. ServiceNow adds them at once. ME Service Desk Plus
+// reveals them in steps, as the product's Jira does with Project -> Issue Type: first only Request
+// Template, then the fields that template carries.
 
-import { TYPE_FIELDS, FIELD_OPTIONS, INTEGRATION_TYPES, SDP, DEFAULT_SUBJECT, DEFAULT_DESCRIPTION } from './catalogue.js'
+import { TYPE_FIELDS, TEMPLATE_FIELDS, FIELD_OPTIONS, INTEGRATION_TYPES, SDP, DEFAULT_SUBJECT, DEFAULT_DESCRIPTION } from './catalogue.js'
 
 // DS events deliver the value in event.detail as an array — unwrap.
 const detailValue = (event) => (Array.isArray(event.detail) ? event.detail[0] : event.detail)
@@ -103,26 +105,25 @@ export function renderProfileDrawer({ isTaken = () => false, onCreate, onClose }
   body.append(head, field('Description', description), typeSection, more)
 
   let currentType = ''
+  let currentTemplate = ''
+  // SDP only: the Request Template select, and the section its fields are rebuilt in.
+  let template = null
+  let templateSection = null
 
-  function renderType(next) {
-    currentType = next
-    typeSection.replaceChildren()
-    const rows = TYPE_FIELDS[next]
-    if (!rows) return
-
+  // A select per label, as [left, right] rows.
+  function appendPairs(target, rows) {
     for (const pair of rows) {
       const row = document.createElement('div')
       row.className = 'integration-drawer__pair'
-      for (const label of pair) {
-        // SDP ships "Default Request" as its template; every other field starts unset.
-        const preset = label === 'Request Template' ? 'Default Request' : ''
-        row.append(field(label, select(`field-${label}`, FIELD_OPTIONS[label], preset)))
-      }
-      typeSection.append(row)
+      for (const label of pair) row.append(field(label, select(`field-${label}`, FIELD_OPTIONS[label])))
+      target.append(row)
     }
+  }
 
+  // Auto Close Ticket and the ticket Subject / Description templates, which close every ticketing form.
+  function appendTicketFields(target, ticketType) {
     // SDP calls a ticket a request; ServiceNow calls it an incident.
-    const noun = next === SDP ? 'Request' : 'Incident'
+    const noun = ticketType === SDP ? 'Request' : 'Incident'
 
     const autoClose = document.createElement('obs-switch')
     autoClose.dataset.role = 'auto-close'
@@ -132,14 +133,61 @@ export function renderProfileDrawer({ isTaken = () => false, onCreate, onClose }
     const subject = input('ticket-subject', { value: DEFAULT_SUBJECT })
     const body = input('ticket-description', { type: 'textarea', value: DEFAULT_DESCRIPTION })
 
-    typeSection.append(
+    target.append(
       field('Auto Close Ticket', autoClose, {
-        required: next === SDP,
+        required: ticketType === SDP,
         hint: `Close the ${noun.toLowerCase()} when the alert that raised it clears.`,
       }),
       field(`${noun} Subject`, subject, { required: true, hint: 'Placeholders like $$$object.name$$$ are filled from the alert.' }),
       field(`${noun} Description`, body, { required: true, hint: 'Placeholders like $$$counter$$$ are filled from the alert.' })
     )
+  }
+
+  function renderTemplate(next) {
+    currentTemplate = next
+    if (!templateSection) return
+    // A refused Create marked the select; a pick answers it.
+    if (next) setError(template)
+    templateSection.replaceChildren()
+    const labels = TEMPLATE_FIELDS[next]
+    if (!labels) return
+
+    // Packed two per row in the template's order, so a field the template drops leaves no hole.
+    const rows = []
+    for (let i = 0; i < labels.length; i += 2) rows.push(labels.slice(i, i + 2))
+    appendPairs(templateSection, rows)
+    appendTicketFields(templateSection, SDP)
+    if (drawer.isConnected) upgradeSelects(templateSection)
+  }
+
+  function renderType(next) {
+    currentType = next
+    currentTemplate = ''
+    template = null
+    templateSection = null
+    typeSection.replaceChildren()
+
+    if (next === SDP) {
+      // Alone on its row, like Jira's Project; the form below waits for a pick.
+      template = select('field-Request Template', FIELD_OPTIONS['Request Template'])
+      template.addEventListener('change', (event) => renderTemplate(detailValue(event) ?? valueOf(template)))
+      const row = document.createElement('div')
+      row.className = 'integration-drawer__pair'
+      row.append(field('Request Template', template, {
+        required: true,
+        hint: 'The fields below depend on the template you pick.',
+      }))
+
+      templateSection = document.createElement('div')
+      templateSection.className = 'integration-drawer__type'
+      templateSection.dataset.role = 'template-section'
+      typeSection.append(row, templateSection)
+    } else {
+      const rows = TYPE_FIELDS[next]
+      if (!rows) return
+      appendPairs(typeSection, rows)
+      appendTicketFields(typeSection, next)
+    }
     // Rendered after insertion, so the new selects can take their options now.
     if (drawer.isConnected) upgradeSelects(typeSection)
   }
@@ -210,12 +258,16 @@ export function renderProfileDrawer({ isTaken = () => false, onCreate, onClose }
     const nameError = !n ? 'Profile Name is required' : isTaken(n) ? 'A profile with this name already exists' : ''
     setError(name, nameError)
     setError(type, t ? '' : 'Select an Integration Type')
+    const tpl = currentTemplate || (template ? valueOf(template) : '')
+    if (template) setError(template, tpl ? '' : 'Select a Request Template')
     for (const role of ['ticket-subject', 'ticket-description']) {
       const el = typeSection.querySelector(`[data-role="${role}"]`)
       if (el) setError(el, String(valueOf(el)).trim() ? '' : 'This field is required')
     }
     if (drawer.querySelector('[data-invalid]')) return null
-    return { name: n, type: t, description: String(valueOf(description)) }
+    const draft = { name: n, type: t, description: String(valueOf(description)) }
+    if (template) draft.template = tpl
+    return draft
   }
 
   create.addEventListener('click', () => {
@@ -228,5 +280,6 @@ export function renderProfileDrawer({ isTaken = () => false, onCreate, onClose }
 
   drawer.upgrade = () => upgradeSelects(drawer)
   drawer.selectType = renderType
+  drawer.selectTemplate = renderTemplate
   return drawer
 }

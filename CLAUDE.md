@@ -16,7 +16,7 @@ A reference implementation of several ObserveOps screens, built entirely from th
 | **WAN Link Discovery** | WAN Link as a category in the Discovery Profile tree: pick an already-monitored router, declare the link, push the IP SLA operation and provision what verified. Cisco IOS XE, IOS XR and NX-OS, plus Juniper RPM. Four views in one screen — profile list, Create form (Single and CSV modes), progress panel, provision grid. |
 | **SLO** | The SLO estate as tiles — flat, or regrouped under each Business Service, whose tile carries the severest status of its own SLOs. |
 | **SLO Profile** | Settings → SLO Profile: the shipped profile table (Evaluation Logic beside Frequency) and its Create SLO Profile form — Strict vs. Redundant evaluation logic with a quorum stepper. |
-| **Integration** | Settings → Integration with **ME Service Desk Plus** added: the Settings section menu, an integration landing, the Integration Profile list and its Create drawer (SDP's twelve request fields), and the SDP connection form (the ServiceNow form minus "Create Alert … as Event / Incident"). |
+| **Integration** | Settings → Integration with **ME Service Desk Plus** added: the Settings section menu, an integration landing, the Integration Profile list and its Create drawer (SDP reveals its fields in steps, like the product's Jira: Integration Type → Request Template → that template's fields), and the SDP connection form (the ServiceNow form minus "Create Alert … as Event / Incident"). |
 
 It serves two purposes at once:
 
@@ -33,7 +33,7 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 - **Vanilla JS + Vite 8** — no framework. The DS ships web components, so the app is plain DOM. This
   is deliberate: it keeps the DS's components on the critical path so anything awkward about them
   surfaces immediately instead of being smoothed over by a wrapper.
-- **Vitest + jsdom** — 764 tests across 48 files.
+- **Vitest + jsdom** — 774 tests across 48 files.
 - `@mtdt/observeops-ds-elements` · `-ds-css` · `-ds-spec` (public on npm, no auth).
 - The **`observeops-ds` MCP server** for component discovery and token resolution — registered by
   the project's own `.mcp.json`.
@@ -91,10 +91,10 @@ src/slo-profile/
   evaluation.js                 Strict/Redundant + quorum — no DOM, no DS      (17 tests)
   evaluationLogic.js            the one invented control — see G45 in DS-GAPS.md (16 tests)
   sloProfile.css                token-only styling — no hex/rgb/hsl anywhere
-src/integrations/                                                     29 tests
+src/integrations/                                                     39 tests
   screen.js                     menu ↔ landing / profile list / SDP form, ?view= deep links (11 tests)
-  catalogue.js                  integrations, type fields, seeded profiles — no DOM, no DS (8 tests)
-  profileDrawer.js              the Create Integration Profile drawer           (10 tests)
+  catalogue.js                  integrations, type fields, SDP template→fields map, seeded profiles — no DOM, no DS (11 tests)
+  profileDrawer.js              the Create Integration Profile drawer           (17 tests)
   connectionForm.js             the ME Service Desk Plus connection form
   integrations.css              token-only styling — no hex/rgb/hsl anywhere
 vite.config.js                  index.html + the two redirect stubs
@@ -110,7 +110,7 @@ docs/                           see "Key context" below
 ```bash
 npm install
 npm run dev            # then open / — the app is one page
-npm test               # 764 tests across 48 files
+npm test               # 774 tests across 48 files
 npm run build          # builds the app and the two redirect stubs
 ```
 
