@@ -221,6 +221,18 @@ anything, and change only what the feature actually requires.
 - **`augmentSideMenu.js` is the only file that reaches into a component's shadow DOM.** It wires the
   category row's edit pencil, which `obs-side-menu` renders but does not report. If the DS ever emits
   a distinct edit event, **delete that file.**
+- **Form layout follows the shipped product** (the user's review rules, 2026-10-12 — every form,
+  current and future):
+  - **Gaps are measured from the product, never guessed.** Two-column forms leave **24px** between
+    columns (the product's Jira Create Integration Profile drawer); 32px read as "very large".
+  - **Edges line up across rows** — field with field, field with button, button group with the
+    field edge. A button beside a select starts on the right column's edge; Reset / Test / Save end
+    on the right field edge, not the page edge. Side-by-side fields share a top edge (a caption's ⓘ
+    must not push one down — see `.integration-field__label`).
+  - **The plainest control the product uses.** URL Time Out is a plain text field: no number
+    spinner, no "sec" suffix.
+  - Assert these in the probe by measuring rendered edges (`probe-integrations.mjs` has examples).
+
 
 ### Environment gotchas
 

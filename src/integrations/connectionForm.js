@@ -40,8 +40,7 @@ export function renderConnectionForm({ onTest } = {}) {
   const timeout = document.createElement('obs-input')
   timeout.dataset.role = 'sdp-timeout'
   timeout.setAttribute('block', '')
-  timeout.setAttribute('type', 'number')
-  timeout.setAttribute('suffix', 'sec')
+  // A plain text field, as in the product: no number spinner, no "sec" suffix.
   timeout.setAttribute('value', DEFAULTS.timeout)
 
   const credential = document.createElement('obs-select')

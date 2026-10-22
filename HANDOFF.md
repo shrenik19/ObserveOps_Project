@@ -37,16 +37,25 @@ deciding field, and Mode removed.
   `integration-3-drawer-sdp.png` now shows Default Request.
 - Colour guard clean; `npm run build` clean.
 
+### Later the same day — layout review fixes (SDP connection form + drawer)
+
+The user reviewed the SDP connection form and set three rules for every form, now in CLAUDE.md
+"Standing constraints": product-measured gaps (24px between columns), edges aligned across rows,
+and the plainest control (URL Time Out is plain text — no spinner, no "sec"). Applied:
+24px column gap (form + drawer); Create Credential Profile starts the right column; the form is
+exactly two columns wide so Save ends on the field edge; captions fixed at 16px so an ⓘ no longer
+drops its field 2px. The probe now measures all of it. New `connectionForm.test.js`.
+
 ## In progress
 
-**Not committed, not published.** Modified: `CLAUDE.md`, `HANDOFF.md`,
-`src/integrations/{catalogue,profileDrawer}.js`, their tests, `screen.test.js`,
-`scripts/probe-integrations.mjs`, the shots. Commit with explicit paths, per the shared-branch rule.
+Both commits are pushed. **A parallel session has an uncommitted Settings-layout restructure** in
+this working tree (`src/settings/`, router, screens). Its changes overlap `CLAUDE.md`,
+`integrations.css`, `screen.js`/`screen.test.js` — this session committed only its own hunks.
+Three probe checks (menu sections, `?view=` hashes) fail against that work until it updates them.
 
 ## Next steps
 
-1. **Commit and publish** once the user approves.
-2. **Designer review of the template → fields map** and the placeholder pick-lists. A real build
+1. **Designer review of the template → fields map** and the placeholder pick-lists. A real build
    reads both from the SDP instance.
 
 ## Gotchas & notes

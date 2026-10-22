@@ -154,6 +154,12 @@ await pick('[data-role="field-Request Template"]', 'Default Request')
   check('no Mode field anywhere', !caps.includes('Mode'))
   const rows = await templateRows()
   check('…five full pairs', same(rows, [2, 2, 2, 2, 2]), rows)
+  // The product's Jira drawer leaves 24px between its two columns.
+  const gaps = await page.$$eval('[data-role="template-section"] .integration-drawer__pair', (rs) => rs.map((r) => {
+    const [a, b] = [...r.querySelectorAll('obs-select')].map((s) => s.getBoundingClientRect())
+    return Math.round(b.left - a.right)
+  }))
+  check('…24px between the columns, as in the product', gaps.every((g) => g === 24), gaps)
 }
 check('Auto Close Ticket is required for SDP', await page.$$eval('.integration-drawer__type .integration-field__label', (els) =>
   els.find((e) => e.firstChild.textContent === 'Auto Close Ticket')?.querySelector('.integration-field__required') != null))
@@ -203,6 +209,30 @@ check('the credential select shows its value, not [object Object]', await page.$
   const [a, b] = await page.$$eval('.sdp-connection__switch', (els) => els.map((e) => e.getBoundingClientRect().left))
   check('Auto Sync and Use Proxy Server stack in the left column', Math.abs(a - b) < 1, [a, b])
 }
+{
+  // Edges line up across rows: whatever sits below starts and ends where the field above does.
+  const box = (sel) => page.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return { l: Math.round(r.left), r: Math.round(r.right) } })
+  const url = await box('[data-role="sdp-url"]')
+  const timeout = await box('[data-role="sdp-timeout"]')
+  const button = await box('[data-role="sdp-create-credential"]')
+  const credential = await box('[data-role="sdp-credential"]')
+  const email = await box('[data-role="sdp-failover-email"]')
+  const save = await box('[data-role="sdp-save"]')
+  check('24px between the two columns, as in the product', timeout.l - url.r === 24, timeout.l - url.r)
+  check('Create Credential Profile starts where URL Time Out starts', button.l === timeout.l, [button.l, timeout.l])
+  check('Credential Profiles spans the Server URL column exactly', credential.l === url.l && credential.r === url.r, [credential, url])
+  check('Fail Over Email starts where URL Time Out starts', email.l === timeout.l, [email.l, timeout.l])
+  check('Save ends at the right edge of the fields', save.r === timeout.r, [save.r, timeout.r])
+  // Side by side, the controls share a top edge — a caption's ⓘ must not push one down.
+  const top = (sel) => page.$eval(sel, (e) => Math.round(e.getBoundingClientRect().top))
+  const rows = [[await top('[data-role="sdp-url"]'), await top('[data-role="sdp-timeout"]')],
+    [await top('[data-role="sdp-reoccur"]'), await top('[data-role="sdp-failover-email"]')]]
+  check('fields side by side share a top edge', rows.every(([a, b]) => a === b), rows)
+}
+check('URL Time Out is a plain text field — no spinner, no "sec"', await page.$eval('[data-role="sdp-timeout"]', (e) => {
+  const input = e.shadowRoot.querySelector('input')
+  return input?.type === 'text' && !/\bsec\b/.test(e.shadowRoot.textContent) && !e.shadowRoot.querySelector('[class*="step"], [class*="spin"]')
+}))
 await page.click('[data-role="sdp-test"]')
 await page.waitForTimeout(400)
 check('Test reports the connection', await page.$eval('[data-role="sdp-test-result"]', (e) => e.getBoundingClientRect().height > 20))

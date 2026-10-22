@@ -76,9 +76,11 @@
   min-width: 0;
 }
 
+/* A fixed height: the ⓘ is 18px tall and would otherwise push its field 2px below its neighbour's. */
 .integration-field__label {
   display: inline-flex;
   align-items: center;
+  height: 16px;
   gap: 4px;
   font-size: 13px;
   color: var(--neutral-light);
@@ -107,10 +109,11 @@
   gap: 16px;
 }
 
+/* 24px between the columns, as in the product's own Create Integration Profile drawer (Jira). */
 .integration-drawer__pair {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px 32px;
+  gap: 16px 24px;
 }
 
 .integration-drawer__more {
@@ -134,11 +137,13 @@
 
 /* ---------- ME Service Desk Plus connection form ---------- */
 
+/* Exactly the two field columns wide (480 + 24 + 480), so Reset / Test / Save end on the right
+   column's edge instead of past it. */
 .sdp-connection {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 1040px;
+  max-width: 984px;
 }
 
 .sdp-connection__intro {
@@ -177,18 +182,18 @@
 .sdp-connection__grid {
   display: grid;
   grid-template-columns: minmax(0, 480px) minmax(0, 480px);
-  gap: 24px 32px;
+  gap: 24px;
 }
 
+/* The row's two children join the grid itself: the select takes the left column, and the button
+   starts the right one — on the same edge as URL Time Out and Fail Over Email. */
 .sdp-connection__credential {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  grid-column: 1 / -1;
+  display: contents;
 }
 
-.sdp-connection__credential .integration-field {
-  flex: 0 1 480px;
+.sdp-connection__credential > obs-button {
+  justify-self: start;
+  align-self: end;
 }
 
 .sdp-connection__switch {
