@@ -1,0 +1,36 @@
+/* The Settings layout: the section menu beside one pane. Colours are var(--token) — no hex/rgb/hsl
+   anywhere, per the project's standing constraint. */
+
+/* side-menu.json sizes the sections menu at ~15% of the viewport (215–290px); the product's pane is
+   resizable, this one is fixed at the upper end so the longest labels fit. */
+.settings-nav {
+  flex: 0 0 280px;
+  min-height: 0;
+  border-right: 1px solid var(--border-color);
+}
+
+/* Whatever screen fills the pane brings its own app-shell__body or app-shell__content; both are
+   flex items that expect a flex column parent with a bounded height. */
+.settings-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.settings-placeholder {
+  gap: 12px;
+  padding: 16px 24px;
+}
+
+.settings-placeholder__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--page-text-color);
+}
+
+.settings-placeholder obs-banner {
+  max-width: 720px;
+}

@@ -47,6 +47,12 @@ async function route() {
 
   shell.setActive(target.module.key)
 
+  // Mounted once per visit to the module; moving between its own routes only updates it.
+  if (target.kind === 'layout') {
+    await host.show(target.module.layout, { key: target.module.key })
+    return
+  }
+
   if (target.kind === 'moduleIndex') {
     await host.show(async () => moduleIndex(target.module))
     return

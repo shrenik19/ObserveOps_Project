@@ -104,6 +104,22 @@ every tab there it is display-only — none of the tabs filters the list in this
 screenshot, pre-existing and unchanged: the Report title size (G61), default Type / Report Type
 filter chips (G50), the ACTIONS heading, the schedule calendar icon, and 50 rows per page.
 
+### 2026-10-27 — Settings layout published
+
+The **shared Settings layout** — built by a parallel session (files last edited 2026-10-12) and left
+uncommitted — is now committed and published at the user's request: `src/settings/` (the product's
+18-section menu beside a pane, My Profile / Change Password, placeholders for sections without design
+work), Settings as a **layout** module in the registry / router / screen host, and the LAMA, SLO
+Profile, WAN Link Discovery and Integration screens moved into its pane (one route per menu item;
+old `?view=` links redirect). DS-GAPS G55–G56 land with it, so the gap numbering is continuous.
+
+Verified on the full tree before pushing: suite **905 / 905 across 60 files**; colour guard and build
+clean; **probe-settings 40/40**, probe-integrations **55/55** (its three route checks updated to the
+new routes — Integration items are `#/settings/integration-profile` etc., Slack opens the layout's
+placeholder), probe-custom-report 71/71, probe-slo 29/29, probe-wan-link-discovery 85/85,
+verify-create-drawers 18/18, verify-slo-filters 8/8, verify-wan-link clean. The working tree is now
+fully committed — no parallel work remains uncommitted.
+
 ## In progress
 
 **Committed and published 2026-10-27 via /publish** (SLO report + brand), with only this work's
@@ -111,11 +127,8 @@ paths and hunks — see `git log`. Paths: `src/custom-report/`,
 `src/report-categories/{screen.js,store.js,store.test.js,createReport.test.js}`, `src/app/{shell.js,
 shell.css,shell.test.js,assets/}`, `scripts/probe-custom-report.mjs`, `docs/shots/custom-report-*.png`,
 the spec and plan, and this work's hunks in `CLAUDE.md` and `docs/DS-GAPS.md` (G57–G61).
-**A parallel session's Settings restructure is still uncommitted in the same tree** (`src/settings/`,
-router, screenHost, other screens, DS-GAPS G55–G56, parts of CLAUDE.md). Commit only your own
-paths/hunks — build mixed files from HEAD + own hunks, and verify the staged tree on its own
-(`git checkout-index -a --prefix=<scratch>/`, junction `node_modules`, run suite + probe there).
-The committed DS-GAPS jumps G54 → G57 until the parallel session lands G55–G56.
+The parallel session's Settings restructure was published afterwards (see above), so the tree is
+clean and DS-GAPS numbering is continuous again.
 
 ## Next steps
 

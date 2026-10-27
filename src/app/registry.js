@@ -53,7 +53,18 @@ export const modules = [
   },
   {
     key: 'settings', label: 'Settings', icon: 'settings',
+    // Settings is one layout — the product's section menu beside a pane — not a card grid. Every
+    // #/settings/... route mounts it; src/settings/menu.js maps the menu onto the screens below.
+    layout: () => import('../settings/screen.js'),
     screens: [
+      {
+        key: 'my-profile',
+        label: 'My Profile',
+        description:
+          'Settings -> My Account -> My Profile, where Settings now opens: name, user name, email, ' +
+          'mobile number and a Change Password switch, beside the full Settings section menu.',
+        load: () => import('../settings/myProfile.js'),
+      },
       {
         key: 'lama',
         label: 'LAMA integration',

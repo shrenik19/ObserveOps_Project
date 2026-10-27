@@ -55,4 +55,33 @@ describe('createScreenHost', () => {
     expect(content.children).toHaveLength(0)
     expect(overlay.children).toHaveLength(0)
   })
+
+  it('updates a keyed screen in place instead of remounting it', async () => {
+    const { host } = setup()
+    const mount = vi.fn(() => ({ update, unmount: () => {} }))
+    const update = vi.fn()
+    const loader = vi.fn(async () => ({ mount }))
+    await host.show(loader, { key: 'settings' })
+    await host.show(loader, { key: 'settings' })
+    expect(mount).toHaveBeenCalledTimes(1)
+    expect(update).toHaveBeenCalledTimes(1)
+  })
+
+  it('remounts when the key changes, running the object-form unmount', async () => {
+    const { host } = setup()
+    const unmount = vi.fn()
+    await host.show(async () => ({ mount: () => ({ update: () => {}, unmount }) }), { key: 'settings' })
+    await host.show(async () => ({ mount: () => {} }), { key: 'reports' })
+    expect(unmount).toHaveBeenCalledTimes(1)
+  })
+
+  it('never updates an unkeyed screen', async () => {
+    const { host } = setup()
+    const update = vi.fn()
+    const mount = vi.fn(() => ({ update }))
+    await host.show(async () => ({ mount }))
+    await host.show(async () => ({ mount }))
+    expect(mount).toHaveBeenCalledTimes(2)
+    expect(update).not.toHaveBeenCalled()
+  })
 })

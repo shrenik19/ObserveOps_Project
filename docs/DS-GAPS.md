@@ -55,6 +55,8 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G52** no code block, and its tokens ship unused | 🆕 **OPEN** | `--code-tag-background-color` / `--code-tag-text-color` are defined in both themes and referenced by **nothing** — 4 occurrences in `observeops-ds.css`, all definitions, no rule consumes them. 0 of 47 elements match `code\|snippet\|copy\|clipboard`. Any screen showing a command hand-composes the box *and* its copy behaviour. **Same shape as G31 / G47** |
 | **G53** `obs-side-menu` opens its sections only once, at setup | 🆕 **OPEN** | `mode="sections"` seeds its open state when it is created: the **first** section with children always opens, plus the one holding `active`. Items assigned later open nothing, and `active` set later never opens its section. Settings → Integration had to seed the markup with only the Integration section, then assign the full list after mount |
 | **G54** no ManageEngine / ServiceDesk Plus logo — and a missing logo cannot be detected | 🆕 **OPEN** | Nine spellings (`ManageEngine`, `ServiceDesk Plus`, `ME Service Desk Plus`, `sdp`, …) render a "?" placeholder whose shadow DOM is identical to `name="qqqzzz-nonsense"`. ServiceNow and Jira render real marks. The SDP form uses a lettered stand-in |
+| **G55** no avatar | 🆕 **OPEN** | 0 of 47 elements match `avatar`. `obs-user-menu` draws an initials disc in the app header, but only inside itself — nothing exposes it. Settings → My Profile hand-rolls its 136px initials disc (`.my-profile__avatar`), token-only. **Same shape as G31 / G47 / G52** |
+| **G56** `obs-side-menu` draws a top-level leaf as a sub-item | 🆕 **OPEN** | In `mode="sections"` an item without children gets the child indent (`padding-left: 40px` vs a section's 12px), a 16px icon instead of 19px, no chevron and normal weight — so a section with no sub-items reads as a child of the section above. `children: []` changes nothing (still `row leaf`). The product's Settings menu draws every section alike. **Workaround shipped:** each of the ten sections without design work carries one inert row, "Not in this design yet", so it is drawn as a section |
 | **G57** `obs-table` header font size cannot be set | 🆕 **OPEN** | Header cells paint a fixed 12px. Measured in Chrome: a `font-size` on the host, or overriding `--font-size-lg`, leaves `th` at 12px; no `part` on `th`, no custom property. The product's report Style tab offers Header Font Size Small / Medium / Large. Create Custom Report → SLO keeps the choice with the report but cannot preview it |
 | **G58** `obs-table`'s `tags` cell type is undocumented | 🆕 **OPEN** | `elements-api.json` documents column `type` with no list of values. The bundle renders `type: 'tags'` — an array of strings or `{label, variant}` as `obs-tag` chips — which is exactly the product's SLO.PROFILE.TAGS column. Found by reading the bundle; used by the SLO report preview |
 | **G59** no report-type illustrations, and no chart-type icons | 🆕 **OPEN** | The product's Create Custom Report tiles are line illustrations; its Style tab picks Area / Line / Horizontal Bar / Vertical Bar / Pie / Solid Gauge / Grid by icon. None of these ship (`areaChart`, `lineChart`, `barChart`, `pieChart`, `gauge` are absent), though the DS ships `--chart-type-icon` / `--chart-line-type-icon` for them. Hand-drawn, token-only, in `src/custom-report/tileArt.js` and `preview.js` |
@@ -2226,6 +2228,49 @@ that asserts "the logo painted" passes on the placeholder.
 **Asks:** add the ManageEngine ServiceDesk Plus mark; and make the fallback detectable — a
 `missing` attribute reflected on the host, or a `logo-missing` event — so a consumer can fall back
 deliberately instead of shipping a "?".
+
+---
+
+### New finding — G55: no avatar
+
+**Class: DS — capability.** Found building Settings → My Account → My Profile
+(`src/settings/myProfile.js`), whose left column is the user's avatar: a 136px initials disc with a
+Change action under it.
+
+No element matches `avatar` (elements 0.1.167). `obs-user-menu` renders exactly this disc at header
+size for its trigger, so the DS has the pattern — it just does not expose it.
+
+**Workaround shipped:** `.my-profile__avatar` in `src/settings/myProfile.css` — initials on
+`--code-tag-background-color`, swapped for an `<img>` once a picture is chosen. Token-only.
+
+**Ask:** an `obs-avatar` with `initials`, `src` and `size`, which `obs-user-menu` would then use too.
+
+---
+
+### New finding — G56: `obs-side-menu` draws a top-level leaf as a sub-item
+
+**Class: DS — capability.** Found building the shared Settings layout (`src/settings/`), whose menu
+is the product's eighteen sections, ten of which have no sub-items in this app.
+
+Measured in real Chrome (elements 0.1.167), `mode="sections"`:
+
+| item | class | padding-left | icon | chevron |
+|---|---|---|---|---|
+| section with children | `row group` | 12px | 19px | yes |
+| child of a section | `row leaf` | 40px | 16px | no |
+| **top-level item, no children** | `row leaf` | **40px** | **16px** | **no** |
+| top-level item, `children: []` | `row leaf` | 40px | 16px | no |
+
+So "User Settings" renders as if it belonged to "My Account" above it. The product draws every
+section alike, chevron included, whether or not the viewer has opened it.
+
+**Workaround shipped:** `untouched()` in `src/settings/menu.js` gives each of the ten sections without
+design work one child, "Not in this design yet", which has no route. Picking it moves the element's
+internal highlight onto it, so the layout steps `active` to another value and back (the element
+watches `active`, but only fires on a change) — `restoreHighlight()` in `src/settings/screen.js`.
+
+**Asks:** draw depth-0 items at section indent and weight whether or not they have children; or
+accept a per-item `section: true` / `group: true` flag.
 
 ---
 

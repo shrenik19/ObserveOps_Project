@@ -35,15 +35,20 @@ export function href(moduleKey, screenKey) {
  *   moduleIndex  the module holds several screens: show its card grid
  *   ignore       the module holds none: do nothing at all, leaving the URL and the sidebar
  *                highlight exactly as they were
+ *   layout       the module owns a layout (Settings): every route inside it mounts that one
+ *                layout, which reads the rest of the hash itself. `screen` is the registry screen
+ *                the hash names, or null when it names a menu item with no screen of its own.
  */
 export function resolve({ module: moduleKey, screen: screenKey }, modules) {
   if (!moduleKey) return { kind: 'overview' }
 
   const module = modules.find((m) => m.key === moduleKey)
   if (!module) return { kind: 'overview' }
-  if (module.screens.length === 0) return { kind: 'ignore' }
 
   const named = screenKey && module.screens.find((s) => s.key === screenKey)
+  if (module.layout) return { kind: 'layout', module, screen: named || null }
+
+  if (module.screens.length === 0) return { kind: 'ignore' }
   if (named) return { kind: 'screen', module, screen: named }
 
   // No screen named, or one named that does not exist: fall back to the module's own rules.

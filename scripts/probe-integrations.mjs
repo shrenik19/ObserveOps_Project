@@ -65,7 +65,8 @@ await go('/settings/integration')
   const rows = await menuRows()
   const groups = rows.filter((r) => r.group).map((r) => r.label)
   const leaves = rows.filter((r) => !r.group).map((r) => r.label)
-  check('the Settings menu lists nine sections, Integration last', groups.length === 9 && groups.at(-1) === 'Integration', groups)
+  // The shared Settings layout: the product's 18 sections (src/settings/menu.js), Integration last.
+  check('the Settings menu lists the product\'s 18 sections, Integration last', groups.length === 18 && groups.at(-1) === 'Integration', groups)
   // The menu opens its first section by default; only Integration may be open here (G53).
   check('only Integration is open', leaves[0] === 'Integration Profile' && leaves.length === 9, leaves)
   check('SDP sits right after ServiceNow', leaves.indexOf(SDP) === leaves.indexOf('ServiceNow') + 1)
@@ -77,7 +78,8 @@ await shot('integration-1-landing')
 section('Integration Profile list')
 await page.click(`.integration-card[data-integration="Integration Profile"]`)
 await page.waitForTimeout(600)
-check('the hash names the view', page.url().endsWith('?view=Integration%20Profile'), page.url())
+// Each Integration item is its own Settings route now, not a ?view= on #/settings/integration.
+check('the hash names the item', page.url().endsWith('#/settings/integration-profile'), page.url())
 check('the menu marks Integration Profile active', (await menuRows()).find((r) => r.active)?.label === 'Integration Profile')
 const rowCount = () => page.$eval('#integration-table', (t) => t.rows.length)
 check('twelve seeded profiles', (await rowCount()) === 12)
@@ -193,7 +195,7 @@ check('the filter offers SDP as an Integration Type', await page.$eval('#integra
 section('ME Service Desk Plus connection form')
 await clickMenu(SDP)
 await page.waitForTimeout(700)
-check('the hash names the view', page.url().endsWith('?view=ME%20Service%20Desk%20Plus'), page.url())
+check('the hash names the item', page.url().endsWith('#/settings/me-service-desk-plus'), page.url())
 {
   const caps = await paintedCaptions('.sdp-connection')
   const expected = ['Server URL', 'URL Time Out', 'Credential Profiles', 'If alert re-occurs', 'Fail Over Email', 'Auto Sync', 'Use Proxy Server']
@@ -239,12 +241,14 @@ check('Test reports the connection', await page.$eval('[data-role="sdp-test-resu
 await shot('integration-4-sdp-connection')
 
 section('Deep link, other entries')
-await go(`/settings/integration?view=${encodeURIComponent(SDP)}`)
+// The SDP form's own route. (The old ?view= links still redirect — probe-settings.mjs checks those.)
+await go('/settings/me-service-desk-plus')
 check('a deep link opens the SDP form', (await page.$$('.sdp-connection')).length === 1)
 check('…with SDP active in the menu', (await menuRows()).find((r) => r.active)?.label === SDP)
 await clickMenu('Slack')
 await page.waitForTimeout(400)
-check('an untouched integration says it keeps its screen', await page.$eval('[data-role="out-of-scope"]', (e) => /keeps its existing screen/.test(e.textContent)))
+// Items with no design work open the Settings layout's placeholder.
+check('an untouched integration says it keeps its screen', await page.$eval('[data-role="settings-placeholder"]', (e) => /Slack keeps its existing screen/.test(e.textContent)))
 await clickMenu('LAMA')
 await page.waitForTimeout(800)
 check('LAMA goes to the existing LAMA screen', page.url().endsWith('#/settings/lama'), page.url())

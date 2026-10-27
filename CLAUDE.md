@@ -17,7 +17,8 @@ A reference implementation of several ObserveOps screens, built entirely from th
 | **WAN Link Discovery** | WAN Link as a category in the Discovery Profile tree: pick an already-monitored router, declare the link, push the IP SLA operation and provision what verified. Cisco IOS XE, IOS XR and NX-OS, plus Juniper RPM. Four views in one screen — profile list, Create form (Single and CSV modes), progress panel, provision grid. |
 | **SLO** | The SLO estate as tiles — flat, or regrouped under each Business Service, whose tile carries the severest status of its own SLOs. |
 | **SLO Profile** | Settings → SLO Profile: the shipped profile table (Evaluation Logic beside Frequency) and its Create SLO Profile form — Strict vs. Redundant evaluation logic with a quorum stepper. |
-| **Integration** | Settings → Integration with **ME Service Desk Plus** added: the Settings section menu, an integration landing, the Integration Profile list and its Create drawer (SDP reveals its fields in steps, like the product's Jira: Integration Type → Request Template → that template's fields), and the SDP connection form (the ServiceNow form minus "Create Alert … as Event / Incident"). |
+| **Settings** | One shared layout for every Settings route: the product's 18-section menu (build 10.0.1) beside a pane. Settings opens on **My Profile**; the screens below sit in its pane. Sections with no design work are listed but open nothing (one inert "Not in this design yet" row — DS-GAPS G56); sub-items with no design work open a placeholder. Menu model: `src/settings/menu.js`. |
+| **Integration** | Settings → Integration with **ME Service Desk Plus** added: an integration landing, the Integration Profile list and its Create drawer (SDP reveals its fields in steps, like the product's Jira: Integration Type → Request Template → that template's fields), and the SDP connection form (the ServiceNow form minus "Create Alert … as Event / Incident"). |
 
 It serves two purposes at once:
 
@@ -34,7 +35,7 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 - **Vanilla JS + Vite 8** — no framework. The DS ships web components, so the app is plain DOM. This
   is deliberate: it keeps the DS's components on the critical path so anything awkward about them
   surfaces immediately instead of being smoothed over by a wrapper.
-- **Vitest + jsdom** — 862 tests across 57 files.
+- **Vitest + jsdom** — 905 tests across 60 files.
 - `@mtdt/observeops-ds-elements` · `-ds-css` · `-ds-spec` (public on npm, no auth).
 - The **`observeops-ds` MCP server** for component discovery and token resolution — registered by
   the project's own `.mcp.json`.
@@ -102,8 +103,13 @@ src/slo-profile/
   evaluation.js                 Strict/Redundant + quorum — no DOM, no DS      (17 tests)
   evaluationLogic.js            the one invented control — see G45 in DS-GAPS.md (16 tests)
   sloProfile.css                token-only styling — no hex/rgb/hsl anywhere
-src/integrations/                                                     39 tests
-  screen.js                     menu ↔ landing / profile list / SDP form, ?view= deep links (11 tests)
+src/settings/                                                         41 tests
+  menu.js                       the 18 sections, their sub-items, hash -> item — no DOM, no DS
+  screen.js                     the layout: obs-side-menu + pane, updated in place between items
+  myProfile.js                  My Account -> My Profile, where Settings opens
+  settings.css · myProfile.css  token-only styling — no hex/rgb/hsl anywhere
+src/integrations/                                                     36 tests
+  screen.js                     landing / profile list / SDP form — one Settings route each (7 tests)
   catalogue.js                  integrations, type fields, SDP template→fields map, seeded profiles — no DOM, no DS (11 tests)
   profileDrawer.js              the Create Integration Profile drawer           (17 tests)
   connectionForm.js             the ME Service Desk Plus connection form
@@ -121,13 +127,14 @@ docs/                           see "Key context" below
 ```bash
 npm install
 npm run dev            # then open / — the app is one page
-npm test               # 862 tests across 57 files
+npm test               # 905 tests across 60 files
 npm run build          # builds the app and the two redirect stubs
 ```
 
 **The app is a single page.** `/` is the Overview; the screens are routes inside the shell —
-`#/reports/categories`, `#/settings/lama`, `#/settings/wan-link-discovery` and `#/monitors/wan-link` — and the sidebar navigates
-between them.
+`#/reports/categories`, `#/monitors/wan-link` and every `#/settings/<item>` — and the sidebar navigates
+between them. Settings is a **layout** module (`layout:` in the registry): every `#/settings/...` route
+mounts `src/settings/screen.js` once, and moving between its menu items only swaps the pane.
 The two `.html` files are redirect stubs kept only so already-published URLs keep working.
 
 ### Adding a screen
@@ -167,6 +174,7 @@ the dev server, `SHOTS` the screenshot directory (default `docs/shots/`).
 node scripts/verify-wan-link.mjs              # the WAN Link list and its probe drawers
 node scripts/probe-wan-link-discovery.mjs     # WAN Link Discovery, all four views end to end
 node scripts/probe-slo.mjs                    # the SLO estate and SLO Profile, incl. Create form
+node scripts/probe-settings.mjs               # the Settings layout: 18-section menu, panes, old-link redirects
 node scripts/probe-integrations.mjs           # Settings -> Integration: menu, profiles, drawer, SDP form
 node scripts/probe-custom-report.mjs          # Report -> Create Custom Report -> SLO, measured edges
 ```
@@ -247,7 +255,6 @@ anything, and change only what the feature actually requires.
     spinner, no "sec" suffix.
   - Assert these in the probe by measuring rendered edges (`probe-integrations.mjs` has examples).
 
-
 ### Environment gotchas
 
 - **The project root is this folder, not the folder above it.** Sessions are often launched from
@@ -293,7 +300,8 @@ published before the refactor keep working:
 | WAN Link Discovery | https://shrenik19.github.io/ObserveOps_Project/#/settings/wan-link-discovery |
 | SLO estate | https://shrenik19.github.io/ObserveOps_Project/#/slo/list |
 | SLO Profile | https://shrenik19.github.io/ObserveOps_Project/#/settings/slo-profile |
-| Integration (ME Service Desk Plus) | https://shrenik19.github.io/ObserveOps_Project/#/settings/integration — add `?view=ME%20Service%20Desk%20Plus` or `?view=Integration%20Profile` to open a view |
+| Settings (opens on My Profile) | https://shrenik19.github.io/ObserveOps_Project/#/settings |
+| Integration (ME Service Desk Plus) | https://shrenik19.github.io/ObserveOps_Project/#/settings/integration — or `#/settings/integration-profile`, `#/settings/me-service-desk-plus` (old `?view=` links still redirect) |
 | ↳ old LAMA link | `…/lama.html` → redirects to `#/settings/lama` |
 | ↳ old Report link | `…/report-categories.html` → redirects to `#/reports/categories` |
 

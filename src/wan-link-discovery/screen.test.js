@@ -11,9 +11,10 @@ describe('wan-link-discovery registration', () => {
     expect(screen.label).toBe('WAN Link discovery')
   })
 
-  it('resolves #/settings/wan-link-discovery to the screen', () => {
+  // Settings is a layout now; the layout's menu maps this old route to Discovery Profile.
+  it('resolves #/settings/wan-link-discovery to the screen, inside the Settings layout', () => {
     const route = resolve(parse('#/settings/wan-link-discovery'), modules)
-    expect(route.kind).toBe('screen')
+    expect(route.kind).toBe('layout')
     expect(route.screen.key).toBe('wan-link-discovery')
   })
 

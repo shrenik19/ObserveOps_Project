@@ -106,3 +106,20 @@ describe('resolve', () => {
     })
   })
 })
+
+describe('resolve — a module with a layout', () => {
+  const layout = async () => ({})
+  const mods = [{ key: 'set', label: 'Set', icon: 'settings', layout, screens: [screen('a'), screen('b')] }]
+
+  it('sends the bare module to its layout, not a card grid', () => {
+    expect(resolve({ module: 'set', screen: null }, mods)).toEqual({ kind: 'layout', module: mods[0], screen: null })
+  })
+
+  it('names the registry screen when the hash has one', () => {
+    expect(resolve({ module: 'set', screen: 'b' }, mods).screen.key).toBe('b')
+  })
+
+  it('still hands the layout a route with no registry screen behind it', () => {
+    expect(resolve({ module: 'set', screen: 'menu-only' }, mods)).toEqual({ kind: 'layout', module: mods[0], screen: null })
+  })
+})

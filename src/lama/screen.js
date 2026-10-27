@@ -1,11 +1,9 @@
-import { pageHeaderHTML } from '../app/pageHeader.js'
 import { renderLamaProfileDrawer } from './lamaProfileDrawer.js'
 import './lama.css'
 
 export const meta = { pageHeader: { heading: 'Settings', icon: 'settings' } }
 
 const TEMPLATE = `
-  ${pageHeaderHTML({ heading: 'Settings', icon: 'settings' })}
 
   <main class="app-shell__content lama-page">
     <!-- The LAMA intro strip: mark, title, and the framework blurb the product shows. -->

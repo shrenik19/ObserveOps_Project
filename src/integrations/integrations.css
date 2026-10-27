@@ -1,13 +1,6 @@
 /* Settings -> Integration. Colours are var(--token) — no hex/rgb/hsl anywhere, per the project's
    standing constraint. Gaps follow the 8px rhythm obs-toolbar uses internally. */
 
-/* ---------- Settings section menu ---------- */
-
-.integration-nav {
-  flex: 0 0 280px;
-  min-height: 0;
-}
-
 /* ---------- Landing ---------- */
 
 .integration-intro {

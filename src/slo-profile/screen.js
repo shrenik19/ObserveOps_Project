@@ -2,7 +2,6 @@
 // table (artboard 6) and the Create SLO Profile form (artboard 2). Creating does not change route,
 // which is how the shipped product behaves.
 
-import { pageHeaderHTML } from '../app/pageHeader.js'
 import { createProfileStore } from './profiles.js'
 import { renderCreateForm } from './createForm.js'
 import { renderPaneDrawer, renderNavRail } from '../app/paneDrawer.js'
@@ -20,7 +19,6 @@ const FILTER_FIELDS = [
 ]
 
 const TEMPLATE = `
-  ${pageHeaderHTML({ heading: 'Settings', icon: 'settings' })}
   <div class="app-shell__body">
     <main class="app-shell__content" id="slo-profile-content">
       <section id="slo-profile-list">

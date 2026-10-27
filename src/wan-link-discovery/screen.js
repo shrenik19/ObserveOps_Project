@@ -1,4 +1,3 @@
-import { pageHeaderHTML } from '../app/pageHeader.js'
 import { createStore } from './profileStore.js'
 import { renderCreateForm } from './createForm.js'
 import { renderPaneDrawer } from '../app/paneDrawer.js'
@@ -10,7 +9,6 @@ import './wanLinkDiscovery.css'
 export const meta = { pageHeader: { heading: 'Settings', icon: 'settings' } }
 
 const TEMPLATE = `
-  ${pageHeaderHTML({ heading: 'Settings', icon: 'settings' })}
   <div class="app-shell__body">
     <main class="app-shell__content" id="wld-content">
       <section id="wld-list">
