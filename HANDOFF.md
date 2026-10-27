@@ -96,6 +96,14 @@ transparent), swapped on `html[data-theme="dark-theme"]`. Verified in Chrome in 
 150 × 40 is 1× — an SVG would stay sharp on high-DPI screens. Known, not changed (shell-wide): the
 product's header icons (search, user, monitor, bell) and its build number (8.2.9 / 10.0.1 vs 8.2.7).
 
+### 2026-10-27 — SLO report tab
+
+The Report page's tab row gains **SLO**, after Log Compliance (user request, product screenshot). Like
+every tab there it is display-only — none of the tabs filters the list in this app. Probe **71/71**
+(tab painted, last, clear of Create Custom Report). **Published 2026-10-27.** Noticed on the same
+screenshot, pre-existing and unchanged: the Report title size (G61), default Type / Report Type
+filter chips (G50), the ACTIONS heading, the schedule calendar icon, and 50 rows per page.
+
 ## In progress
 
 **Committed and published 2026-10-27 via /publish** (SLO report + brand), with only this work's

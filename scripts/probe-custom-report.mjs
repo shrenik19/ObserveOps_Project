@@ -49,6 +49,20 @@ await page.goto(`${ORIGIN}/#/reports/categories`)
 await page.waitForLoadState('networkidle')
 await wait(800)
 const listCount = (await paintedRows('#reports-table')).length
+{
+  // SLO joins the product's report tabs, last; the row still fits beside Create Custom Report.
+  const tabs = await page.$eval('#report-tabs', (t) => {
+    const labels = [...t.shadowRoot.querySelectorAll('*')].filter((n) => n.children.length === 0 && n.getBoundingClientRect().width > 0)
+      .map((n) => n.textContent.trim()).filter((s) => /^(Metric|Log|Flow|Trap|Audit|NCCM|APM|RUM|NetRoute|Log Compliance|SLO)$/.test(s))
+    return labels
+  })
+  check('the Report page shows an SLO tab, after Log Compliance', tabs.at(-1) === 'SLO' && tabs.at(-2) === 'Log Compliance', tabs)
+  const [slo, create] = await Promise.all([
+    page.locator('#report-tabs').getByText('SLO', { exact: true }).boundingBox(),
+    box('[data-role="create-custom-report"]'),
+  ])
+  check('…painted on the tab row, clear of Create Custom Report', slo && slo.width > 10 && slo.x + slo.width < create.l, [slo && Math.round(slo.x + slo.width), create.l])
+}
 await page.click('[data-role="create-custom-report"]')
 await wait(700)
 check('the wizard replaces the Report page', await page.$eval('[data-role="custom-report"]', (e) => e.getBoundingClientRect().height > 400) &&

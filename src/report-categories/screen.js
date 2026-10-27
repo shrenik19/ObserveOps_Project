@@ -193,7 +193,8 @@ export function mount(root) {
   // obs-tabs normalizes each item as { key: key ?? label, label: label ?? key } — it is { key, label },
   // NOT the { value, text } shape obs-radio and obs-select use. Set as a JSON attribute so the value
   // survives regardless of upgrade timing.
-  const reportTabs = ['Metric', 'Log', 'Flow', 'Trap', 'Audit', 'NCCM', 'APM', 'RUM', 'NetRoute', 'Log Compliance']
+  // The product's tabs, then SLO — the report type Create Custom Report now offers.
+  const reportTabs = ['Metric', 'Log', 'Flow', 'Trap', 'Audit', 'NCCM', 'APM', 'RUM', 'NetRoute', 'Log Compliance', 'SLO']
   const tabsEl = root.querySelector('#report-tabs')
   tabsEl.setAttribute('tabs', JSON.stringify(reportTabs.map((label) => ({ key: label.toLowerCase(), label }))))
   tabsEl.setAttribute('value', 'metric')

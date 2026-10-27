@@ -22,6 +22,12 @@ describe('Report page — Create Custom Report', () => {
 
   const open = () => $('[data-role="create-custom-report"]').click()
 
+  it("adds an SLO tab after the product's report tabs", () => {
+    const tabs = JSON.parse($('#report-tabs').getAttribute('tabs')).map((t) => [t.key, t.label])
+    expect(tabs.map(([, label]) => label)).toEqual(['Metric', 'Log', 'Flow', 'Trap', 'Audit', 'NCCM', 'APM', 'RUM', 'NetRoute', 'Log Compliance', 'SLO'])
+    expect(tabs.at(-1)).toEqual(['slo', 'SLO'])
+  })
+
   it('opens the wizard in place of the list, and says so in the hash', () => {
     open()
     expect($('[data-role="custom-report"]')).not.toBeNull()
