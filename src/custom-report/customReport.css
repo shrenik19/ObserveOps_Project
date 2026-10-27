@@ -1,0 +1,473 @@
+/* Create Custom Report -> SLO. Colours are var(--token) — no hex/rgb/hsl anywhere, per the
+   project's standing constraint. Columns sit 24px apart and edges line up across rows (CLAUDE.md
+   "Form layout follows the shipped product"). */
+
+/* ---------- Shell ---------- */
+
+.custom-report {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.custom-report__body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The page title, as the product draws it: a back chevron and ~20px regular-weight text, a 50px band
+   with a bottom rule, the date range at the right on Report Criteria. */
+.cr-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 16px 0 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cr-header__back {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--btn-radius);
+  background: none;
+  color: var(--page-text-color);
+  cursor: pointer;
+}
+
+.cr-header__back:hover {
+  background: var(--neutral-lightest);
+}
+
+.cr-header__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--page-text-color);
+}
+
+.cr-header__range {
+  margin-left: auto;
+}
+
+.custom-report__rail {
+  flex: 0 0 300px;
+  border-right: 1px solid var(--border-color);
+  overflow: auto;
+}
+
+/* The steps as the product lists them: full-width 45px rows split by rules, the current one banded. */
+.cr-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* border-box: a <div> row would otherwise add its rule to the 45px (a <button> row already does). */
+.cr-step {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 45px;
+  padding: 0 18px;
+  border: 0;
+  border-bottom: 1px solid var(--border-color);
+  background: none;
+  color: var(--page-text-color);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+
+button.cr-step {
+  cursor: pointer;
+}
+
+button.cr-step:hover {
+  background: var(--neutral-lightest);
+}
+
+.cr-step.is-current {
+  background: var(--neutral-lightest);
+}
+
+.cr-step.is-upcoming {
+  color: var(--neutral-light);
+}
+
+/* Done: a filled dark disc with a white check. Current and upcoming: an outlined number. */
+.cr-step__marker {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  height: 26px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 13px;
+}
+
+.cr-step.is-done .cr-step__marker {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-button-text);
+}
+
+.cr-step__label strong {
+  font-weight: 600;
+}
+
+.custom-report__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 16px;
+  overflow: auto;
+}
+
+.custom-report__content > section {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 16px;
+}
+
+/* Previous / Next / Save & Exit, ending on the step's right edge. */
+.custom-report__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.custom-report__more {
+  margin: 0;
+  font-size: 13px;
+  color: var(--neutral-light);
+}
+
+/* ---------- Fields ---------- */
+
+.cr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* A fixed height: an ⓘ would otherwise push its field below its neighbour's. */
+.cr-field__label {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--neutral-light);
+}
+
+.cr-field__required {
+  color: var(--secondary-red);
+}
+
+.cr-field__error {
+  font-size: 12px;
+  color: var(--secondary-red);
+}
+
+.cr-field obs-switch,
+.cr-field obs-radio {
+  align-self: flex-start;
+}
+
+/* ---------- Step 1: Report Type ---------- */
+
+.report-type-step__search {
+  width: 240px;
+}
+
+.report-type-step__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.report-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 144px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--btn-radius);
+  background: var(--neutral-lightest);
+  color: var(--page-text-color);
+  font: inherit;
+  text-align: center;
+}
+
+.report-tile[hidden] {
+  display: none;
+}
+
+.report-tile[aria-disabled='true'] {
+  cursor: default;
+}
+
+button.report-tile {
+  cursor: pointer;
+}
+
+button.report-tile:hover,
+button.report-tile:focus-visible {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.report-tile__label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tile-art {
+  width: 140px;
+  height: 70px;
+}
+
+/* Black and white only (user review): black (--neutral-darkest) and neutral grey. --page-text-color
+   and --border-color are tinted navy / blue, so they are not used here. */
+.tile-art .art-grid { stroke: var(--neutral-regular-lighter); stroke-width: 1; }
+.tile-art .art-line { fill: none; stroke: var(--neutral-darkest); stroke-width: 2; stroke-linejoin: round; }
+.tile-art .art-bar { stroke: var(--neutral-darkest); stroke-width: 3; stroke-linecap: round; }
+.tile-art .art-fill { fill: var(--neutral-darkest); opacity: 0.35; }
+.tile-art .art-faint { opacity: 0.4; }
+.tile-art .art-dot { fill: var(--neutral-lightest); stroke: var(--neutral-darkest); stroke-width: 2; }
+.tile-art .art-hole { fill: var(--neutral-lightest); }
+.tile-art .art-track { fill: none; stroke: var(--neutral-darkest); stroke-width: 10; opacity: 0.15; }
+.tile-art .art-accent { fill: none; stroke: var(--neutral-darkest); stroke-width: 10; }
+.tile-art .art-target { stroke: var(--neutral-darkest); stroke-width: 3; stroke-linecap: round; }
+
+/* ---------- Step 2: Report Criteria ---------- */
+
+/* The query: one plain row of fields, as in the product's report criteria, with every added row in
+   the same grid so its Counter and Aggregation sit in the first row's columns. 20px between
+   columns, measured from the product's APM report criteria. */
+.slo-query {
+  display: grid;
+  /* SLO Type · Counter · Aggregation · Source Filter · Source · actions. Source Filter must fit
+     "Availability SLO" unclipped. */
+  grid-template-columns:
+    minmax(0, 0.9fr) minmax(0, 1.4fr) minmax(0, 0.7fr) minmax(0, 1.1fr) minmax(0, 1.3fr) 72px;
+  gap: 16px 20px;
+  align-items: end;
+}
+
+.slo-query__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+}
+
+.slo-query__remove obs-icon {
+  color: var(--secondary-red);
+}
+
+.criteria-step__preview {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Preview on the left, Properties on the right, filling the step down to Previous / Next — the
+   product's split, 20px apart. */
+.slo-preview-area {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 20px;
+  min-height: 360px;
+}
+
+.slo-preview {
+  display: flex;
+  flex-direction: column;
+  flex: 8 1 0;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--btn-radius);
+  overflow: auto;
+}
+
+.slo-preview__empty {
+  margin: auto;
+  font-size: 16px;
+  color: var(--neutral-light);
+}
+
+.slo-preview__chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.slo-properties {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 7 1 0;
+  gap: 16px;
+  min-width: 0;
+  padding: 12px 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--btn-radius);
+}
+
+/* Collapsed, only the toggle remains, and the preview takes the width. */
+.slo-properties.is-collapsed {
+  flex: 0 0 24px;
+  padding: 0;
+}
+
+.slo-properties.is-collapsed .slo-properties__title,
+.slo-properties.is-collapsed .slo-properties__body {
+  display: none;
+}
+
+/* The product's round chevron, sitting on the panel's left border. */
+.slo-properties__toggle {
+  position: absolute;
+  top: 12px;
+  left: -13px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--neutral-lighter);
+  border-radius: 50%;
+  background: var(--neutral-lighter);
+  color: var(--page-text-color);
+  cursor: pointer;
+}
+
+.slo-properties.is-collapsed .slo-properties__toggle obs-icon {
+  transform: rotate(180deg);
+}
+
+.slo-properties__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--page-text-color);
+}
+
+.slo-properties__body {
+  display: none;
+}
+
+.slo-properties__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--page-text-color);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.slo-properties.is-collapsed .slo-properties__toggle obs-icon {
+  transform: rotate(180deg);
+}
+
+.slo-properties__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.slo-properties__views {
+  display: inline-flex;
+  border: 1px solid var(--border-color);
+  border-radius: var(--btn-radius);
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.slo-properties__view {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--border-color);
+  background: none;
+  cursor: pointer;
+}
+
+.slo-properties__view:last-child {
+  border-right: 0;
+}
+
+.slo-properties__view[aria-pressed='true'] {
+  background: var(--neutral-button-bg);
+}
+
+.slo-properties__view svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cr-icon-line { fill: none; stroke: var(--page-text-color); stroke-width: 1.4; }
+.cr-icon-fill { fill: var(--page-text-color); }
+.cr-icon-fill-line { fill: none; stroke: var(--chart-vivid-teal); stroke-width: 2.4; }
+
+/* Chart marks — the DS's categorical chart palette. */
+.cr-chart .cr-grid { stroke: var(--chart-grid-line-color); stroke-width: 1; }
+.cr-chart .cr-axis,
+.cr-chart .cr-legend { fill: var(--chart-legend-color); font-size: 11px; font-family: var(--chart-font-family); }
+.cr-chart .cr-gauge-value { fill: var(--page-text-color); font-size: 14px; font-weight: 600; }
+.cr-chart .cr-line { fill: none; stroke-width: 2; }
+.cr-chart .cr-area { opacity: 0.25; stroke: none; }
+.cr-chart .cr-point { stroke: var(--page-background-color); stroke-width: 2; }
+.cr-chart .cr-slice { stroke: var(--page-background-color); stroke-width: 2; }
+.cr-chart .cr-gauge-track { fill: none; stroke: var(--chart-grid-line-color); stroke-width: 14; }
+.cr-chart .cr-gauge { fill: none; stroke-width: 14; }
+
+.cr-chart .cr-series-0 { fill: var(--chart-vivid-teal); stroke: var(--chart-vivid-teal); }
+.cr-chart .cr-series-1 { fill: var(--chart-indigo); stroke: var(--chart-indigo); }
+.cr-chart .cr-series-2 { fill: var(--chart-amber); stroke: var(--chart-amber); }
+.cr-chart .cr-series-3 { fill: var(--chart-hot-pink); stroke: var(--chart-hot-pink); }
+.cr-chart .cr-series-4 { fill: var(--chart-lime-green); stroke: var(--chart-lime-green); }
+.cr-chart .cr-series-5 { fill: var(--chart-sunset-orange); stroke: var(--chart-sunset-orange); }
+.cr-chart .cr-series-6 { fill: var(--chart-bright-violet); stroke: var(--chart-bright-violet); }
+.cr-chart .cr-series-7 { fill: var(--chart-aqua); stroke: var(--chart-aqua); }
+/* Lines and gauge arcs are strokes only; the element selector outranks the series fills above. */
+.cr-chart polyline.cr-line,
+.cr-chart path.cr-gauge { fill: none; }
+
+/* ---------- Step 3: Report Properties ---------- */
+
+/* Two 380px columns. The step itself stays full width: the product pins Previous / Save & Exit to
+   the page's bottom-right corner, as on Report Criteria (user screenshot, 2026-10-27). */
+/* Measured on the product's Report Properties: 14px between the columns, ~40px between rows. */
+.properties-step__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 380px) minmax(0, 380px);
+  gap: 40px 14px;
+}

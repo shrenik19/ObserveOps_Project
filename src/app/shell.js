@@ -4,6 +4,11 @@
 // Deliberately imports no DS module. The custom elements are registered once by main.js, which
 // keeps this file testable in jsdom, where they are inert unknown elements.
 
+// The motadata wordmark, as the product's header shows it. The DS ships only the mark (obs-logo, at
+// the top of the sidebar), so the wordmark is the user's own asset, one per theme.
+import wordmarkOnLight from './assets/motadata-wordmark-on-light.jpg'
+import wordmarkOnDark from './assets/motadata-wordmark-on-dark.png'
+
 // The header's build number differs between the two old pages (8.2.6 and 8.2.7). One shell means
 // one value; the later wins.
 const TEMPLATE = `
@@ -17,9 +22,9 @@ const TEMPLATE = `
       <obs-app-header id="app-header" build="8.2.7">
         <!-- Our own markup, so making it a link needs no DS co-operation. obs-sidebar's logo is an
              <a> with @click.prevent that emits nothing, so it cannot be the way home. -->
-        <a slot="brand" class="app-brand" href="#/">
-          <obs-logo name="motadata" size="26"></obs-logo>
-          ObserveOps
+        <a slot="brand" class="app-brand" href="#/" aria-label="motadata — Overview">
+          <img class="app-brand__wordmark app-brand__wordmark--on-light" src="${wordmarkOnLight}" alt="motadata" width="150" height="40">
+          <img class="app-brand__wordmark app-brand__wordmark--on-dark" src="${wordmarkOnDark}" alt="motadata" width="150" height="40">
         </a>
 
         <obs-user-menu

@@ -11,6 +11,7 @@ A reference implementation of several ObserveOps screens, built entirely from th
 | Screen | What it is |
 |---|---|
 | **Report / Category RBAC** | Category-level Public/Private visibility & sharing on the Report module's left-nav category list. |
+| **Create Custom Report → SLO** | The Report page's Create Custom Report wizard with an **SLO** report type: the product's tile grid (only SLO clickable), the SLO query from Create Widget (SLO Type → Counter, Last, Source Filter Performance / Availability SLO, Source, ⊕/⊗ counter rows), a Grid / Top N preview (seven views) beside a Properties panel, and Report Properties → Save & Exit into the list. An internal view of the Report screen: `#/reports/categories?view=create-report`. |
 | **LAMA** | The LAMA list and its Create LAMA Profile drawer. |
 | **WAN Link** | Cisco NX-OS WAN Link monitoring — ICMP Echo, UDP Echo and UDP Jitter probes, each with a detail drawer. |
 | **WAN Link Discovery** | WAN Link as a category in the Discovery Profile tree: pick an already-monitored router, declare the link, push the IP SLA operation and provision what verified. Cisco IOS XE, IOS XR and NX-OS, plus Juniper RPM. Four views in one screen — profile list, Create form (Single and CSV modes), progress panel, provision grid. |
@@ -33,7 +34,7 @@ Purpose 2 is why `docs/DS-GAPS.md` exists and matters as much as the code.
 - **Vanilla JS + Vite 8** — no framework. The DS ships web components, so the app is plain DOM. This
   is deliberate: it keeps the DS's components on the critical path so anything awkward about them
   surfaces immediately instead of being smoothed over by a wrapper.
-- **Vitest + jsdom** — 774 tests across 48 files.
+- **Vitest + jsdom** — 861 tests across 57 files.
 - `@mtdt/observeops-ds-elements` · `-ds-css` · `-ds-spec` (public on npm, no auth).
 - The **`observeops-ds` MCP server** for component discovery and token resolution — registered by
   the project's own `.mcp.json`.
@@ -64,6 +65,16 @@ src/report-categories/
   augmentSideMenu.js            the ONE remaining DS extension         (17 tests)
   categoryRow.js                superseded — kept, unused by the page  (13 tests)
   *.css                         token-only styling — no hex/rgb/hsl anywhere
+src/custom-report/                                                    77 tests
+  catalogue.js                  report types, SLO counters, option lists, preview columns/rows — no DOM, no DS
+  sloReportData.js              example SLO profiles and instances
+  wizard.js                     step state, validation, toReport() — no DOM, no DS
+  screen.js                     renderWizard(): hand-built header + step rail (G60, G61), the open step
+  reportTypeStep.js · tileArt.js  the 19 tiles and their hand-drawn pictures (G59)
+  criteriaStep.js               Widget Type + the SLO query grid
+  preview.js · charts.js        Grid / Top N preview, Properties panel, inline-SVG charts
+  propertiesStep.js             Name, Description, Category, Orientation, Schedule
+  customReport.css              token-only styling — no hex/rgb/hsl anywhere
 src/lama/
   screen.js                     the LAMA list and its Create LAMA Profile drawer
 src/wan-link/
@@ -110,7 +121,7 @@ docs/                           see "Key context" below
 ```bash
 npm install
 npm run dev            # then open / — the app is one page
-npm test               # 774 tests across 48 files
+npm test               # 861 tests across 57 files
 npm run build          # builds the app and the two redirect stubs
 ```
 
@@ -157,6 +168,7 @@ node scripts/verify-wan-link.mjs              # the WAN Link list and its probe 
 node scripts/probe-wan-link-discovery.mjs     # WAN Link Discovery, all four views end to end
 node scripts/probe-slo.mjs                    # the SLO estate and SLO Profile, incl. Create form
 node scripts/probe-integrations.mjs           # Settings -> Integration: menu, profiles, drawer, SDP form
+node scripts/probe-custom-report.mjs          # Report -> Create Custom Report -> SLO, measured edges
 ```
 
 `probe-wan-link-discovery.mjs` walks the whole screen — list → Create form (Single and CSV) →
@@ -171,7 +183,7 @@ see `docs/DS-GAPS.md` G41 and the `[hidden]` note at the top of `wanLinkDiscover
 
 | File | Job |
 |---|---|
-| `docs/DS-GAPS.md` | **The DS gap report — G0–G54** (G11 unused; **G21 and G40 are withdrawn**, each kept in place with the rendered evidence that disproved it). Written to be handed to the DS team on its own. Kept current: fixed items are marked ✅ with evidence, and the original report is preserved beneath. |
+| `docs/DS-GAPS.md` | **The DS gap report — G0–G61** (G11 unused; **G21 and G40 are withdrawn**, each kept in place with the rendered evidence that disproved it). Written to be handed to the DS team on its own. Kept current: fixed items are marked ✅ with evidence, and the original report is preserved beneath. |
 | `docs/PROJECT-CONTEXT.md` | What was built and why, for someone who has never seen the app. Companion to the gap report. |
 | `docs/superpowers/plans/…-ds-component-reference.md` | A consumer's-eye record of what each `obs-*` element's API *actually* is, versus what the registry says. The raw material behind the gap report. |
 | `docs/superpowers/specs/…-design.md` | The original design spec. |
@@ -228,7 +240,9 @@ anything, and change only what the feature actually requires.
   - **Edges line up across rows** — field with field, field with button, button group with the
     field edge. A button beside a select starts on the right column's edge; Reset / Test / Save end
     on the right field edge, not the page edge. Side-by-side fields share a top edge (a caption's ⓘ
-    must not push one down — see `.integration-field__label`).
+    must not push one down — see `.integration-field__label`). **Exception — step wizards** (Create
+    Custom Report): the product pins Previous / Next / Save & Exit to the page's bottom-right corner
+    on every step, Previous a filled grey `neutral-lightest`, Save & Exit an outlined `default`.
   - **The plainest control the product uses.** URL Time Out is a plain text field: no number
     spinner, no "sec" suffix.
   - Assert these in the probe by measuring rendered edges (`probe-integrations.mjs` has examples).

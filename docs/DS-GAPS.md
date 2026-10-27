@@ -55,6 +55,11 @@ screen (2026-08-13). Both are discoverability/capability gaps that cost real tim
 | **G52** no code block, and its tokens ship unused | 🆕 **OPEN** | `--code-tag-background-color` / `--code-tag-text-color` are defined in both themes and referenced by **nothing** — 4 occurrences in `observeops-ds.css`, all definitions, no rule consumes them. 0 of 47 elements match `code\|snippet\|copy\|clipboard`. Any screen showing a command hand-composes the box *and* its copy behaviour. **Same shape as G31 / G47** |
 | **G53** `obs-side-menu` opens its sections only once, at setup | 🆕 **OPEN** | `mode="sections"` seeds its open state when it is created: the **first** section with children always opens, plus the one holding `active`. Items assigned later open nothing, and `active` set later never opens its section. Settings → Integration had to seed the markup with only the Integration section, then assign the full list after mount |
 | **G54** no ManageEngine / ServiceDesk Plus logo — and a missing logo cannot be detected | 🆕 **OPEN** | Nine spellings (`ManageEngine`, `ServiceDesk Plus`, `ME Service Desk Plus`, `sdp`, …) render a "?" placeholder whose shadow DOM is identical to `name="qqqzzz-nonsense"`. ServiceNow and Jira render real marks. The SDP form uses a lettered stand-in |
+| **G57** `obs-table` header font size cannot be set | 🆕 **OPEN** | Header cells paint a fixed 12px. Measured in Chrome: a `font-size` on the host, or overriding `--font-size-lg`, leaves `th` at 12px; no `part` on `th`, no custom property. The product's report Style tab offers Header Font Size Small / Medium / Large. Create Custom Report → SLO keeps the choice with the report but cannot preview it |
+| **G58** `obs-table`'s `tags` cell type is undocumented | 🆕 **OPEN** | `elements-api.json` documents column `type` with no list of values. The bundle renders `type: 'tags'` — an array of strings or `{label, variant}` as `obs-tag` chips — which is exactly the product's SLO.PROFILE.TAGS column. Found by reading the bundle; used by the SLO report preview |
+| **G59** no report-type illustrations, and no chart-type icons | 🆕 **OPEN** | The product's Create Custom Report tiles are line illustrations; its Style tab picks Area / Line / Horizontal Bar / Vertical Bar / Pie / Solid Gauge / Grid by icon. None of these ship (`areaChart`, `lineChart`, `barChart`, `pieChart`, `gauge` are absent), though the DS ships `--chart-type-icon` / `--chart-line-type-icon` for them. Hand-drawn, token-only, in `src/custom-report/tileArt.js` and `preview.js` |
+| **G60** `obs-steps` cannot draw the product's wizard rail | 🆕 **OPEN** | Create Custom Report's rail is full-width 45px rows split by rules, the current row banded, a done step a **filled** dark disc with a white check, no connectors. `obs-steps direction="vertical"` draws circles with labels above their centres; `completed="primary"` gives an outlined check, `connector="none"` drops lines but no rows or bands exist. Hand-built (`.cr-steps`), token-only |
+| **G61** `obs-page-header`'s title size is fixed | 🆕 **OPEN** | The title paints 16px / 500 (`h4.title`, no `part`, no custom property; a host `font-size` does not reach it). The product's page titles ("Create Custom Report", "Report") are ~20px regular. The wizard hand-builds its header (`.cr-header`); the other screens keep the DS's 16px |
 
 | Gap | Status | Evidence |
 |---|---|---|
@@ -2222,3 +2227,88 @@ that asserts "the logo painted" passes on the placeholder.
 `missing` attribute reflected on the host, or a `logo-missing` event — so a consumer can fall back
 deliberately instead of shipping a "?".
 
+---
+
+### New finding — G57: `obs-table` header font size cannot be set
+
+**Class: DS — capability.** Found building Create Custom Report → SLO (`src/custom-report/`), whose
+Properties → Style tab offers the product's **Header Font Size: Small / Medium / Large** for a Grid.
+
+Measured in real Chrome (`#reports-table`, elements 0.1.167):
+
+| attempt | `th` font-size | `td` font-size |
+|---|---|---|
+| as rendered | 12px | 13px |
+| `font-size: 18px` on the host | 12px | 13px |
+| `--font-size-lg: 30px` on the host | 12px | 13px |
+
+`th` carries no `part` attribute and reads no custom property, so nothing outside the shadow root
+reaches it. A `::part(header)` rule was written first and removed: it matched nothing.
+
+**Workaround shipped:** none that shows. The choice is kept with the saved report
+(`criteria.fontSize`), and the preview draws the DS's 12px.
+
+**Ask:** a `header-size="small|medium|large"` attribute, or `part="header-cell"` on `th`.
+
+---
+
+### New finding — G58: `obs-table`'s `tags` cell type is undocumented
+
+**Class: DS — documentation.** `elements-api.json` describes `columns` as
+`[{key,title,width?,align?,sortable?,type?,cls?}]` and lists no `type` values. The bundle handles
+`type === "tags"`: the cell value is an array, each item a string or `{ label, variant }`, painted as
+`obs-tag` chips. That is the product's SLO.PROFILE.TAGS column, used by the SLO report preview with
+the product's "first tag, then +N" shape.
+
+**Ask:** list every column `type` (`link`, `switch`, `button`, `icon`, `tags`, …) with its value shape.
+
+---
+
+### New finding — G59: no report-type illustrations, and no chart-type icons
+
+**Class: DS — capability.** Create Custom Report's first step is a grid of nineteen tiles, each a line
+illustration (table, trend line, area, pie, flow, code, shield, device, globe). The Report Criteria
+Style tab picks a Top N view by icon. The DS ships none of these: `areaChart`, `lineChart`,
+`barChart`, `pieChart` and `gauge` are not icon names, and there is no illustration set — yet
+`--chart-type-icon` and `--chart-line-type-icon` exist, apparently for exactly this.
+
+**Workaround shipped:** ten hand-drawn motifs in `src/custom-report/tileArt.js` and seven view icons in
+`src/custom-report/preview.js`, coloured only through `--chart-type-icon`, `--chart-grid-line-color`
+and `--chart-vivid-teal`.
+
+**Ask:** the report-type illustrations and chart-type icons as `obs-icon` names.
+
+---
+
+### New finding — G60: `obs-steps` cannot draw the product's wizard rail
+
+**Class: DS — capability.** Found matching Create Custom Report's left rail to the product (user
+screenshot, 2026-10-27).
+
+The product: one full-width 45px row per step, split by rules; the current row banded; a finished step
+a **filled** dark disc with a white check; the current and later steps an outlined number; no
+connector lines; "Report Type : **APM**" with the choice emphasised.
+
+Measured with `obs-steps direction="vertical"` (elements 0.1.167) and every relevant attribute
+(`connector="none"`, `completed="primary"`, `fill="outline"`): no row bands or separators exist, the
+completed marker is an outlined check, and each label sits above its circle's centre rather than
+beside it.
+
+**Workaround shipped:** `.cr-steps` in `src/custom-report/` — an `<ol>` of rows, done rows are
+buttons that revisit the step. Token-only; measured by `probe-custom-report.mjs`.
+
+**Ask:** a `variant="list"` (row per step, separators, banded current row) and a filled completed marker.
+
+---
+
+### New finding — G61: `obs-page-header`'s title size is fixed
+
+**Class: DS — capability.** The title renders as `h4.title` at **16px / 500**. Setting `font-size` on
+the host, or a custom property, leaves it at 16px; it carries no `part`. The product's page titles —
+"Create Custom Report", and "Report" on the Report page — are ~20px at regular weight.
+
+**Workaround shipped:** the Create Custom Report wizard hand-builds its header (`.cr-header`: back
+chevron, 20px / 400 title, bottom rule). Every other screen still uses `obs-page-header` at 16px, so
+they differ from the product in the same way.
+
+**Ask:** a `size` attribute, or `part="title"`.

@@ -37,8 +37,7 @@ body {
   min-width: 0;
 }
 
-/* Brand mark + wordmark in the app header's `brand` slot. The mark uses currentColor so it follows
-   the header's text colour in both themes — no hardcoded fill. */
+/* The motadata wordmark in the app header's `brand` slot, as the product shows it. */
 .app-brand {
   display: inline-flex;
   align-items: center;
@@ -49,6 +48,23 @@ body {
   /* It is an <a> now — the way back to the Overview — so it needs the underline removed that a
      <span> never had. */
   text-decoration: none;
+}
+
+/* Dark text in the light theme, white in the dark one (the DS sets html[data-theme="dark-theme"]).
+   Drawn at the asset's native 150 × 40. */
+.app-brand__wordmark {
+  display: block;
+  width: 150px;
+  height: 40px;
+}
+
+.app-brand__wordmark--on-dark,
+:root[data-theme='dark-theme'] .app-brand__wordmark--on-light {
+  display: none;
+}
+
+:root[data-theme='dark-theme'] .app-brand__wordmark--on-dark {
+  display: block;
 }
 
 /* Category nav + content sit side by side and fill the rest. */

@@ -40,6 +40,17 @@ describe('createShell', () => {
     expect(host.querySelector('.app-brand').getAttribute('href')).toBe('#/')
   })
 
+  it('shows the motadata wordmark, as the product header does — one per theme, no "ObserveOps" text', () => {
+    const { host } = build()
+    const brand = host.querySelector('.app-brand')
+    const marks = [...brand.querySelectorAll('img')]
+    expect(marks.map((m) => m.className)).toEqual(['app-brand__wordmark app-brand__wordmark--on-light', 'app-brand__wordmark app-brand__wordmark--on-dark'])
+    expect(marks.every((m) => m.getAttribute('alt') === 'motadata')).toBe(true)
+    expect(marks[0].getAttribute('src')).toMatch(/motadata-wordmark-on-light\.jpg/)
+    expect(marks[1].getAttribute('src')).toMatch(/motadata-wordmark-on-dark\.png/)
+    expect(brand.textContent.trim()).toBe('')
+  })
+
   it('setActive highlights a module', () => {
     const { host, shell } = build()
     shell.setActive('reports')

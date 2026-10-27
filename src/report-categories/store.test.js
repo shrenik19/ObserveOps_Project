@@ -248,3 +248,25 @@ describe('updateReport', () => {
     expect(() => withReports().updateReport('nope', {})).toThrow('Unknown report: nope')
   })
 })
+
+describe('addReport', () => {
+  const categories = [{ id: 'all-reports', name: 'All Reports', type: 'builtin', visibility: 'public', sharedWith: [] },
+    { id: 'availability', name: 'Availability', type: 'builtin', visibility: 'public', sharedWith: [] }]
+
+  it('adds a report to its category, first, and notifies', () => {
+    const store = createStore({ categories, reports: [{ id: 'r1', category: 'availability', title: 'Old' }] })
+    const listener = vi.fn()
+    store.subscribe(listener)
+    const added = store.addReport({ category: 'availability', title: 'SLO weekly', type: 'SLO' })
+    expect(added.id).toBeTruthy()
+    expect(store.getReports().map((r) => r.title)).toEqual(['SLO weekly', 'Old'])
+    expect(store.countReportsInCategory('availability')).toBe(2)
+    expect(listener).toHaveBeenCalledTimes(1)
+  })
+
+  it('refuses a report for a category that does not exist', () => {
+    const store = createStore({ categories, reports: [] })
+    expect(() => store.addReport({ category: 'nope', title: 'x' })).toThrow(/Unknown category/)
+    expect(store.getReports()).toEqual([])
+  })
+})

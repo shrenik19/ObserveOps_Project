@@ -3,6 +3,7 @@ import { createStore } from './store.js'
 import { renderCategorySettingsPanel } from './categorySettingsPanel.js'
 import { augmentCategoryRows } from './augmentSideMenu.js'
 import { startDeleteCategoryFlow } from './deleteCategoryFlow.js'
+import { renderWizard } from '../custom-report/screen.js'
 import './categorySettingsPanel.css'
 import './deleteConfirmDialog.css'
 import './reassignReportsDialog.css'
@@ -413,6 +414,43 @@ export function mount(root) {
 
   store.subscribe(render)
   render(store.getCategories())
+
+  // --- Create Custom Report ----------------------------------------------------------------------
+  // An internal view of this screen, not a route of its own: the wizard replaces the page while it is
+  // open, and the hash says so (?view=create-report) via replaceState — a hashchange would remount.
+  const CREATE_VIEW = 'create-report'
+  let wizard = null
+  const pageParts = () => [...root.children].filter((c) => c !== wizard)
+
+  function closeWizard() {
+    wizard?.remove()
+    wizard = null
+    for (const part of pageParts()) part.style.display = ''
+    history.replaceState(null, '', '#/reports/categories')
+  }
+
+  function openWizard() {
+    if (wizard) return
+    wizard = renderWizard({
+      // All Reports is a view of every category, not a place a report can live.
+      categories: store.getCategories().filter((c) => c.id !== 'all-reports').map(({ id, name }) => ({ id, name })),
+      isTaken: (name) => store.getReports().some((r) => r.title.toLowerCase() === name.trim().toLowerCase()),
+      onExit: closeWizard,
+      onSave: (saved) => {
+        // The list's row shape; the store assigns the id.
+        const row = report(undefined, saved.name, saved.category, saved.description, saved.type, saved.reportType, saved.schedule)
+        store.addReport({ ...row, orientation: saved.orientation, criteria: saved.criteria })
+        closeWizard()
+      },
+    })
+    for (const part of pageParts()) part.style.display = 'none'
+    root.append(wizard)
+    wizard.upgrade()
+    history.replaceState(null, '', `#/reports/categories?view=${CREATE_VIEW}`)
+  }
+
+  root.querySelector('[data-role="create-custom-report"]').addEventListener('click', openWizard)
+  if (new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('view') === CREATE_VIEW) openWizard()
 
   // The ONE thing on this screen that outlives its DOM: a MutationObserver on obs-side-menu's
   // shadow root. Without this disconnect every revisit stacks another observer, each re-running

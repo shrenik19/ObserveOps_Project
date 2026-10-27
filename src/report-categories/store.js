@@ -66,6 +66,18 @@ export function createStore(initial) {
     notify()
   }
 
+  /**
+   * Add a report — Create Custom Report's Save & Exit. First in the list, so the report just made is
+   * the one in view. Refuses an unknown category: that would be the orphan this store exists to prevent.
+   */
+  function addReport(report) {
+    if (!categories.some((c) => c.id === report.category)) throw new Error(`Unknown category: ${report.category}`)
+    const added = { ...report, id: report.id ?? generateId() }
+    reports = [added, ...reports]
+    notify()
+    return { ...added }
+  }
+
   /** Throws unless the category exists and is deletable. Returns it. */
   function assertDeletable(id) {
     const target = categories.find((c) => c.id === id)
@@ -145,6 +157,7 @@ export function createStore(initial) {
     getReports,
     getReportsByCategory,
     countReportsInCategory,
+    addReport,
     updateReport,
     moveReportsAndDeleteCategory,
     deleteCategoryWithReports,
